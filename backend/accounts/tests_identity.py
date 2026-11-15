@@ -22,7 +22,7 @@ from trading.models import TradingAccount
 from . import identity, verification
 from .models import EmailCode, IdentityVerification
 
-PASSWORD = 'HarbourTest2026x'
+PASSWORD = 'ZentraTest2026x'
 
 
 def make_photo(width=640, height=420, fmt='JPEG', colour=(180, 40, 40), exif=False):

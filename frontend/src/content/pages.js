@@ -27,7 +27,7 @@ export const accountsPage = {
   hero: { title: 'Start investing', text: 'Become a self-directed investor in about 15 minutes.', image: img('1611095567219-8fa7d4d8bf48') }, // couple looking at a laptop outdoors
   onThisPage: [['Start here', '#start'], ['Accounts', '#accounts'], ['Compare', '#compare'], ['Steps', '#steps'], ['Transfer', '#transfer']],
   start: [
-    { icon: 'doc', title: 'New to Harbour Direct?', text: 'To invest with us you need a brokerage account. Choose the account type that fits your goals, then apply online.', link: ['Open an account', '/sign-up'] },
+    { icon: 'doc', title: 'New to Zentra Direct?', text: 'To invest with us you need a brokerage account. Choose the account type that fits your goals, then apply online.', link: ['Open an account', '/sign-up'] },
     { icon: 'mail', title: 'Already applied?', text: 'We will email you within 1 to 2 business days so you can verify your identity and activate your account.', link: ['Check my application', '/account'] },
   ],
   compare: {
@@ -134,7 +134,7 @@ export const aboutPage = {
   story: {
     title: 'Who we are',
     paragraphs: [
-      'Harbour Direct Brokerage helps Canadians invest on their own terms. We believe investing should be clear: simple pricing, honest information and tools that help you decide for yourself.',
+      'Zentra Direct helps Canadians invest on their own terms. We believe investing should be clear: simple pricing, honest information and tools that help you decide for yourself.',
       'We do not give investment advice. Instead, we give you a dependable platform, research you can trust and a support team that knows your account.',
     ],
   },
@@ -220,10 +220,10 @@ export const legalPages = {
     title: 'Regulatory information',
     updated: 'November 2026',
     sections: [
-      ['What we offer today', 'Harbour Direct currently offers practice accounts only. Practice accounts use virtual money, orders are not sent to an exchange, and no client money is held.'],
+      ['What we offer today', 'Zentra Direct currently offers practice accounts only. Practice accounts use virtual money, orders are not sent to an exchange, and no client money is held.'],
       ['Registration', 'Registration details, including the regulator that oversees the firm, will be published on this page before any real-money account is offered.'],
       ['Investor protection', 'Because practice accounts hold no real money, no investor-protection coverage applies to them.'],
-      ['Order execution only', 'Harbour Direct provides an order-execution-only service and does not give investment advice or recommendations.'],
+      ['Order execution only', 'Zentra Direct provides an order-execution-only service and does not give investment advice or recommendations.'],
     ],
   },
   forms: {

@@ -47,7 +47,7 @@ export function CheckList({ items }) {
 }
 
 /**
- * The Harbour Direct logo. `light` is for dark backgrounds (white and soft gold);
+ * The Zentra Direct logo. `light` is for dark backgrounds (white and soft gold);
  * the default is for light backgrounds (navy and gold). The lettering is drawn
  * shapes, so it looks the same on every device. It is deliberately not used in
  * the signed-in dashboard.

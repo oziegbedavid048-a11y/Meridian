@@ -1055,7 +1055,7 @@ export default function Terminal() {
   const { w, h } = useViewport();
   const wide = w >= 1000;
 
-  useEffect(() => { document.title = 'Trading terminal | Harbour Direct Brokerage'; }, []);
+  useEffect(() => { document.title = 'Trading terminal | Zentra Direct'; }, []);
   useEffect(() => {
     const tick = () => { const d = new Date(); setClock(`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`); };
     tick();

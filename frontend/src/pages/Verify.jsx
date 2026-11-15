@@ -371,7 +371,7 @@ export function VerifyPage() {
   const [info, setInfo] = useState(null);
   const [error, setError] = useState('');
 
-  useEffect(() => { document.title = 'Verify your identity | Harbour Direct Brokerage'; }, []);
+  useEffect(() => { document.title = 'Verify your identity | Zentra Direct'; }, []);
 
   const load = useCallback(async () => {
     try {

@@ -10,7 +10,7 @@ import { LegalPage } from './SitePages.jsx';
 
 export function PricingPage() {
   useEffect(() => {
-    document.title = 'Pricing | Harbour Direct Brokerage';
+    document.title = 'Pricing | Zentra Direct';
   }, []);
   return (
     <main id="main">
@@ -38,7 +38,7 @@ export function LegalRoute() {
 
 export function NotFound() {
   useEffect(() => {
-    document.title = 'Page not found | Harbour Direct Brokerage';
+    document.title = 'Page not found | Zentra Direct';
   }, []);
   return (
     <main id="main">

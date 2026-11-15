@@ -83,7 +83,7 @@ export default function Header() {
 
       <div className="mainbar">
         <div className="container mainbar__inner">
-          <Link to="/" className="mainbar__logo" aria-label="Harbour Direct Brokerage home">
+          <Link to="/" className="mainbar__logo" aria-label="Zentra Direct home">
             <Logo />
           </Link>
 

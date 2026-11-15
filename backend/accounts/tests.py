@@ -9,7 +9,7 @@ from django.test import Client, TestCase
 from .verification import TOKEN_SALT
 from .validation import password_problems, validate_step
 
-GOOD_PASSWORD = 'HarbourTest2026x'
+GOOD_PASSWORD = 'ZentraTest2026x'
 
 
 class ApiTestCase(TestCase):

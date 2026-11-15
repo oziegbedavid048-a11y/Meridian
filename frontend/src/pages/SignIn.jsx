@@ -29,7 +29,7 @@ export default function SignIn() {
   }, [loading, user, navigate, next]);
 
   useEffect(() => {
-    document.title = 'Sign in | Harbour Direct Brokerage';
+    document.title = 'Sign in | Zentra Direct';
   }, []);
 
   const set = (k, v) => {
@@ -79,7 +79,7 @@ export default function SignIn() {
           <Link to="/" className="auth__logo auth__logo--mobile"><Logo /></Link>
           <h2>Sign in</h2>
           <p className="auth__sub">
-            New to Harbour Direct? <Link to="/sign-up">Open an account</Link>
+            New to Zentra Direct? <Link to="/sign-up">Open an account</Link>
           </p>
           <FormAlert>{alert}</FormAlert>
           <form ref={formRef} onSubmit={submit} noValidate className="auth__form">

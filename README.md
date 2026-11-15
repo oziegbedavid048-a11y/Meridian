@@ -1,4 +1,4 @@
-# Harbour Direct Brokerage
+# Zentra Direct
 
 Marketing site, account-opening flow, sign-in and client dashboard for a
 self-directed brokerage.

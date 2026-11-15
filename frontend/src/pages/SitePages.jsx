@@ -18,7 +18,7 @@ import {
 
 function useTitle(title) {
   useEffect(() => {
-    document.title = `${title} | Harbour Direct Brokerage`;
+    document.title = `${title} | Zentra Direct`;
   }, [title]);
 }
 

@@ -22,7 +22,7 @@ CODE_TTL = timedelta(minutes=10)
 MAX_GUESSES = 5
 RESEND_AFTER = timedelta(seconds=45)
 TOKEN_TTL_SECONDS = 30 * 60
-TOKEN_SALT = 'harbour.email-verified'  # noqa: S105 (a label that separates token types, not a secret)
+TOKEN_SALT = 'zentra.email-verified'  # noqa: S105 (a label that separates token types, not a secret)
 
 
 class Cooldown(Exception):
@@ -56,7 +56,7 @@ def send_code(email):
     EmailCode.objects.create(email=email, code_hash=_hash(email, code), expires_at=now + CODE_TTL)
     try:
         send_mail(
-            subject='Your Harbour Direct verification code',
+            subject='Your Zentra Direct verification code',
             message=(
                 f'Your verification code is {code}.\n\n'
                 'It expires in 10 minutes. If you did not ask for this code, you can ignore this email.\n'

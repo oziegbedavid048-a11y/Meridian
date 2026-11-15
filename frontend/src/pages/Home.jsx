@@ -6,7 +6,7 @@ import {
 
 export default function Home() {
   useEffect(() => {
-    document.title = 'Harbour Direct Brokerage | Online investing and practice trading';
+    document.title = 'Zentra Direct | Online investing and practice trading';
   }, []);
   return (
     <main id="main">

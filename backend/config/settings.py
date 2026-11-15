@@ -1,5 +1,5 @@
 """
-Django settings for Harbour Direct Brokerage.
+Django settings for Zentra Direct.
 
 Secure by default: with nothing configured the server runs in production mode,
 which means debug is off, a real secret key and host list are required, cookies
@@ -57,7 +57,7 @@ TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 
 DEBUG = env_bool('DJANGO_DEBUG', False)
 
-_DEV_KEY = 'dev-only-insecure-key-change-me-before-deploying-harbour-direct'
+_DEV_KEY = 'dev-only-insecure-key-change-me-before-deploying-zentra-direct'
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or _DEV_KEY
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1' if DEBUG else '')
 
@@ -268,13 +268,13 @@ EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_PASSWORD', '')
 EMAIL_USE_TLS = env_bool('DJANGO_EMAIL_TLS', True)
 EMAIL_TIMEOUT = 10
-DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_FROM_EMAIL', 'Harbour Direct <no-reply@localhost>')
+DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_FROM_EMAIL', 'Zentra Direct <no-reply@localhost>')
 
 # Identity photos. Never served by the website; only the staff review page reads them.
 PRIVATE_MEDIA_ROOT = BASE_DIR / 'private_media'
 if TESTING:  # tests write their sample photos somewhere disposable, never into the real folder
     import tempfile
-    PRIVATE_MEDIA_ROOT = Path(tempfile.gettempdir()) / 'harbour-test-private-media'
+    PRIVATE_MEDIA_ROOT = Path(tempfile.gettempdir()) / 'zentra-test-private-media'
 
 
 # ---------- logging ----------
@@ -309,7 +309,7 @@ LOGGING = {
 }
 
 
-# ---------- Harbour Direct ----------
+# ---------- Zentra Direct ----------
 
 # Unfinished applications are kept for 30 days so applicants can resume.
 APPLICATION_RETENTION_DAYS = 30

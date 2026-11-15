@@ -38,7 +38,7 @@ export function AccountHome() {
   const [positions, setPositions] = useState([]);
   const [stats, setStats] = useState(null);
 
-  useEffect(() => { document.title = 'My account | Harbour Direct Brokerage'; }, []);
+  useEffect(() => { document.title = 'My account | Zentra Direct'; }, []);
 
   const load = useCallback(async () => {
     try {
@@ -131,7 +131,7 @@ function FundingForm({ kind }) {
   const isDeposit = kind === 'deposit';
   const title = isDeposit ? 'Add practice funds' : 'Remove practice funds';
 
-  useEffect(() => { document.title = `${title} | Harbour Direct Brokerage`; }, [title]);
+  useEffect(() => { document.title = `${title} | Zentra Direct`; }, [title]);
 
   useEffect(() => {
     getFunding().then((res) => { setPresets(res.presets || []); setIdentity(res.identity || null); }).catch(() => {});
@@ -304,7 +304,7 @@ export function TradeHistoryPage() {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => { document.title = 'Trade history | Harbour Direct Brokerage'; }, []);
+  useEffect(() => { document.title = 'Trade history | Zentra Direct'; }, []);
 
   const load = useCallback(async () => {
     try {
@@ -390,7 +390,7 @@ export function TradeHistoryPage() {
 export function FundingHistoryPage() {
   const [data, setData] = useState(null);
 
-  useEffect(() => { document.title = 'Balance history | Harbour Direct Brokerage'; }, []);
+  useEffect(() => { document.title = 'Balance history | Zentra Direct'; }, []);
 
   const load = useCallback(async () => {
     try {

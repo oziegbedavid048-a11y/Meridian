@@ -11,8 +11,8 @@ const img = (id, w = 900) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=72`;
 
 export const brand = {
-  name: 'Harbour Direct Brokerage',
-  short: 'Harbour Direct',
+  name: 'Zentra Direct',
+  short: 'Zentra Direct',
   tagline: 'Investing, made clear.',
 };
 
@@ -165,7 +165,7 @@ export const visuals = {
 };
 
 export const why = {
-  title: 'Why investors choose Harbour Direct',
+  title: 'Why investors choose Zentra Direct',
   columns: [
     {
       icon: 'chat',
@@ -471,5 +471,5 @@ export const footer = {
     ['Fraud awareness', '/legal/fraud'],
   ],
   disclaimer:
-    'Harbour Direct currently offers practice accounts for learning: balances are virtual money and orders are not sent to an exchange. Registration details will be published before any real-money account is offered. Investing involves risk, including the possible loss of the money you invest. Past performance does not guarantee future results. Harbour Direct provides an order-execution-only service and does not give investment advice or recommendations.',
+    'Zentra Direct currently offers practice accounts for learning: balances are virtual money and orders are not sent to an exchange. Registration details will be published before any real-money account is offered. Investing involves risk, including the possible loss of the money you invest. Past performance does not guarantee future results. Zentra Direct provides an order-execution-only service and does not give investment advice or recommendations.',
 };

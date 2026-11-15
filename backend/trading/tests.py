@@ -10,7 +10,7 @@ from . import engine
 from .pricing import get_prices as pricing_get_prices
 from .models import FundingRequest, Instrument, Trade, TradingAccount
 
-PASSWORD = 'HarbourTest2026x'
+PASSWORD = 'ZentraTest2026x'
 
 
 def make_instrument(**kwargs):
