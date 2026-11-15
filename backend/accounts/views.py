@@ -134,8 +134,8 @@ def email_code(request):
         seconds, code = verification.send_code(email)
     except verification.Cooldown as wait:
         return too_many(wait.seconds, f'A code was just sent. You can ask for another in {wait.seconds} seconds.')
-    except verification.SendFailed:
-        log.error('could not send a verification email')
+    except verification.SendFailed as failure:
+        log.error('could not send a verification email: %s', failure)  # the reason shows in the host's logs
         return _bad_request({'form': ['We could not send the email right now. Please try again shortly.']}, status=503)
     body = {'sent': True, 'expires_in': seconds, 'resend_in': int(verification.RESEND_AFTER.total_seconds())}
     # Only when emails are printed in the server window (development), so a

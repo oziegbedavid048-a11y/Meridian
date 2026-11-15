@@ -13,9 +13,9 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core import signing
-from django.core.mail import send_mail
 from django.utils import timezone
 
+from .emails import verification_code_email
 from .models import EmailCode
 
 CODE_TTL = timedelta(minutes=10)
@@ -53,19 +53,11 @@ def send_code(email):
     code = f'{secrets.randbelow(10 ** 6):06d}'
     EmailCode.objects.filter(email=email, used=False).update(used=True)  # only the newest code works
     EmailCode.objects.filter(created_at__lt=now - timedelta(days=1)).delete()
-    EmailCode.objects.create(email=email, code_hash=_hash(email, code), expires_at=now + CODE_TTL)
+    record = EmailCode.objects.create(email=email, code_hash=_hash(email, code), expires_at=now + CODE_TTL)
     try:
-        send_mail(
-            subject='Your Zentra Direct verification code',
-            message=(
-                f'Your verification code is {code}.\n\n'
-                'It expires in 10 minutes. If you did not ask for this code, you can ignore this email.\n'
-            ),
-            from_email=None,
-            recipient_list=[email],
-            fail_silently=False,
-        )
+        verification_code_email(email, code, int(CODE_TTL.total_seconds() // 60)).send(fail_silently=False)
     except Exception as exc:
+        record.delete()  # not sent, so it must not block asking again
         raise SendFailed(str(exc)) from exc
     return int(CODE_TTL.total_seconds()), code
 

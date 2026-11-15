@@ -96,7 +96,7 @@ export function DashboardMock() {
 export function LaptopMock() {
   return (
     <div className="laptop-mock" aria-hidden="true">
-      <div className="lm-screen"><DashboardMock /></div>
+      <div className="lm-screen"><TradeMock /></div>
       <div className="lm-base" />
     </div>
   );
@@ -111,6 +111,122 @@ export function ToolsVisual() {
         <div className="tv-base" />
       </div>
       <div className="tv-phone"><PhoneMock /></div>
+    </div>
+  );
+}
+
+/* ---------- The trading terminal, drawn for the hero laptop ---------- */
+
+const QUOTES = [
+  ['EURUSD', '1.10274', '1.10286', 12],
+  ['GBPUSD', '1.32112', '1.32128', 16],
+  ['USDJPY', '159.672', '159.693', 21],
+  ['USDCAD', '1.42661', '1.42679', 18],
+  ['AUDUSD', '0.67762', '0.67778', 16],
+  ['BTCUSD', '64714.06', '64754.06', 4000],
+];
+
+const SIDE_LINKS = ['Dashboard', 'Trade', 'Add funds', 'Remove funds', 'Trade history', 'Balance history'];
+
+/** A price drawn the trading-terminal way: the last digits large. */
+function BigPrice({ value }) {
+  if (value.split('.')[1]?.length === 2) {
+    // Two decimals (e.g. 64714.06): the cents are the large part.
+    return <span className="tm-px">{value.slice(0, -2)}<b>{value.slice(-2)}</b></span>;
+  }
+  const head = value.slice(0, -3);
+  const big = value.slice(-3, -1);
+  const tail = value.slice(-1);
+  return <span className="tm-px">{head}<b>{big}</b><sup>{tail}</sup></span>;
+}
+
+/* Fixed candles (open, high, low, close), so the drawing is the same on every visit. */
+function makeCandles() {
+  const out = [];
+  let price = 1.1135;
+  let seed = 7;
+  const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < 64; i += 1) {
+    const trend = i < 26 ? 0.00042 : i < 30 ? -0.0011 : i < 44 ? -0.00018 : i < 52 ? -0.0007 : 0.00005;
+    const open = price;
+    const close = open + trend + (rand() - 0.5) * 0.0011;
+    const high = Math.max(open, close) + rand() * 0.0005;
+    const low = Math.min(open, close) - rand() * 0.0005;
+    out.push([open, high, low, close]);
+    price = close;
+  }
+  return out;
+}
+
+const CANDLES = makeCandles();
+const LAST = CANDLES[CANDLES.length - 1][3];
+const CHART_W = 300;
+const CHART_H = 150;
+const PRICE_TOP = Math.max(...CANDLES.map((c) => c[1])) + 0.0006;
+const PRICE_BOTTOM = Math.min(...CANDLES.map((c) => c[2])) - 0.0006;
+const toY = (p) => ((PRICE_TOP - p) / (PRICE_TOP - PRICE_BOTTOM)) * CHART_H;
+const GRID = [0.15, 0.38, 0.62, 0.85].map((f) => PRICE_TOP - f * (PRICE_TOP - PRICE_BOTTOM));
+
+function CandleChart() {
+  const step = CHART_W / CANDLES.length;
+  return (
+    <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} preserveAspectRatio="none" className="tm-svg" aria-hidden="true">
+      {GRID.map((p) => <line key={p} x1="0" x2={CHART_W} y1={toY(p)} y2={toY(p)} className="tm-grid" />)}
+      {CANDLES.map(([o, h, l, c], i) => {
+        const x = i * step + step / 2;
+        return (
+          <g key={x} className={c >= o ? 'tm-up' : 'tm-down'}>
+            <line x1={x} x2={x} y1={toY(h)} y2={toY(l)} />
+            <rect x={x - step * 0.32} width={step * 0.64}
+              y={toY(Math.max(o, c))} height={Math.max(0.8, Math.abs(toY(o) - toY(c)))} />
+          </g>
+        );
+      })}
+      <line x1="0" x2={CHART_W} y1={toY(LAST)} y2={toY(LAST)} className="tm-last" />
+    </svg>
+  );
+}
+
+/** The signed-in trading screen: quotes on the left, the chart on the right. */
+export function TradeMock() {
+  return (
+    <div className="tm" aria-hidden="true">
+      <div className="tm-top">
+        <span className="tm-pill">Practice account</span>
+        <span className="tm-out">Sign out</span>
+      </div>
+      <div className="tm-body">
+        <nav className="tm-side">
+          {SIDE_LINKS.map((label) => (
+            <span key={label} className={label === 'Trade' ? 'is-on' : ''}><i />{label}</span>
+          ))}
+        </nav>
+        <div className="tm-quotes">
+          <div className="tm-head">Quotes</div>
+          {QUOTES.map(([sym, bid, ask, spread]) => (
+            <div key={sym} className={`tm-q${sym === 'BTCUSD' ? ' is-down' : ''}${sym === 'EURUSD' ? ' is-sel' : ''}`}>
+              <span className="tm-q__id"><b>{sym}</b><small>Spread: {spread}</small></span>
+              <BigPrice value={bid} />
+              <BigPrice value={ask} />
+            </div>
+          ))}
+        </div>
+        <div className="tm-chart">
+          <div className="tm-head tm-head--row"><span>EURUSD</span><span className="tm-tf">H1</span></div>
+          <div className="tm-deal">
+            <span className="tm-sell">SELL <b>1.10274</b></span>
+            <span className="tm-vol">0.10</span>
+            <span className="tm-buy">BUY <b>1.10286</b></span>
+          </div>
+          <div className="tm-plot">
+            <CandleChart />
+            <div className="tm-scale">
+              {GRID.map((p) => <span key={p} style={{ top: `${(toY(p) / CHART_H) * 100}%` }}>{p.toFixed(5)}</span>)}
+              <span className="tm-scale__last" style={{ top: `${(toY(LAST) / CHART_H) * 100}%` }}>{LAST.toFixed(5)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

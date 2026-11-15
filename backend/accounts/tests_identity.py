@@ -76,7 +76,7 @@ class EmailCodeTests(TestCase):
 
     @override_settings(DEBUG=True, EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend')
     def test_in_development_with_console_email_the_code_is_returned_so_the_flow_can_finish(self):
-        with mock.patch('accounts.verification.send_mail'):
+        with mock.patch('accounts.emails.EmailMultiAlternatives.send'):
             res = self.send()
         self.assertRegex(res.json()['dev_code'], r'^\d{6}$')
 
@@ -169,7 +169,7 @@ class EmailCodeTests(TestCase):
         self.assertEqual(len(mail.outbox), 0)
 
     def test_a_mail_failure_is_reported_not_crashed(self):
-        with mock.patch('accounts.verification.send_mail', side_effect=OSError('smtp down')):
+        with mock.patch('accounts.emails.EmailMultiAlternatives.send', side_effect=OSError('smtp down')):
             res = self.send()
         self.assertEqual(res.status_code, 503)
         self.assertNotIn('smtp', json.dumps(res.json()))  # the technical reason stays private
@@ -627,3 +627,37 @@ class PurgeTests(IdentityBase):
         IdentityVerification.objects.update(status='approved', reviewed_at=timezone.now())
         call_command('purge_identity_photos', '--days', '30', stdout=io.StringIO())
         self.assertTrue(IdentityVerification.objects.get().front_image)  # decided today
+
+
+class VerificationEmailContentTests(TestCase):
+    """The sign-up email is plain and professional, in text and HTML, with the code in both."""
+
+    def test_the_code_email_has_text_and_html_with_the_code_and_a_footer(self):
+        from django.core import mail
+
+        from accounts import verification
+        seconds, code = verification.send_code('ada@example.org')
+        self.assertEqual(seconds, 600)
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.subject, 'Your Zentra Direct verification code')
+        self.assertEqual(message.to, ['ada@example.org'])
+        self.assertIn(code, message.body)
+        self.assertIn('expires in 10 minutes', message.body)
+        self.assertIn('Please do not reply', message.body)
+        html, kind = message.alternatives[0]
+        self.assertEqual(kind, 'text/html')
+        self.assertIn(code, html)
+        self.assertIn('Please do not reply', html)
+        self.assertNotIn('<img', html)  # no images or tracking
+
+    def test_a_failed_send_does_not_block_asking_again(self):
+        from unittest import mock
+
+        from accounts import verification
+        from accounts.models import EmailCode
+        with mock.patch('accounts.emails.EmailMultiAlternatives.send', side_effect=OSError('down')):
+            with self.assertRaises(verification.SendFailed):
+                verification.send_code('ada@example.org')
+        self.assertFalse(EmailCode.objects.filter(email='ada@example.org').exists())
+        verification.send_code('ada@example.org')  # no cooldown error
