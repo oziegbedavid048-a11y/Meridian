@@ -93,6 +93,8 @@
 }
 
 .mainbar__logo {
+  display: flex; /* no line-box gap under the logo, so it sits in the exact middle */
+  align-items: center;
   text-decoration: none;
   flex: none;
   margin-right: auto;
@@ -233,9 +235,11 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--brand);
-  color: var(--white);
+  background: transparent;
+  color: var(--brand);
 }
+
+.round-lock:hover { background: rgb(20 48 90 / 0.08); }
 
 .burger {
   display: inline-grid;
