@@ -47,9 +47,20 @@ function SiteLayout() {
   );
 }
 
+/** Shown only on the static preview build, where the backend is not running. */
+function PreviewNotice() {
+  if (!import.meta.env.VITE_STATIC_PREVIEW) return null;
+  return (
+    <p className="preview-notice" role="note">
+      Website preview. Signing in, the dashboard and live prices need the server, which is not running here.
+    </p>
+  );
+}
+
 export default function App() {
   return (
     <>
+      <PreviewNotice />
       <ScrollManager />
       <CookieBanner />
       <Routes>

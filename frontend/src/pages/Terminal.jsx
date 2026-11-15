@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import AccountShell, { ExecutionNotice } from '../components/AccountShell.jsx';
 import CandleChart from '../components/CandleChart.jsx';
-import { api } from '../lib/api.js';
+import { API_ROOT, api } from '../lib/api.js';
 import {
   cancelOrder, closeAll, closeBy, closePosition, fieldErrors, getCandles, getInstruments,
   getPositions, modifyPosition, placeOrder, price, usePoll,
@@ -737,7 +737,7 @@ function HistoryScreen({ account, refreshKey }) {
     <section className="mx-screen" aria-label="History">
       <header className="mx-head">
         <h2>History</h2>
-        <a className="mx-icon" href={`/api/trading/statement/${query}`} download aria-label="Download statement">
+        <a className="mx-icon" href={`${API_ROOT}/trading/statement/${query}`} download aria-label="Download statement">
           <Download size={22} aria-hidden="true" />
         </a>
         <button type="button" className={`mx-icon ${active ? 'is-on' : ''}`} onClick={() => setFiltering(true)}

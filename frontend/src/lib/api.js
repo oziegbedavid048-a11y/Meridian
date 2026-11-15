@@ -2,6 +2,9 @@
 // Django's CSRF protection needs the `csrftoken` cookie echoed back in the
 // X-CSRFToken header on every unsafe request.
 
+// The backend's address. Empty means the same address as the website (the normal setup).
+export const API_ROOT = `${import.meta.env.VITE_API_BASE || ''}/api`;
+
 let csrfReady = null;
 
 function readCookie(name) {
@@ -12,7 +15,7 @@ function readCookie(name) {
 async function ensureCsrf() {
   if (readCookie('csrftoken')) return;
   if (!csrfReady) {
-    csrfReady = fetch('/api/auth/csrf/', { credentials: 'same-origin' }).finally(() => {
+    csrfReady = fetch(`${API_ROOT}/auth/csrf/`, { credentials: 'same-origin' }).finally(() => {
       csrfReady = null;
     });
   }
@@ -35,7 +38,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   if (unsafe) await ensureCsrf();
   let res;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(`${API_ROOT}${path}`, {
       method,
       credentials: 'same-origin',
       headers: {
