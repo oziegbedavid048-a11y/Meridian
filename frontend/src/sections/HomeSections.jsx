@@ -7,6 +7,7 @@ import {
 } from '../content/site.js';
 import { ArrowLink, CheckList, Reveal, RuleHeading, SmartLink } from '../components/ui.jsx';
 import LineIcon from '../components/LineIcon.jsx';
+import { LaptopMock } from '../components/DashboardMock.jsx';
 import PricingTable from './PricingTable.jsx';
 import { Insights, LivePrices } from './LiveMarket.jsx';
 
@@ -27,9 +28,7 @@ export function Hero() {
               <Link to={hero.secondary.href} className="btn btn--white-outline">{hero.secondary.label}</Link>
             </div>
           </div>
-          <div className="hero__visual">
-            <img className="photo-frame" src={visuals.hero.src} alt={visuals.hero.alt} width="1200" height="800" />
-          </div>
+          <div className="hero__visual"><LaptopMock /></div>
         </div>
       </section>
       <nav className="crumbs" aria-label="Breadcrumb">

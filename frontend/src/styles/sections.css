@@ -1077,7 +1077,3 @@ a.box:hover {
   background: #dfe4ea;
 }
 
-.hero__visual .photo-frame {
-  border-radius: 12px;
-  box-shadow: 0 18px 40px rgb(10 26 51 / 0.28);
-}

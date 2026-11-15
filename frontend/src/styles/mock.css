@@ -1,0 +1,379 @@
+/* The hero laptop drawing (restored). */
+
+.mock {
+  width: 100%;
+  height: 100%;
+  background: #f7f8f8;
+  color: var(--ink);
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+}
+
+.mock__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+}
+
+.mock__brand {
+  font-weight: 700;
+  color: var(--brand);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mock__tabs {
+  display: flex;
+  gap: 12px;
+  color: var(--muted);
+}
+
+.mock__tabs b {
+  font-weight: 600;
+  color: var(--brand);
+  border-bottom: 2px solid var(--brand);
+}
+
+.mock__tabs i {
+  font-style: normal;
+}
+
+.mock__trade {
+  margin-left: auto;
+  background: var(--brand);
+  color: var(--white);
+  padding: 3px 12px;
+  border-radius: var(--pill);
+}
+
+.mock__body {
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.mock__summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: end;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.mock__summary small,
+.mock__cards small {
+  display: block;
+  color: var(--muted);
+}
+
+.mock__summary strong {
+  display: block;
+  font-size: 1.9em;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.mock__summary em {
+  font-style: normal;
+}
+
+.mock-chart {
+  width: 100%;
+  height: 46px;
+}
+
+.mock__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.mock__cards div {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
+.mock__cards b {
+  font-weight: 500;
+}
+
+.mock__table {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 8px;
+}
+
+.mock__row {
+  display: grid;
+  grid-template-columns: 40px 1fr 64px 48px;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #eef0f0;
+}
+
+.mock__row:last-child {
+  border-bottom: 0;
+}
+
+.mock__sym {
+  font-weight: 600;
+}
+
+.mock__name {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mock__val {
+  text-align: right;
+}
+
+.mock .up,
+.phone-mock .up {
+  color: var(--up);
+}
+
+.mock .down {
+  color: var(--down);
+}
+.laptop-mock {
+  width: 100%;
+}
+
+.lm-screen {
+  aspect-ratio: 16 / 10;
+  border: clamp(6px, 0.9vw, 11px) solid #1d2427;
+  border-bottom-width: clamp(9px, 1.3vw, 15px);
+  border-radius: 12px 12px 0 0;
+  background: #1d2427;
+  overflow: hidden;
+}
+
+.lm-screen .mock {
+  font-size: clamp(5px, 0.8vw, 10px);
+}
+
+.lm-base {
+  position: relative;
+  height: clamp(9px, 1.2vw, 14px);
+  margin: 0 -7%;
+  background: linear-gradient(#e2e6e8, #b9c1c5);
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 18px 30px -18px rgb(0 0 0 / 0.45);
+}
+
+.lm-base::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 15%;
+  height: 45%;
+  transform: translateX(-50%);
+  background: #a3adb2;
+  border-radius: 0 0 8px 8px;
+}
+.phone-mock {
+  width: 100%;
+  aspect-ratio: 9 / 19;
+  border: 7px solid #1d2427;
+  border-radius: 34px;
+  background: #1d2427;
+  overflow: hidden;
+  box-shadow: 0 24px 40px -20px rgb(0 0 0 / 0.45);
+}
+
+.phone-mock__screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 27px;
+  background: var(--white);
+  overflow: hidden;
+  padding: 8px 10px;
+  font-size: 8px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pm-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.pm-island {
+  width: 34%;
+  height: 12px;
+  border-radius: 8px;
+  background: #1d2427;
+}
+
+.pm-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pm-head b {
+  display: block;
+  font-weight: 600;
+}
+
+.pm-head small {
+  color: var(--muted);
+}
+
+.pm-back {
+  font-size: 1.6em;
+  color: var(--brand);
+}
+
+.pm-price strong {
+  display: block;
+  font-size: 2em;
+  font-weight: 400;
+}
+
+.pm-price small {
+  font-size: 0.5em;
+  color: var(--muted);
+}
+
+.pm-price em {
+  font-style: normal;
+  color: var(--up);
+}
+
+.pm-tabs {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+}
+
+.pm-tabs b {
+  color: var(--brand);
+}
+
+.pm-tabs i {
+  font-style: normal;
+}
+
+.pm-stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+}
+
+.pm-stats div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #eef0f0;
+  padding-bottom: 2px;
+}
+
+.pm-stats dt {
+  color: var(--muted);
+}
+
+.pm-stats dd {
+  margin: 0;
+}
+
+.pm-pos {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--sand);
+}
+
+.pm-actions {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.pm-actions span {
+  padding: 6px 0;
+  border-radius: var(--pill);
+  text-align: center;
+  font-weight: 600;
+}
+
+.pm-buy {
+  background: var(--brand);
+  color: var(--white);
+}
+
+.pm-sell {
+  border: 1px solid var(--brand);
+  color: var(--brand);
+}
+.tools-visual {
+  position: relative;
+  background: #e9eceb;
+  border-radius: var(--radius);
+  padding: 9% 14% 11% 6%;
+}
+
+.tv-screen {
+  aspect-ratio: 16 / 10;
+  border: 7px solid #1d2427;
+  border-bottom-width: 10px;
+  border-radius: 10px 10px 0 0;
+  overflow: hidden;
+}
+
+.tv-screen .mock {
+  font-size: clamp(4.5px, 0.6vw, 7.5px);
+}
+
+.tv-base {
+  height: 9px;
+  margin: 0 -6%;
+  background: linear-gradient(#e2e6e8, #b9c1c5);
+  border-radius: 0 0 10px 10px;
+}
+
+.tv-phone {
+  position: absolute;
+  right: 5%;
+  bottom: 7%;
+  width: 21%;
+}
+
+.tv-phone .phone-mock {
+  border-width: 4px;
+  border-radius: 18px;
+}
+
+.tv-phone .phone-mock__screen {
+  border-radius: 14px;
+  font-size: clamp(3.5px, 0.45vw, 6px);
+  padding: 5px 6px;
+}
+
+.prices__table td.up {
+  white-space: nowrap;
+}
+

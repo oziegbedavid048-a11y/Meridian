@@ -160,7 +160,6 @@ export const promos = [
 
 // Real photographs in place of the earlier drawn sample screens.
 export const visuals = {
-  hero: { src: img('1460925895917-afdab827c52f', 1200), alt: 'Market charts on a laptop screen' },
   platforms: { src: img('1611974789855-9c2a0a7236a3', 1100), alt: 'A candlestick price chart' },
   tools: { src: img('1579532537598-459ecdaf39cc', 1100), alt: 'Financial charts and figures on a desk' },
 };

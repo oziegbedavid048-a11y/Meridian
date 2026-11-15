@@ -11,6 +11,7 @@ import './styles/terminal.css';
 import './styles/mt.css';
 import './styles/mx.css';
 import './styles/verify.css';
+import './styles/mock.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
