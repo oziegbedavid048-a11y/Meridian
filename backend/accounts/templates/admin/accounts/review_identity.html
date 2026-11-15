@@ -1,0 +1,80 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+  .idr { max-width: 900px; font-size: 15px; line-height: 1.5; }
+  .idr .box { padding: 14px 18px; margin: 0 0 18px; border-radius: 8px; background: #f3f6fb; border-left: 4px solid #234a80; }
+  .idr .box--warm { background: #fdf6e6; border-left-color: #b8893b; }
+  .idr .box--bad { background: #fbeceb; border-left-color: #b91c1c; }
+  .idr table { border-collapse: collapse; margin: 0 0 20px; }
+  .idr th { text-align: left; padding: 6px 24px 6px 0; font-weight: 600; color: #444; }
+  .idr td { padding: 6px 0; }
+  .idr .photos { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 0 24px; }
+  .idr figure { margin: 0; }
+  .idr figure img { display: block; max-width: 280px; max-height: 280px; border: 1px solid #ccc; border-radius: 8px; background: #eee; }
+  .idr figcaption { margin-top: 6px; font-weight: 600; }
+  .idr .actions { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .idr .go { padding: 14px 28px; font-size: 16px; font-weight: 700; border: 0; border-radius: 8px; background: #166534; color: #fff; cursor: pointer; }
+  .idr .no { padding: 14px 28px; font-size: 16px; font-weight: 700; border: 0; border-radius: 8px; background: #b91c1c; color: #fff; cursor: pointer; }
+  .idr textarea { display: block; width: 360px; max-width: 100%; min-height: 70px; margin: 0 0 10px; padding: 8px; font: inherit; }
+  .idr .state { font-size: 18px; font-weight: 700; }
+</style>
+
+<div id="content-main" class="idr">
+  <div class="box box--warm">
+    This is a practice account. Nothing here is checked against real records, so there is no
+    real ID to match. Look at the photos and decide, the same way you would for a real client.
+  </div>
+
+  {% if record.status == "pending" %}
+    <p class="state" style="color:#b45309">Waiting for your decision</p>
+  {% elif record.status == "approved" %}
+    <p class="state" style="color:#166534">Approved{% if record.reviewed_at %} on {{ record.reviewed_at|date:"M j, Y H:i" }}{% endif %}{% if record.reviewed_by %} by {{ record.reviewed_by.email }}{% endif %}</p>
+  {% else %}
+    <p class="state" style="color:#b91c1c">Not approved{% if record.reviewed_at %} on {{ record.reviewed_at|date:"M j, Y H:i" }}{% endif %}</p>
+    {% if record.rejection_reason %}<div class="box box--bad">Reason given: {{ record.rejection_reason }}</div>{% endif %}
+  {% endif %}
+
+  <table>
+    <tr><th>Email</th><td>{{ record.user.email }}</td></tr>
+    <tr><th>Full name they entered</th><td>{{ record.full_name }}</td></tr>
+    {% if application_name %}<tr><th>Name on their application</th><td>{{ application_name }}</td></tr>{% endif %}
+    <tr><th>Province or territory</th><td>{{ province_name }}</td></tr>
+    <tr><th>Document chosen</th><td>{{ document_label }}</td></tr>
+    <tr><th>Sent</th><td>{{ record.submitted_at|date:"M j, Y H:i" }}{% if record.attempts > 1 %} (attempt {{ record.attempts }}){% endif %}</td></tr>
+  </table>
+
+  <div class="photos">
+    {% for key, label, present in photos %}
+      <figure>
+        {% if present %}
+          <a href="{% url 'admin:accounts_identityverification_photo' record.pk key %}" target="_blank" rel="noopener">
+            <img src="{% url 'admin:accounts_identityverification_photo' record.pk key %}" alt="{{ label }}">
+          </a>
+        {% endif %}
+        <figcaption>{{ label }}</figcaption>
+      </figure>
+    {% endfor %}
+  </div>
+
+  {% if error %}<p class="errornote">{{ error }}</p>{% endif %}
+
+  {% if can_decide and record.status != "approved" %}
+  <div class="actions">
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="do" value="approve">
+      <button type="submit" class="go">Approve</button>
+      <p style="margin-top:8px">The client can then make withdrawals.</p>
+    </form>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="do" value="reject">
+      <label for="reason"><b>Not happy with it? Say why:</b></label>
+      <textarea id="reason" name="reason" maxlength="300" placeholder="For example: the photo of the back is blurry. Please take it again."></textarea>
+      <button type="submit" class="no">Do not approve</button>
+      <p style="margin-top:8px">They will see your reason and can send new photos.</p>
+    </form>
+  </div>
+  {% endif %}
+
+  <p style="margin-top:28px"><a href="{% url 'admin:accounts_identityverification_changelist' %}">&larr; Back to all identity checks</a></p>
+</div>
+{% endblock %}

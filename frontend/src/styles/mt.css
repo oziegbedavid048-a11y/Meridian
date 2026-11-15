@@ -1,0 +1,676 @@
+/* ---------- Desktop-terminal style trading layout ----------
+   Dense, grey-chrome panes: toolbar, Market Watch, chart window,
+   Terminal panel. On phones the panes become bottom tabs. */
+.mt {
+  --mt-chrome: #ececec;
+  --mt-line: #a9a9a9;
+  --mt-soft: #d6d6d6;
+  --mt-up: #1e4fa3;
+  --mt-down: #c0271d;
+  --mt-sel: #cfe0f7;
+  font-size: 0.8125rem;
+  color: #1c1c1c;
+  border: 1px solid var(--mt-line);
+  background: var(--mt-chrome);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 3px;
+}
+
+.mt button {
+  font: inherit;
+}
+
+.mt-pane-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  padding: 2px 8px;
+  background: linear-gradient(#f7f7f7, #dedede);
+  border-bottom: 1px solid var(--mt-line);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.mt-pane-title__time {
+  margin-left: auto;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Toolbar */
+
+.mt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid #8e8e8e;
+  border-radius: 3px;
+  background: linear-gradient(#ffffff, #e4e4e4);
+  color: #1c1c1c;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mt-btn:hover:not(:disabled) {
+  background: linear-gradient(#ffffff, #d5e4f7);
+  border-color: #4a78b8;
+}
+
+.mt-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mt-btn--wide {
+  width: 100%;
+  min-height: 36px;
+}
+
+/* Work area */
+
+/* Tables */
+.mt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+}
+
+.mt-table th,
+.mt-table td {
+  padding: 3px 8px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid #efefef;
+  font-weight: 400;
+}
+
+.mt-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(#f7f7f7, #e2e2e2);
+  border-bottom: 1px solid var(--mt-line);
+  border-right: 1px solid var(--mt-soft);
+  font-size: 0.75rem;
+  color: #333;
+}
+
+.mt-table th:first-child,
+.mt-table td:first-child,
+.mt-table tbody th {
+  text-align: left;
+}
+
+.mt-empty {
+  padding: 18px 8px !important;
+  text-align: center !important;
+  color: #666;
+}
+
+/* Market Watch */
+.mt-watch {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--mt-line);
+  background: #fff;
+}
+
+.mt-watch__scroll {
+  flex: 1;
+  overflow: auto;
+  max-height: 478px;
+}
+
+.mt-watch__table tbody tr {
+  cursor: pointer;
+}
+
+.mt-watch__table tbody tr:hover {
+  background: #f1f6fd;
+}
+
+.mt-watch__table tbody tr.is-selected {
+  background: var(--mt-sel);
+}
+
+.mt-watch__table tbody th {
+  font-weight: 600;
+}
+
+.mt-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 6px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  vertical-align: middle;
+}
+
+.mt-arrow--up {
+  border-bottom: 7px solid var(--mt-up);
+}
+
+.mt-arrow--down {
+  border-top: 7px solid var(--mt-down);
+}
+
+.mt-arrow--flat {
+  border: 0;
+  width: 8px;
+  height: 2px;
+  background: #999;
+}
+
+.mt-px--up {
+  color: var(--mt-up);
+}
+
+.mt-px--down {
+  color: var(--mt-down);
+}
+
+/* Chart window */
+
+/* Status line */
+
+/* Terminal panel */
+
+.mt-pos {
+  color: var(--mt-up);
+}
+
+.mt-neg {
+  color: var(--mt-down);
+}
+
+.mt-actions {
+  text-align: right;
+}
+
+.mt-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  min-height: 24px;
+  padding: 1px 8px;
+  margin-left: 3px;
+  border: 1px solid #8e8e8e;
+  border-radius: 2px;
+  background: linear-gradient(#fff, #e6e6e6);
+  color: #1c1c1c;
+  font-size: 0.75rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.mt-mini:hover:not(:disabled) {
+  border-color: #4a78b8;
+  background: #e3eefc;
+}
+
+/* Mobile section tabs */
+
+/* ---------- Dialogs ---------- */
+.mt-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgb(0 0 0 / 0.35);
+  overflow-y: auto;
+}
+
+.mt-dialog {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #5b5b5b;
+  background: #f0f0f0;
+  box-shadow: 0 10px 34px rgb(0 0 0 / 0.4);
+  font-size: 0.8125rem;
+  color: #1c1c1c;
+}
+
+.mt-dialog__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 4px 10px;
+  background: linear-gradient(#fdfdfd, #dcdcdc);
+  border-bottom: 1px solid var(--mt-line, #a9a9a9);
+}
+
+.mt-dialog__bar h2 {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1c1c1c;
+}
+
+.mt-dialog__bar button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.mt-dialog__bar button:hover {
+  background: #c0271d;
+  color: #fff;
+}
+
+.mt-dialog__body {
+  padding: 12px;
+}
+
+.mt-field {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.mt-field label {
+  text-align: right;
+  color: #1c1c1c;
+}
+
+.mt-field select,
+.mt-field > input,
+.mt-step input {
+  width: 100%;
+  min-height: 30px;
+  padding: 3px 6px;
+  border: 1px solid #8e8e8e;
+  border-radius: 2px;
+  background: #fff;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt-field select:focus,
+.mt-field input:focus {
+  outline: 2px solid #4a78b8;
+  outline-offset: 0;
+}
+
+.mt-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px 28px;
+}
+
+.mt-step button {
+  display: grid;
+  place-items: center;
+  border: 1px solid #8e8e8e;
+  border-left: 0;
+  background: linear-gradient(#fff, #e4e4e4);
+  cursor: pointer;
+}
+
+.mt-field.has-error input {
+  border-color: #c0271d;
+}
+
+.mt-field__err {
+  grid-column: 2;
+  margin: 0;
+  font-size: 0.75rem;
+  color: #c0271d;
+}
+
+.mt-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
+}
+
+.mt-row2 .mt-field {
+  grid-template-columns: 1fr;
+}
+
+.mt-row2 .mt-field label {
+  text-align: left;
+}
+
+.mt-row2 .mt-field__err {
+  grid-column: 1;
+}
+
+.mt-group {
+  margin: 10px 0 0;
+  padding: 8px 10px 10px;
+  border: 1px solid #b5b5b5;
+}
+
+.mt-group legend {
+  padding: 0 6px;
+  font-size: 0.75rem;
+}
+
+.mt-quote {
+  margin: 2px 0 10px;
+  text-align: center;
+  font-size: 1.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt-quote__bid {
+  color: #c0271d;
+}
+
+.mt-quote__ask {
+  color: #1e4fa3;
+}
+
+.mt-bigbtns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mt-sell,
+.mt-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border: 1px solid #5b5b5b;
+  border-radius: 2px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mt-sell {
+  background: #c0271d;
+}
+
+.mt-buy {
+  background: #1e4fa3;
+}
+
+.mt-sell:hover:not(:disabled),
+.mt-buy:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.mt-sell:disabled,
+.mt-buy:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mt-note {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: #555;
+  text-align: center;
+}
+
+.mt-alert {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 6px 8px;
+  border: 1px solid #c0271d;
+  background: #fbefee;
+  color: #7f1d17;
+}
+
+.mt-done__line {
+  margin: 0 0 10px;
+  padding: 8px;
+  border: 1px solid #b5b5b5;
+  background: #fff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Dashboard market panel ---------- */
+.mt-watch--dash {
+  --mt-line: #a9a9a9;
+  --mt-soft: #d6d6d6;
+  --mt-up: #1e4fa3;
+  --mt-down: #c0271d;
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+  color: #1c1c1c;
+}
+
+.mt-watch--dash .mt-watch__scroll {
+  max-height: 320px;
+}
+
+.mt-watch--dash .mt-table th,
+.mt-watch--dash .mt-table td {
+  padding: 6px 10px;
+}
+
+.mt-watch--dash .mt-watch__table tbody tr {
+  cursor: default;
+}
+
+.mt-name {
+  text-align: left !important;
+  color: #555;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mt-kinds {
+  display: flex;
+  gap: 2px;
+  padding: 3px 4px 0;
+  background: #ececec;
+  border-bottom: 1px solid var(--mt-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mt-kinds button {
+  flex: none;
+  min-height: 30px;
+  padding: 3px 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  background: none;
+  font: inherit;
+  color: #333;
+  cursor: pointer;
+}
+
+.mt-kinds button.is-active {
+  background: #fff;
+  border-color: var(--mt-line);
+  font-weight: 700;
+  margin-bottom: -1px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 860px) {
+  /* One pane at a time, switched by the bottom tabs. */
+  .mt {
+    padding-bottom: 0;
+  }
+  .mt[data-pane='chart'] .mt-watch {
+    display: none;
+  }
+  .mt-watch__scroll {
+    max-height: none;
+  }
+  .mt-table th,
+  .mt-table td {
+    padding: 9px 10px;
+  }
+  .mt-watch__table {
+    font-size: 0.9375rem;
+  }
+  .mt-btn {
+    min-height: 40px;
+  }
+  .mt-mini {
+    min-height: 34px;
+    min-width: 34px;
+  }
+  .mt-hide-sm {
+    display: none;
+  }
+  .mt-field select,
+  .mt-field > input,
+  .mt-step input {
+    min-height: 40px;
+    font-size: 1rem;
+  }
+  .mt-step {
+    grid-template-columns: minmax(0, 1fr) 40px 40px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mt-field {
+    grid-template-columns: 1fr;
+  }
+  .mt-field label {
+    text-align: left;
+  }
+  .mt-field__err {
+    grid-column: 1;
+  }
+  .mt-quote {
+    font-size: 1.375rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .mt-watch--dash .mt-table th,
+  .mt-watch--dash .mt-table td {
+    padding: 8px 5px;
+  }
+  .mt-watch--dash .mt-arrow {
+    margin-right: 3px;
+  }
+}
+
+/* ---------- Clean-up: icons, readable sizes, touch targets ---------- */
+
+.app-nav__site {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.footer__legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+@media (max-width: 767px) {
+
+  .footer__legal {
+    gap: 4px 24px;
+  }
+
+  .footer__legal a,
+  .footer a[href^="tel:"],
+  .footer a[href^="mailto:"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* History tables become one card per row on phones. */
+  .table-scroll:has(.pos-table--cards) {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .pos-table--cards,
+  .pos-table--cards tbody {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pos-table--cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .pos-table--cards tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border: 1px solid var(--panel-line, var(--line));
+    border-radius: 12px;
+    background: var(--white);
+  }
+
+  .pos-table--cards th,
+  .pos-table--cards td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .pos-table--cards [data-label]::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}
+
+@media (max-width: 767px) {
+  .drawer__phone,
+  a[href^="tel:"],
+  a[href^="mailto:"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+
+  p a[href^="tel:"],
+  p a[href^="mailto:"] {
+    display: inline;
+    min-height: 0;
+  }
+}

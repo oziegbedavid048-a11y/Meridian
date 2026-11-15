@@ -1,0 +1,57 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+  .mm { max-width: 760px; font-size: 15px; line-height: 1.5; }
+  .mm .box { padding: 14px 18px; margin: 0 0 18px; border-radius: 8px; background: #f3f6fb; border-left: 4px solid #234a80; }
+  .mm .box--warm { background: #fdf6e6; border-left-color: #b8893b; }
+  .mm h2 { margin: 24px 0 6px; font-size: 17px; }
+  .mm ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .mm li label { display: block; padding: 10px 14px; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; background: #fff; }
+  .mm li input { margin-right: 6px; }
+  .mm .q { font-weight: 700; display: block; margin: 20px 0 8px; font-size: 16px; }
+  .mm .go { margin-top: 24px; padding: 14px 28px; font-size: 16px; font-weight: 700; border: 0; border-radius: 8px; background: #234a80; color: #fff; cursor: pointer; }
+  .mm .other { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .mm .other button { padding: 10px 16px; border: 1px solid #234a80; border-radius: 8px; background: #fff; color: #234a80; cursor: pointer; font-size: 14px; }
+  .mm .big { font-size: 22px; font-weight: 700; }
+</style>
+
+<div id="content-main" class="mm">
+
+  <div class="box">
+    <div>Right now</div>
+    <div class="big">{{ status }}</div>
+    {% if quote %}<div>Price: {{ quote.bid }} (sell) / {{ quote.ask }} (buy)</div>{% endif %}
+    <div>Open trades on this market: <strong>{{ open_trades }}</strong></div>
+  </div>
+
+  <div class="box box--warm">
+    <strong>How this works</strong><br>
+    You choose what the price does. <strong>Every student sees the same price.</strong>
+    If a student already has a trade open, it wins or loses as the price moves:
+    someone who <em>bought</em> gains when the price goes up and loses when it goes down,
+    and someone who <em>sold</em> is the other way round. You cannot pick who wins.
+  </div>
+
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="do" value="move">
+    {% for field in form %}
+      <span class="q">{{ field.label }}</span>
+      {{ field }}
+      {% if field.errors %}<p class="errornote">{{ field.errors|join:" " }}</p>{% endif %}
+    {% endfor %}
+    <button type="submit" class="go">Start moving the price</button>
+  </form>
+
+  <h2>Or</h2>
+  <form method="post" class="other">{% csrf_token %}
+    {% if controlled %}
+      <button type="submit" name="do" value="steady">Stop moving (keep the price where it is)</button>
+      <button type="submit" name="do" value="live">Go back to live prices</button>
+    {% else %}
+      <span>This market is already on live prices. Start a move above to take control of it.</span>
+    {% endif %}
+  </form>
+
+  <p style="margin-top:28px"><a href="{% url 'admin:trading_instrument_changelist' %}">&larr; Back to all markets</a></p>
+</div>
+{% endblock %}

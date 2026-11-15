@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main">
+  <p style="padding:10px 14px;background:#fdf6e6;border-left:3px solid #b8893b;max-width:760px">
+    This order is placed in <strong>{{ account.user.email }}</strong>'s account and fills at the
+    current market price, exactly as if they had placed it themselves. It appears in their terminal
+    straight away, and in their trade history once it closes.
+  </p>
+
+  {% if summary %}
+  <p><strong>Balance</strong> {{ summary.balance }} {{ account.currency }} &nbsp;·&nbsp;
+     <strong>Equity</strong> {{ summary.equity }} &nbsp;·&nbsp;
+     <strong>Free margin</strong> {{ summary.free_margin }}</p>
+  {% endif %}
+
+  <form method="post">{% csrf_token %}
+    <fieldset class="module aligned">
+      {{ form.as_div }}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" value="Place the order" class="default">
+      <a href="{% url 'admin:trading_tradingaccount_change' account.pk %}" class="button cancel-link">Cancel</a>
+    </div>
+  </form>
+
+  {% if quotes %}
+  <h2>Prices right now</h2>
+  <table style="max-width:460px">
+    <thead><tr><th>Instrument</th><th style="text-align:right">Bid</th><th style="text-align:right">Ask</th></tr></thead>
+    <tbody>
+      {% for q in quotes %}
+      <tr><td>{{ q.symbol }}</td>
+          <td style="text-align:right">{{ q.bid|floatformat:5 }}</td>
+          <td style="text-align:right">{{ q.ask|floatformat:5 }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+"""Create or update the tradable instrument list.
+
+    python manage.py seed_instruments
+
+Spreads and leverage below are starting values. Set the real ones for your
+broker in the Django admin; this command never overwrites an existing row's
+spread, leverage or enabled flag.
+"""
+
+from decimal import Decimal
+
+from django.core.management.base import BaseCommand
+
+from trading.models import Instrument
+
+K = Instrument.Kind
+
+# symbol, feed symbol, name, kind, quote ccy, digits, contract size, spread pts, leverage
+INSTRUMENTS = [
+    ('EURUSD', 'EURUSD=X', 'Euro vs US Dollar', K.FOREX, 'USD', 5, '100000', 12, 30),
+    ('GBPUSD', 'GBPUSD=X', 'British Pound vs US Dollar', K.FOREX, 'USD', 5, '100000', 16, 30),
+    ('USDJPY', 'USDJPY=X', 'US Dollar vs Japanese Yen', K.FOREX, 'JPY', 3, '100000', 14, 30),
+    ('USDCAD', 'USDCAD=X', 'US Dollar vs Canadian Dollar', K.FOREX, 'CAD', 5, '100000', 18, 30),
+    ('AUDUSD', 'AUDUSD=X', 'Australian Dollar vs US Dollar', K.FOREX, 'USD', 5, '100000', 16, 30),
+
+    ('BTCUSD', 'BTC-USD', 'Bitcoin vs US Dollar', K.CRYPTO, 'USD', 2, '1', 4000, 2),
+    ('ETHUSD', 'ETH-USD', 'Ethereum vs US Dollar', K.CRYPTO, 'USD', 2, '1', 300, 2),
+
+    ('AAPL', 'AAPL', 'Apple Inc.', K.STOCK, 'USD', 2, '1', 6, 5),
+    ('MSFT', 'MSFT', 'Microsoft Corporation', K.STOCK, 'USD', 2, '1', 8, 5),
+    ('NVDA', 'NVDA', 'NVIDIA Corporation', K.STOCK, 'USD', 2, '1', 8, 5),
+    ('RY', 'RY.TO', 'Royal Bank of Canada', K.STOCK, 'CAD', 2, '1', 6, 5),
+    ('SHOP', 'SHOP.TO', 'Shopify Inc.', K.STOCK, 'CAD', 2, '1', 10, 5),
+
+    ('SPY', 'SPY', 'S&P 500 ETF', K.INDEX, 'USD', 2, '1', 6, 10),
+    ('QQQ', 'QQQ', 'Nasdaq 100 ETF', K.INDEX, 'USD', 2, '1', 6, 10),
+    ('XIC', 'XIC.TO', 'S&P/TSX Capped Composite ETF', K.INDEX, 'CAD', 2, '1', 6, 10),
+
+    ('XAUUSD', 'GC=F', 'Gold vs US Dollar', K.COMMODITY, 'USD', 2, '100', 30, 20),
+]
+
+
+class Command(BaseCommand):
+    help = 'Create or update tradable instruments.'
+
+    def handle(self, *args, **options):
+        created = updated = 0
+        for order, (symbol, feed, name, kind, ccy, digits, contract, spread, leverage) in enumerate(INSTRUMENTS):
+            defaults = {
+                'feed_symbol': feed, 'name': name, 'kind': kind, 'quote_currency': ccy,
+                'digits': digits, 'contract_size': Decimal(contract), 'sort_order': order,
+            }
+            inst, was_created = Instrument.objects.get_or_create(
+                symbol=symbol,
+                defaults={**defaults, 'spread_points': spread, 'leverage': leverage},
+            )
+            if was_created:
+                created += 1
+                continue
+            # Refresh descriptive fields but leave broker settings alone.
+            for field, value in defaults.items():
+                setattr(inst, field, value)
+            inst.save(update_fields=list(defaults))
+            updated += 1
+        self.stdout.write(self.style.SUCCESS(f'{created} instruments created, {updated} updated.'))

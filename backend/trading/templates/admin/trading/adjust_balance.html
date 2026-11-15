@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main">
+  <p style="padding:10px 14px;background:#fdf6e6;border-left:3px solid #b8893b;max-width:760px">
+    This changes <strong>{{ account.user.email }}</strong>'s practice balance. It is virtual money,
+    the change is recorded against your name, and the client sees it in their balance history.
+  </p>
+
+  {% if summary %}
+  <p><strong>Balance</strong> {{ summary.balance }} {{ account.currency }} &nbsp;·&nbsp;
+     <strong>Free margin</strong> {{ summary.free_margin }}</p>
+  {% endif %}
+
+  <form method="post">{% csrf_token %}
+    <fieldset class="module aligned">
+      {{ form.as_div }}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" value="Apply the adjustment" class="default">
+      <a href="{% url 'admin:trading_tradingaccount_change' account.pk %}" class="button cancel-link">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

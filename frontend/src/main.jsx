@@ -1,0 +1,23 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App.jsx';
+import { AuthProvider } from './lib/auth.jsx';
+import './styles/base.css';
+import './styles/layout.css';
+import './styles/sections.css';
+import './styles/pages.css';
+import './styles/terminal.css';
+import './styles/mt.css';
+import './styles/mx.css';
+import './styles/verify.css';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
+);

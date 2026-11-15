@@ -1,0 +1,11 @@
+# Pinned so every machine runs the same, audited versions.
+Django==5.2.19
+asgiref==3.13.0
+sqlparse==0.6.1
+pillow==13.0.0
+tzdata==2026.6
+
+# Needed only for a real deployment:
+# gunicorn          (a production web server)
+# psycopg[binary]   (PostgreSQL, when DJANGO_DB_NAME is set)
+# redis             (shared rate limits, when DJANGO_REDIS_URL is set)
