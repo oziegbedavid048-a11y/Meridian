@@ -62,9 +62,10 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or _DEV_KEY
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1' if DEBUG else '')
 
 if not DEBUG and not TESTING:
-    if SECRET_KEY == _DEV_KEY or len(SECRET_KEY) < 50:
+    # 40+ random characters is ample (Render's "Generate" button makes 44).
+    if SECRET_KEY == _DEV_KEY or len(SECRET_KEY) < 40 or len(set(SECRET_KEY)) < 10:
         raise ImproperlyConfigured(
-            'Set DJANGO_SECRET_KEY to a long random value (at least 50 characters). '
+            'Set DJANGO_SECRET_KEY to a long random value (at least 40 characters). '
             'Generate one with: python -c "from django.core.management.utils import '
             'get_random_secret_key as g; print(g())"')
     if not ALLOWED_HOSTS or '*' in ALLOWED_HOSTS:
@@ -140,6 +141,22 @@ if os.environ.get('DJANGO_DB_NAME'):  # PostgreSQL for a real deployment (pip in
         'PORT': os.environ.get('DJANGO_DB_PORT', '5432'),
         'CONN_MAX_AGE': 60,
         'OPTIONS': {'sslmode': os.environ.get('DJANGO_DB_SSLMODE', 'require')},
+    }
+elif os.environ.get('DATABASE_URL'):  # one link instead, as Render and most hosts give it
+    from urllib.parse import unquote, urlsplit
+    _db = urlsplit(os.environ['DATABASE_URL'])
+    if _db.scheme not in ('postgres', 'postgresql'):
+        raise ImproperlyConfigured('DATABASE_URL must start with postgres:// or postgresql://')
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': unquote(_db.path.lstrip('/')),
+        'USER': unquote(_db.username or ''),
+        'PASSWORD': unquote(_db.password or ''),
+        'HOST': _db.hostname or 'localhost',
+        'PORT': str(_db.port or 5432),
+        'CONN_MAX_AGE': 60,
+        # Render's internal links have no dot in the host and do not use SSL.
+        'OPTIONS': {'sslmode': os.environ.get('DJANGO_DB_SSLMODE') or ('require' if '.' in (_db.hostname or '') else 'prefer')},
     }
 
 # Rate limits and the price cache live here. Use Redis once there is more than
