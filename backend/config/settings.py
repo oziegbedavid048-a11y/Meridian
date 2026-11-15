@@ -276,8 +276,13 @@ RATE_LIMITS = {
 
 # In development codes are printed in the server window instead of sent. In
 # production set DJANGO_EMAIL_HOST (and the rest) so real emails go out.
+# Zoho's email REST API is used when its token is set (hosts like Render's free
+# plan block SMTP). See config/zohomail.py.
+ZOHO_MAIL_TOKEN = os.environ.get('DJANGO_ZOHO_MAIL_TOKEN', '')
+ZOHO_MAIL_HOST = os.environ.get('DJANGO_ZOHO_MAIL_HOST', 'cpaas.zoho.com')
 EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND') or (
-    'django.core.mail.backends.console.EmailBackend' if DEBUG
+    'config.zohomail.ZohoMailBackend' if ZOHO_MAIL_TOKEN
+    else 'django.core.mail.backends.console.EmailBackend' if DEBUG
     else 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.environ.get('DJANGO_EMAIL_HOST', 'localhost')
 EMAIL_PORT = env_int('DJANGO_EMAIL_PORT', 587)

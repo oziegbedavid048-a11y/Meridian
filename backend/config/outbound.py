@@ -3,7 +3,7 @@
 Server-side request forgery (SSRF) is when an attacker tricks the server into
 fetching an address of the attacker's choosing, for example an internal
 service, a cloud metadata address or a file on disk. Every outbound request in
-this project goes through ``get_json`` so that cannot happen:
+this project goes through ``get_json`` or ``post_json`` so that cannot happen:
 
 * the address must be https, with no embedded login and no odd port;
 * the host must be on a short fixed list;
@@ -26,6 +26,9 @@ ALLOWED_HOSTS = frozenset({
     'query1.finance.yahoo.com',
     'query2.finance.yahoo.com',
     'nfs.faireconomy.media',
+    # Zoho's email REST API (sign-up codes), by region. See config/zohomail.py.
+    'cpaas.zoho.com', 'cpaas.zoho.eu', 'cpaas.zoho.in',
+    'api.zeptomail.com', 'api.zeptomail.eu', 'api.zeptomail.in', 'api.zeptomail.com.au',
 })
 MAX_BYTES = 5 * 1024 * 1024
 USER_AGENT = 'Mozilla/5.0 (compatible; ZentraDirect/1.0)'
@@ -80,3 +83,24 @@ def get_json(url, timeout=8):
     if len(body) > MAX_BYTES:
         raise OutboundBlocked('The reply was too large.')
     return json.loads(body.decode('utf-8'))
+
+
+def post_json(url, payload, headers=None, timeout=10):
+    """Send JSON to an allowed host and decode the JSON reply.
+
+    An error reply (4xx or 5xx) is raised as urllib.error.HTTPError.
+    """
+    parts = check_url(url)
+    _assert_public(parts.hostname)
+    request = urllib.request.Request(  # noqa: S310 (the address was checked just above)
+        url,
+        data=json.dumps(payload).encode('utf-8'),
+        method='POST',
+        headers={'User-Agent': USER_AGENT, 'Accept': 'application/json',
+                 'Content-Type': 'application/json', **(headers or {})},
+    )
+    with _opener.open(request, timeout=timeout) as response:  # noqa: S310 (checked above)
+        body = response.read(MAX_BYTES + 1)
+    if len(body) > MAX_BYTES:
+        raise OutboundBlocked('The reply was too large.')
+    return json.loads(body.decode('utf-8')) if body.strip() else {}

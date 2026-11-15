@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
-from django.test import Client, TestCase, override_settings
+from django.test import Client, SimpleTestCase, TestCase, override_settings
 
 from config import outbound
 from config.netutil import client_ip, ip_in, parse_networks
@@ -439,3 +439,56 @@ class AccountLockTests(TestCase):
         TradingAccount.objects.filter(pk=acct.pk).update(balance=Decimal('250'))  # changed elsewhere
         engine.lock_account(acct)
         self.assertEqual(acct.balance, Decimal('250'))
+
+
+class ZohoMailBackendTests(SimpleTestCase):
+    """Emails go to Zoho's REST API with the token, and only to a Zoho host."""
+
+    def _capture(self):
+        from unittest import mock
+        captured = {}
+
+        def fake_post_json(url, payload, headers=None, timeout=None):
+            captured.update(url=url, auth=(headers or {}).get('Authorization'), body=payload, timeout=timeout)
+            return {'data': []}
+
+        return captured, mock.patch('config.zohomail.outbound.post_json', fake_post_json)
+
+    @override_settings(ZOHO_MAIL_TOKEN='Zoho-enczapikey abc123', ZOHO_MAIL_HOST='cpaas.zoho.com',
+                       DEFAULT_FROM_EMAIL='Zentra Direct <no-reply@zentradirect.com>',
+                       EMAIL_BACKEND='config.zohomail.ZohoMailBackend')
+    def test_sends_the_message_as_json_with_the_token(self):
+        from django.core.mail import send_mail
+        captured, patch = self._capture()
+        with patch:
+            self.assertEqual(send_mail('Your code', 'Code 123456', None, ['ada@example.org']), 1)
+        self.assertEqual(captured['url'], 'https://cpaas.zoho.com/v1.1/email')
+        self.assertEqual(captured['auth'], 'Zoho-enczapikey abc123')  # prefix not doubled
+        self.assertEqual(captured['body']['from'], {'address': 'no-reply@zentradirect.com', 'name': 'Zentra Direct'})
+        self.assertEqual(captured['body']['to'], [{'email_address': {'address': 'ada@example.org'}}])
+        self.assertEqual(captured['body']['subject'], 'Your code')
+        self.assertEqual(captured['body']['textbody'], 'Code 123456')
+        self.assertTrue(captured['timeout'])
+
+    @override_settings(ZOHO_MAIL_TOKEN='abc123', ZOHO_MAIL_HOST='cpaas.zoho.com.evil.example')
+    def test_refuses_to_send_the_token_to_a_non_zoho_host(self):
+        from django.core.exceptions import ImproperlyConfigured
+
+        from config.zohomail import ZohoMailBackend
+        with self.assertRaises(ImproperlyConfigured):
+            ZohoMailBackend()
+
+    @override_settings(ZOHO_MAIL_TOKEN='abc123', ZOHO_MAIL_HOST='api.zeptomail.com')
+    def test_a_refusal_from_zoho_is_reported_as_an_error(self):
+        import io
+        import urllib.error
+        from unittest import mock
+
+        from django.core.mail import EmailMessage
+
+        from config.zohomail import ZohoMailBackend
+        error = urllib.error.HTTPError('https://api.zeptomail.com/v1.1/email', 401, 'Unauthorized', {},
+                                       io.BytesIO(b'{"error": "invalid token"}'))
+        with mock.patch('config.zohomail.outbound.post_json', side_effect=error):
+            with self.assertRaisesMessage(OSError, '401'):
+                ZohoMailBackend().send_messages([EmailMessage('s', 'b', 'a@zentradirect.com', ['x@example.org'])])
