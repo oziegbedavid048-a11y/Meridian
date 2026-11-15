@@ -123,9 +123,12 @@ def email_code(request):
         validate_email(email)
     except ValidationError:
         return _bad_request({'email': ['Enter a valid email address.']})
-    if User.objects.filter(username__iexact=email).exists():
+    existing = User.objects.filter(username__iexact=email).first()
+    # Someone who started but did not finish can come back with a code, from
+    # any device. A finished account signs in with its password instead.
+    if existing and not _can_resume_with_code(existing):
         return _bad_request({'email': [
-            'An account with this email already exists. Sign in to resume your application.'
+            'An account with this email already exists. Please sign in.'
         ]}, status=409)
     allowed, retry = limit_check('email-code-email', email)
     if not allowed:
@@ -158,7 +161,20 @@ def verify_email_code(request):
     except verification.CodeProblem as problem:
         log.warning('wrong email code for %s from %s', email, client_ip(request))
         return _bad_request({'code': [str(problem)]})
+    existing = User.objects.filter(username__iexact=email).first()
+    if existing and _can_resume_with_code(existing):
+        # The code proves the email is theirs: sign them in and carry on where they stopped.
+        login(request, existing, backend='django.contrib.auth.backends.ModelBackend')
+        return JsonResponse({'verified': True, 'resumed': True, 'user': _serialize_user(existing)})
     return JsonResponse({'verified': True, 'token': token})
+
+
+def _can_resume_with_code(user):
+    """An unfinished application from an ordinary client (never staff)."""
+    if not user.is_active or user.is_staff or user.is_superuser:
+        return False
+    app = getattr(user, 'application', None)
+    return bool(app and app.status != Application.Status.SUBMITTED)
 
 
 def _throttle_key(request, email):

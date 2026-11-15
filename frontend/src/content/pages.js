@@ -134,7 +134,7 @@ export const aboutPage = {
   story: {
     title: 'Who we are',
     paragraphs: [
-      'Zentra Direct helps Canadians invest on their own terms. We believe investing should be clear: simple pricing, honest information and tools that help you decide for yourself.',
+      'Zentra Direct helps people invest on their own terms. We believe investing should be clear: simple pricing, honest information and tools that help you decide for yourself.',
       'We do not give investment advice. Instead, we give you a dependable platform, research you can trust and a support team that knows your account.',
     ],
   },

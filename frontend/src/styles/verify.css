@@ -340,3 +340,6 @@
 @media (prefers-reduced-motion: reduce) {
   .cam__shutter:active span { transform: none; }
 }
+
+/* The identity prompt sits at the top of Remove funds, above the balances. */
+.vf-gate { margin-bottom: 16px; }

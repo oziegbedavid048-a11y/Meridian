@@ -14,6 +14,7 @@ from django.views.decorators.http import require_http_methods
 from config.ratelimit import rate_limit
 
 from . import identity
+from .countries import COUNTRY_CODES
 from .models import IdentityVerification
 
 log = logging.getLogger('security')
@@ -34,6 +35,7 @@ def state_for(user):
         'status': record.status,
         'can_withdraw': record.status == IdentityVerification.Status.APPROVED,
         'full_name': record.full_name,
+        'country': record.country,
         'province': record.province,
         'document_type': record.document_type,
         'rejection_reason': record.rejection_reason if record.status == IdentityVerification.Status.REJECTED else '',
@@ -55,6 +57,8 @@ def verification(request):
             **state_for(request.user),
             'provinces': [{'code': c, 'name': n} for c, n in identity.PROVINCES],
             'documents': identity.document_options(),
+            'international_documents': identity.INTERNATIONAL_DOCUMENTS,
+            'home_country': getattr(getattr(request.user, 'application', None), 'country', '') or '',
         })
     return _submit(request)
 
@@ -80,16 +84,22 @@ def _submit(request):
     name, problem = identity.clean_full_name(request.POST.get('full_name'))
     if problem:
         errors['full_name'] = [problem]
+    country = (request.POST.get('country') or '').upper()
     province = (request.POST.get('province') or '').upper()
-    if province not in identity.PROVINCE_NAMES:
+    if country not in COUNTRY_CODES:
+        errors['country'] = ['Choose the country you live in.']
+    elif country == 'CA' and province not in identity.PROVINCE_NAMES:
         errors['province'] = ['Choose your province or territory.']
-    document = identity.find_document(province, request.POST.get('document_type') or '') if not errors.get('province') else None
-    if not document and 'province' not in errors:
+    if country != 'CA':
+        province = ''
+    place_ok = 'country' not in errors and 'province' not in errors
+    document = identity.find_document(country, province, request.POST.get('document_type') or '') if place_ok else None
+    if not document and place_ok:
         errors['document_type'] = ['Choose one of the documents on the list.']
 
     photos = {}
     wanted = ['front'] + (['back'] if document and document['sides'] == 2 else []) + ['selfie']
-    if document or 'province' in errors:
+    if document or not place_ok:
         for field in wanted:
             try:
                 photos[field] = identity.clean_photo(request.FILES.get(field))
@@ -104,6 +114,7 @@ def _submit(request):
         record.attempts = (record.attempts or 0) + (1 if existing else 0) or 1
         record.status = IdentityVerification.Status.PENDING
         record.full_name = name
+        record.country = country
         record.province = province
         record.document_type = document['id']
         record.rejection_reason = ''

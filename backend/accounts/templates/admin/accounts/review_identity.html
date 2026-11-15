@@ -38,7 +38,7 @@
     <tr><th>Email</th><td>{{ record.user.email }}</td></tr>
     <tr><th>Full name they entered</th><td>{{ record.full_name }}</td></tr>
     {% if application_name %}<tr><th>Name on their application</th><td>{{ application_name }}</td></tr>{% endif %}
-    <tr><th>Province or territory</th><td>{{ province_name }}</td></tr>
+    <tr><th>Lives in</th><td>{{ province_name }}</td></tr>
     <tr><th>Document chosen</th><td>{{ document_label }}</td></tr>
     <tr><th>Sent</th><td>{{ record.submitted_at|date:"M j, Y H:i" }}{% if record.attempts > 1 %} (attempt {{ record.attempts }}){% endif %}</td></tr>
   </table>

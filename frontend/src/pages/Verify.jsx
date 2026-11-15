@@ -9,6 +9,7 @@ import CameraCapture from '../components/CameraCapture.jsx';
 import { api } from '../lib/api.js';
 import { shrinkImage } from '../lib/images.js';
 import { useAuth } from '../lib/auth.jsx';
+import { COUNTRIES, countryName } from '../content/countries.js';
 
 const STEPS = ['Details', 'Document', 'Photos', 'Face check', 'Review'];
 const whenFmt = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
@@ -89,7 +90,8 @@ function Wizard({ info, onSubmitted }) {
   const app = user?.application;
   const [step, setStep] = useState(1);
   const [name, setName] = useState([app?.first_name, app?.last_name].filter(Boolean).join(' '));
-  const [province, setProvince] = useState(app?.province || '');
+  const [country, setCountry] = useState(app?.country || info.home_country || '');
+  const [province, setProvince] = useState(app?.country === 'CA' ? app?.province || '' : '');
   const [docId, setDocId] = useState('');
   const [photos, setPhotos] = useState({});
   const [camera, setCamera] = useState(null); // 'front' | 'back' | 'selfie'
@@ -102,7 +104,12 @@ function Wizard({ info, onSubmitted }) {
 
   useEffect(() => () => Object.values(photosRef.current).forEach((p) => URL.revokeObjectURL(p.url)), []);
 
-  const docs = (province && info.documents[province]) || [];
+  const docs = country === 'CA'
+    ? (province && info.documents[province]) || []
+    : country ? info.international_documents || [] : [];
+  const place = country === 'CA'
+    ? info.provinces.find((p) => p.code === province)?.name
+    : countryName(country);
   const doc = docs.find((d) => d.id === docId);
   const needsBack = doc?.sides === 2;
 
@@ -141,7 +148,8 @@ function Wizard({ info, onSubmitted }) {
     const errs = {};
     if (step === 1) {
       if (!/^\S+(\s+\S+)+$/.test(name.trim())) errs.full_name = 'Enter your first and last name.';
-      if (!province) errs.province = 'Choose your province or territory.';
+      if (!country) errs.country = 'Choose the country you live in.';
+      else if (country === 'CA' && !province) errs.province = 'Choose your province or territory.';
     }
     if (step === 2 && !doc) errs.document_type = 'Choose one of the documents.';
     if (step === 3) {
@@ -162,7 +170,8 @@ function Wizard({ info, onSubmitted }) {
     setErrors({});
     const body = new FormData();
     body.append('full_name', name.trim());
-    body.append('province', province);
+    body.append('country', country);
+    body.append('province', country === 'CA' ? province : '');
     body.append('document_type', docId);
     body.append('front', photos.front.blob, 'front.jpg');
     if (needsBack) body.append('back', photos.back.blob, 'back.jpg');
@@ -173,7 +182,7 @@ function Wizard({ info, onSubmitted }) {
       const out = {};
       Object.entries(err.errors || {}).forEach(([k, v]) => { if (Array.isArray(v)) out[k] = v[0]; });
       setErrors(Object.keys(out).length ? out : { form: err.message });
-      const target = out.full_name || out.province ? 1 : out.document_type ? 2 : out.front || out.back ? 3 : out.selfie ? 4 : step;
+      const target = out.full_name || out.country || out.province ? 1 : out.document_type ? 2 : out.front || out.back ? 3 : out.selfie ? 4 : step;
       if (target !== step) setStep(target);
     } finally {
       setBusy(false);
@@ -216,6 +225,17 @@ function Wizard({ info, onSubmitted }) {
                 aria-invalid={errors.full_name ? 'true' : undefined} />
               {errors.full_name && <p className="field__error" role="alert">{errors.full_name}</p>}
             </div>
+            <div className={`field ${errors.country ? 'has-error' : ''}`}>
+              <label htmlFor="vf-country">Country you live in</label>
+              <select id="vf-country" value={country} autoComplete="country"
+                onChange={(e) => { setCountry(e.target.value); setProvince(''); setDocId(''); setErrors((x) => ({ ...x, country: undefined, province: undefined })); }}
+                aria-invalid={errors.country ? 'true' : undefined}>
+                <option value="">Choose…</option>
+                {COUNTRIES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+              </select>
+              {errors.country && <p className="field__error" role="alert">{errors.country}</p>}
+            </div>
+            {country === 'CA' && (
             <div className={`field ${errors.province ? 'has-error' : ''}`}>
               <label htmlFor="vf-prov">Province or territory</label>
               <select id="vf-prov" value={province}
@@ -226,13 +246,14 @@ function Wizard({ info, onSubmitted }) {
               </select>
               {errors.province && <p className="field__error" role="alert">{errors.province}</p>}
             </div>
+            )}
           </>
         )}
 
         {step === 2 && (
           <>
             <h2>Choose your document</h2>
-            <p className="muted">These are the photo IDs we accept for people living in {info.provinces.find((p) => p.code === province)?.name}.</p>
+            <p className="muted">These are the photo IDs we accept for people living in {place}.</p>
             <div role="radiogroup" aria-label="Document" className="vf-docs">
               {docs.map((d) => (
                 <label key={d.id} className={`vf-doc ${docId === d.id ? 'is-on' : ''}`}>
@@ -288,7 +309,7 @@ function Wizard({ info, onSubmitted }) {
             <h2>Check and send</h2>
             <dl className="vf-review">
               <div><dt>Name</dt><dd>{name.trim()}</dd></div>
-              <div><dt>Province</dt><dd>{info.provinces.find((p) => p.code === province)?.name}</dd></div>
+              <div><dt>Lives in</dt><dd>{place}</dd></div>
               <div><dt>Document</dt><dd>{doc?.label}</dd></div>
             </dl>
             <div className="vf-thumbs">

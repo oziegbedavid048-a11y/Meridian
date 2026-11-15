@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, BadgeCheck, Check, CircleCheckBig, Clock, Loader2, Mail, Pencil, Phone, ShieldCheck, UserRound,
+  ArrowLeft, BadgeCheck, Check, CircleCheckBig, Clock, Loader2, Mail, Pencil, ShieldCheck, UserRound,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { api } from '../lib/api.js';
@@ -10,7 +10,7 @@ import {
   CheckboxField, ChoiceGroup, FormAlert, PasswordField, RuleList, SelectField, TextField, focusFirstError,
 } from '../components/Form.jsx';
 import { Logo } from '../components/ui.jsx';
-import { contact } from '../content/site.js';
+import { COUNTRIES, countryName } from '../content/countries.js';
 
 const STEPS = [
   { n: 1, label: 'Sign-in details' },
@@ -35,13 +35,13 @@ const label = (key, v) => OPTIONS[key]?.find(([k]) => k === v)?.[1] || v || '—
 
 const EMPTY = {
   title: '', first_name: '', middle_name: '', last_name: '', date_of_birth: '', phone: '',
-  street: '', unit: '', city: '', province: '', postal_code: '', canadian_resident: false,
+  street: '', unit: '', city: '', country: '', province: '', postal_code: '',
   accepted_terms: false, confirmed_accurate: false,
 };
 
 const STEP_KEYS = {
   2: ['title', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'phone'],
-  3: ['street', 'unit', 'city', 'province', 'postal_code', 'canadian_resident'],
+  3: ['street', 'unit', 'city', 'country', 'province', 'postal_code'],
 };
 
 function fromApp(app) {
@@ -50,6 +50,32 @@ function fromApp(app) {
     if (app[k] !== null && app[k] !== undefined) d[k] = app[k];
   });
   return d;
+}
+
+/* Answers typed but not yet saved, kept on this device so leaving the page loses nothing. */
+const draftKey = (email) => `signup-draft:${email}`;
+function readDraft(email) {
+  try {
+    const raw = window.localStorage.getItem(draftKey(email));
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function writeDraft(email, data) {
+  try {
+    window.localStorage.setItem(draftKey(email), JSON.stringify(data));
+  } catch {
+    /* private mode or storage full: the saved steps are still on the server */
+  }
+}
+function clearDraft(email) {
+  try {
+    window.localStorage.removeItem(draftKey(email));
+  } catch {
+    /* nothing to clear */
+  }
 }
 
 function serverErrors(err) {
@@ -69,8 +95,8 @@ function Landing({ onStart }) {
       <div className="choice-cards">
         <div className="choice-card">
           <span className="icon-tile"><UserRound size={24} aria-hidden="true" /></span>
-          <h2>I already started or have an account</h2>
-          <p>Sign in and we will take you back to your application.</p>
+          <h2>I already have an account</h2>
+          <p>Sign in to your account. If you started an application, you can also continue it with Start.</p>
           <Link to="/sign-in?next=/sign-up" className="btn btn--outline btn--block">Sign in</Link>
         </div>
         <div className="choice-card choice-card--accent">
@@ -94,7 +120,7 @@ function Landing({ onStart }) {
 
 /* ---------- Step 1: verify the email, then choose a password ---------- */
 function Credentials({ onDone }) {
-  const { register } = useAuth();
+  const { register, setUser } = useAuth();
   const [form, setForm] = useState({ email: '', code: '', password: '' });
   const [phase, setPhase] = useState('email'); // email -> code -> verified
   const [token, setToken] = useState('');
@@ -157,6 +183,11 @@ function Credentials({ onDone }) {
     setAlert('');
     try {
       const res = await api('/auth/verify-code/', { method: 'POST', body: { email: form.email.trim(), code: form.code.trim() } });
+      if (res.resumed) {
+        // They had started before: signed back in, the page continues where they stopped.
+        setUser(res.user);
+        return;
+      }
       setToken(res.token);
       setPhase('verified');
       setNotice('');
@@ -322,7 +353,7 @@ function StepFields({ step, data, set, errors }) {
         </div>
         <TextField label="Last name" name="last_name" value={data.last_name} onChange={set} error={errors.last_name} autoComplete="family-name" />
         <DobField value={data.date_of_birth} onChange={set} error={errors.date_of_birth} />
-        <TextField label="Phone number" name="phone" type="tel" value={data.phone} onChange={set} error={errors.phone} autoComplete="tel-national" placeholder="416 555 0199" />
+        <TextField label="Phone number" name="phone" type="tel" value={data.phone} onChange={set} error={errors.phone} autoComplete="tel" placeholder="+1 416 555 0199" />
       </>
     );
   }
@@ -335,13 +366,20 @@ function StepFields({ step, data, set, errors }) {
           <TextField label="Unit" optional name="unit" value={data.unit} onChange={set} error={errors.unit} autoComplete="address-line2" />
         </div>
         <TextField label="City" name="city" value={data.city} onChange={set} error={errors.city} autoComplete="address-level2" />
-        <div className="grid2">
-          <SelectField label="Province or territory" name="province" value={data.province} onChange={set} error={errors.province} options={PROVINCES} autoComplete="address-level1" />
-          <TextField label="Postal code" name="postal_code" value={data.postal_code} onChange={(k, v) => set(k, v.toUpperCase())} error={errors.postal_code} autoComplete="postal-code" placeholder="A1A 1A1" maxLength={7} />
-        </div>
-        <CheckboxField name="canadian_resident" checked={data.canadian_resident} onChange={set} error={errors.canadian_resident}>
-          I confirm that I am a resident of Canada for tax purposes.
-        </CheckboxField>
+        <SelectField label="Country" name="country" value={data.country}
+          onChange={(k, v) => { set(k, v); set('province', ''); set('postal_code', ''); }}
+          error={errors.country} options={COUNTRIES} autoComplete="country" />
+        {data.country === 'CA' ? (
+          <div className="grid2">
+            <SelectField label="Province or territory" name="province" value={data.province} onChange={set} error={errors.province} options={PROVINCES} autoComplete="address-level1" />
+            <TextField label="Postal code" name="postal_code" value={data.postal_code} onChange={(k, v) => set(k, v.toUpperCase())} error={errors.postal_code} autoComplete="postal-code" placeholder="A1A 1A1" maxLength={7} />
+          </div>
+        ) : data.country ? (
+          <div className="grid2">
+            <TextField label="State, province or region" optional name="province" value={data.province} onChange={set} error={errors.province} autoComplete="address-level1" maxLength={60} />
+            <TextField label="Postal code" optional name="postal_code" value={data.postal_code} onChange={(k, v) => set(k, v.toUpperCase())} error={errors.postal_code} autoComplete="postal-code" maxLength={12} />
+          </div>
+        ) : null}
       </>
     );
   }
@@ -350,14 +388,15 @@ function StepFields({ step, data, set, errors }) {
 
 /* ---------- Step 6: review ---------- */
 function Review({ data, email, set, errors, goTo }) {
-  const prov = PROVINCES.find(([k]) => k === data.province)?.[1];
+  const prov = data.country === 'CA' ? PROVINCES.find(([k]) => k === data.province)?.[1] : data.province;
+  const place = [data.city, [prov, data.postal_code].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   const sections = [
     { step: 2, title: 'Personal information', rows: [
       ['Name', [label('title', data.title), data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')],
       ['Date of birth', data.date_of_birth], ['Phone', data.phone], ['Email', email]] },
     { step: 3, title: 'Address', rows: [
       ['Address', [data.unit && `${data.unit}-`, data.street].filter(Boolean).join('')],
-      ['City', `${data.city}, ${prov || data.province} ${data.postal_code}`]] },
+      ['City', place], ['Country', countryName(data.country)]] },
   ];
   return (
     <>
@@ -432,9 +471,23 @@ export default function SignUp() {
     loadedFor.current = user.email;
     const a = user.application;
     setApp(a);
-    setData(fromApp(a));
+    const draft = readDraft(user.email);
+    const fresh = fromApp(a);
+    if (draft) {
+      // Fill in what they typed last time but had not saved yet.
+      Object.keys(EMPTY).forEach((k) => {
+        if (k in draft && typeof draft[k] === typeof EMPTY[k]) fresh[k] = draft[k];
+      });
+    }
+    setData(fresh);
     setStep(Math.min(Math.max(a.current_step, 2), LAST_STEP));
   }, [loading, user]);
+
+  // Keep a copy of the answers on this device as they type.
+  useEffect(() => {
+    if (!user?.email || loadedFor.current !== user.email || user.application?.status === 'submitted') return;
+    writeDraft(user.email, data);
+  }, [data, user]);
 
   const furthest = app ? Math.min(app.current_step, LAST_STEP) : 1;
 
@@ -517,6 +570,7 @@ export default function SignUp() {
         body: { accepted_terms: data.accepted_terms, confirmed_accurate: data.confirmed_accurate },
       });
       setApp(res.application);
+      clearDraft(user.email);
       setUser((u) => (u ? { ...u, application: res.application } : u));
       navigate('/account', { replace: true }); // straight to the dashboard
     } catch (err) {
@@ -549,10 +603,6 @@ export default function SignUp() {
       <div className="signup__bar">
         <div className="container signup__bar-inner">
           <Link to="/" aria-label="Zentra Direct home"><Logo /></Link>
-          <span className="signup__assist">
-            <span>Need help?</span>
-            <a href={contact.phoneHref}><Phone size={15} aria-hidden="true" /> {contact.phone}</a>
-          </span>
         </div>
       </div>
 

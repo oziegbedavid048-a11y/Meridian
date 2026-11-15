@@ -1,4 +1,4 @@
-"""Identity verification: which documents each province accepts, and safe photo handling.
+"""Identity verification: which documents are accepted where, and safe photo handling.
 
 This is a practice platform, so nothing here is checked against any real
 records. The flow, the document lists and the review step are built to look and
@@ -29,8 +29,21 @@ COMMON_DOCUMENTS = [
 ]
 
 
-def documents_for(province):
-    """The documents accepted for someone living in this province."""
+# For people who live outside Canada.
+INTERNATIONAL_DOCUMENTS = [
+    {'id': 'passport', 'label': 'Passport', 'sides': 1, 'hint': 'One photo of the page with your picture.'},
+    {'id': 'national_id', 'label': 'National identity card', 'sides': 2, 'hint': 'Front and back.'},
+    {'id': 'drivers_licence', 'label': "Driver's licence", 'sides': 2, 'hint': 'Front and back.'},
+    {'id': 'residence_permit', 'label': 'Residence permit', 'sides': 2, 'hint': 'Front and back.'},
+]
+
+
+def documents_for(country, province=''):
+    """The documents accepted for someone living in this country (and Canadian province)."""
+    if country != 'CA':
+        return INTERNATIONAL_DOCUMENTS
+    if province not in PROVINCE_NAMES:
+        return []
     name = PROVINCE_NAMES[province]
     docs = [{'id': 'drivers_licence', 'label': f"{name} driver's licence", 'sides': 2, 'hint': 'Front and back.'}]
     if province != 'QC':  # Quebec has no separate provincial photo card
@@ -40,11 +53,19 @@ def documents_for(province):
 
 
 def document_options():
-    return {code: documents_for(code) for code, _ in PROVINCES}
+    """Canadian documents by province."""
+    return {code: documents_for('CA', code) for code, _ in PROVINCES}
 
 
-def find_document(province, document_id):
-    return next((d for d in documents_for(province) if d['id'] == document_id), None)
+def find_document(country, province, document_id):
+    return next((d for d in documents_for(country, province) if d['id'] == document_id), None)
+
+
+def where_label(country, province):
+    """'Ontario, CA' for Canada, otherwise the country code."""
+    if country == 'CA' and province in PROVINCE_NAMES:
+        return f'{PROVINCE_NAMES[province]}, CA'
+    return country
 
 
 # ---------- names ----------

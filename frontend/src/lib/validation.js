@@ -18,7 +18,8 @@ export const emailOk = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.tri
 
 const NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
 const POSTAL_RE = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$/i;
-const PHONE_RE = /^\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
+const PHONE_RE = /^\+?[\d\s().-]{7,22}$/; // any country; the digit count is checked too
+const INTL_POSTAL_RE = /^[A-Za-z0-9][A-Za-z0-9 -]{1,10}$/;
 
 function ageOn(dob, today = new Date()) {
   let age = today.getFullYear() - dob.getFullYear();
@@ -40,7 +41,8 @@ export function validateStep(step, d) {
     if (d.first_name && !NAME_RE.test(d.first_name)) e.first_name = 'Enter a valid first name.';
     if (d.middle_name && !NAME_RE.test(d.middle_name)) e.middle_name = 'Enter a valid middle name.';
     if (d.last_name && !NAME_RE.test(d.last_name)) e.last_name = 'Enter a valid last name.';
-    if (d.phone && !PHONE_RE.test(d.phone)) e.phone = 'Enter a 10-digit phone number.';
+    const digits = String(d.phone || '').replace(/\D/g, '').length;
+    if (d.phone && (!PHONE_RE.test(d.phone.trim()) || digits < 7 || digits > 15)) e.phone = 'Enter a valid phone number.';
     if (!d.date_of_birth) e.date_of_birth = 'Enter your date of birth.';
     else {
       const dob = new Date(`${d.date_of_birth}T00:00:00`);
@@ -52,10 +54,14 @@ export function validateStep(step, d) {
   if (step === 3) {
     req('street', 'Street address');
     req('city', 'City');
-    req('province', 'Province or territory');
-    req('postal_code', 'Postal code');
-    if (d.postal_code && !POSTAL_RE.test(d.postal_code.trim())) e.postal_code = 'Enter a postal code like A1A 1A1.';
-    if (d.canadian_resident !== true) e.canadian_resident = 'You must be a resident of Canada to apply.';
+    req('country', 'Country');
+    if (d.country === 'CA') {
+      req('province', 'Province or territory');
+      req('postal_code', 'Postal code');
+      if (d.postal_code && !POSTAL_RE.test(d.postal_code.trim())) e.postal_code = 'Enter a postal code like A1A 1A1.';
+    } else if (d.postal_code && !INTL_POSTAL_RE.test(d.postal_code.trim())) {
+      e.postal_code = 'Enter a valid postal code.';
+    }
   }
   if (step === 4) {
     if (d.accepted_terms !== true) e.accepted_terms = 'You must accept the account agreement to continue.';

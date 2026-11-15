@@ -40,13 +40,14 @@ class Application(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True)
 
-    # Step 3: address and residency
+    # Step 3: address
     street = models.CharField(max_length=120, blank=True)
     unit = models.CharField(max_length=20, blank=True)
     city = models.CharField(max_length=60, blank=True)
-    province = models.CharField(max_length=2, blank=True)
-    postal_code = models.CharField(max_length=7, blank=True)
-    canadian_resident = models.BooleanField(default=False)
+    country = models.CharField(max_length=2, blank=True)  # ISO 3166-1 alpha-2
+    province = models.CharField(max_length=60, blank=True)  # province, state or region
+    postal_code = models.CharField(max_length=12, blank=True)
+    canadian_resident = models.BooleanField(default=False)  # no longer asked; kept for old records
 
     # Step 4: review and agreements
     accepted_terms = models.BooleanField(default=False)
@@ -119,7 +120,8 @@ class IdentityVerification(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='identity_verification')
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     full_name = models.CharField(max_length=100)
-    province = models.CharField(max_length=2)
+    country = models.CharField(max_length=2, default='CA')  # ISO 3166-1 alpha-2
+    province = models.CharField(max_length=2, blank=True)  # Canadian province, when the country is CA
     document_type = models.CharField(max_length=30)
     front_image = models.FileField(upload_to=identity_photo_path, storage=get_private_storage, max_length=200)
     back_image = models.FileField(upload_to=identity_photo_path, storage=get_private_storage,

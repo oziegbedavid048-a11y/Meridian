@@ -1,7 +1,35 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MARKET_SNAPSHOT } from '../content/marketSnapshot.js';
 import { api } from './api.js';
 
-export const getInstruments = () => api('/trading/instruments/');
+export const getInstruments = async () => {
+  const res = await api('/trading/instruments/');
+  if (res?.instruments?.length) rememberInstruments(res.instruments);
+  return res;
+};
+
+/* ---------- Prices to show straight away ----------
+   The market watch opens with the last prices this device saw (or a built-in
+   snapshot), then live prices replace them as soon as they arrive. */
+const LAST_PRICES_KEY = 'market-last-prices';
+
+export function startingInstruments() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(LAST_PRICES_KEY) || 'null');
+    if (Array.isArray(saved) && saved.length && saved.every((i) => i && i.symbol && i.kind)) return saved;
+  } catch {
+    /* storage blocked or corrupt: use the snapshot */
+  }
+  return MARKET_SNAPSHOT;
+}
+
+function rememberInstruments(list) {
+  try {
+    window.localStorage.setItem(LAST_PRICES_KEY, JSON.stringify(list));
+  } catch {
+    /* private mode: the snapshot is used next time */
+  }
+}
 export const getCandles = (symbol, tf) => api(`/trading/candles/${encodeURIComponent(symbol)}/?tf=${tf}`);
 export const getPositions = () => api('/trading/positions/');
 export const getAccount = () => api('/trading/account/');

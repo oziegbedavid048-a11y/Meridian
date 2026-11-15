@@ -5,11 +5,11 @@ import {
   BarChart3, CalendarDays, Download, Eraser, Filter, LineChart, ListX, MousePointer2, MoveUpRight,
   Newspaper, Plus, Rows3, Search, Settings2, Trash2, TrendingUp, X,
 } from 'lucide-react';
-import AccountShell, { ExecutionNotice } from '../components/AccountShell.jsx';
+import AccountShell from '../components/AccountShell.jsx';
 import CandleChart from '../components/CandleChart.jsx';
 import { API_ROOT, api } from '../lib/api.js';
 import {
-  cancelOrder, closeAll, closeBy, closePosition, fieldErrors, getCandles, getInstruments,
+  cancelOrder, closeAll, closeBy, closePosition, fieldErrors, getCandles, getInstruments, startingInstruments,
   getPositions, modifyPosition, placeOrder, price, usePoll,
 } from '../lib/trading.js';
 
@@ -1030,7 +1030,7 @@ function CloseBySheet({ trade, positions, onClose, onDone }) {
 /* ---------- Page ---------- */
 export default function Terminal() {
   const [params] = useSearchParams();
-  const [instruments, setInstruments] = useState([]);
+  const [instruments, setInstruments] = useState(startingInstruments); // live prices replace these within seconds
   const [ticks, setTicks] = useState({});
   const [symbol, setSymbol] = useState(() => (params.get('symbol') || '').toUpperCase() || null);
   const [timeframe, setTimeframe] = useState('H1');
@@ -1101,6 +1101,7 @@ export default function Terminal() {
         prevBids.current[i.symbol] = i.bid;
       });
       setTicks((t) => ({ ...t, ...dirs }));
+      if (!res.instruments.length) return; // keep showing the last known prices
       setInstruments(res.instruments);
       setFeedError(false);
       setSymbol((s) => (s && res.instruments.some((i) => i.symbol === s) ? s : res.instruments[0]?.symbol || null));
@@ -1201,7 +1202,6 @@ export default function Terminal() {
 
   return (
     <AccountShell wide>
-      <ExecutionNotice account={account} />
       {feedError && (
         <p className="feed-error" role="status">
           <AlertCircle size={16} aria-hidden="true" /> Prices are not updating right now. Trading is paused until the feed returns.

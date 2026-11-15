@@ -124,6 +124,8 @@ const TICK_MS = 450;          // how often the last candle moves
 const TICKS_PER_CANDLE = 10;  // a new candle every ~4.5 seconds
 const LIVE_W = 320;
 const LIVE_H = 200;
+const PAIR = 'ETH/BTC';      // Ethereum priced in Bitcoin
+const SCALE = 0.03125;       // price moves sized for a pair trading near 0.034
 
 function seeded(seed) {
   let value = seed;
@@ -134,15 +136,15 @@ function seeded(seed) {
 function startingCandles() {
   const rand = seeded(11);
   const out = [];
-  let price = 1.0962;
+  let price = 0.03426;
   for (let i = 0; i < LIVE_COUNT; i += 1) {
-    const drift = i < 20 ? 0.00034 : i < 25 ? -0.0009 : 0.00012;
+    const drift = (i < 20 ? 0.00034 : i < 25 ? -0.0009 : 0.00012) * SCALE;
     const open = price;
-    const close = open + drift + (rand() - 0.5) * 0.0008;
+    const close = open + drift + (rand() - 0.5) * 0.0008 * SCALE;
     out.push({
       open, close,
-      high: Math.max(open, close) + rand() * 0.00035,
-      low: Math.min(open, close) - rand() * 0.00035,
+      high: Math.max(open, close) + rand() * 0.00035 * SCALE,
+      low: Math.min(open, close) - rand() * 0.00035 * SCALE,
     });
     price = close;
   }
@@ -179,7 +181,7 @@ export function LiveChart() {
         const last = { ...next[next.length - 1] };
         // Pull gently back towards the middle so the chart never drifts off.
         const mean = next.reduce((sum, c) => sum + c.close, 0) / next.length;
-        const move = (rand() - 0.5) * 0.00042 + (mean - last.close) * 0.02;
+        const move = (rand() - 0.5) * 0.00042 * SCALE + (mean - last.close) * 0.02;
         last.close += move;
         last.high = Math.max(last.high, last.close);
         last.low = Math.min(last.low, last.close);
@@ -196,7 +198,7 @@ export function LiveChart() {
 
   const highs = candles.map((c) => c.high);
   const lows = candles.map((c) => c.low);
-  const pad = (Math.max(...highs) - Math.min(...lows)) * 0.12 || 0.001;
+  const pad = (Math.max(...highs) - Math.min(...lows)) * 0.12 || 0.00003;
   const top = Math.max(...highs) + pad;
   const bottom = Math.min(...lows) - pad;
   const y = (price) => ((top - price) / (top - bottom)) * LIVE_H;
@@ -210,7 +212,7 @@ export function LiveChart() {
 
   return (
     <div className="lc" ref={holder} aria-hidden="true">
-      <span className="lc-label">EURUSD <small>M1</small></span>
+      <span className="lc-label">{PAIR} <small>M1</small></span>
       <div className="lc-plot">
         <svg viewBox={`0 0 ${LIVE_W} ${LIVE_H}`} preserveAspectRatio="none" className="lc-svg">
           {levels.map((level) => (
@@ -231,7 +233,7 @@ export function LiveChart() {
         </svg>
         <div className="lc-scale">
           {levels.map((level) => (
-            <span key={level.toFixed(6)} style={{ top: `${(y(level) / LIVE_H) * 100}%` }}>{level.toFixed(4)}</span>
+            <span key={level.toFixed(6)} style={{ top: `${(y(level) / LIVE_H) * 100}%` }}>{level.toFixed(5)}</span>
           ))}
           <span className={`lc-tag ${rising ? 'is-up' : 'is-down'}`} style={{ top: `${(y(last.close) / LIVE_H) * 100}%` }}>
             {last.close.toFixed(5)}

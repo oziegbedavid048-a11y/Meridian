@@ -221,7 +221,7 @@ class IdentityBase(TestCase):
         IdentityVerification.objects.all().delete()  # also deletes the photo files
 
     def submit(self, client=None, **overrides):
-        data = {'full_name': 'Ada Lovelace', 'province': 'ON', 'document_type': 'drivers_licence',
+        data = {'full_name': 'Ada Lovelace', 'country': 'CA', 'province': 'ON', 'document_type': 'drivers_licence',
                 'front': upload('f.jpg'), 'back': upload('b.jpg'), 'selfie': upload('s.jpg')}
         data.update(overrides)
         data = {k: v for k, v in data.items() if v is not None}
@@ -468,7 +468,7 @@ class WithdrawalGateTests(IdentityBase):
 
     def test_under_review_is_still_not_enough(self):
         self.client.post('/api/verification/', {
-            'full_name': 'Ada Lovelace', 'province': 'ON', 'document_type': 'passport',
+            'full_name': 'Ada Lovelace', 'country': 'CA', 'province': 'ON', 'document_type': 'passport',
             'front': upload(), 'selfie': upload()})
         res = self.withdraw()
         self.assertEqual(res.status_code, 403)
@@ -661,3 +661,101 @@ class VerificationEmailContentTests(TestCase):
                 verification.send_code('ada@example.org')
         self.assertFalse(EmailCode.objects.filter(email='ada@example.org').exists())
         verification.send_code('ada@example.org')  # no cooldown error
+
+
+class ResumeWithCodeTests(TestCase):
+    """Someone who started signing up can come back later, on any device, with an email code."""
+
+    def setUp(self):
+        from .models import Application
+        cache.clear()
+        self.client = Client(REMOTE_ADDR='198.51.100.10')
+        self.user = get_user_model().objects.create_user('half@example.com', 'half@example.com', PASSWORD)
+        self.app = Application.objects.create(user=self.user, current_step=3, first_name='Ada')
+
+    def post(self, url, body):
+        return self.client.post(url, data=json.dumps(body), content_type='application/json')
+
+    def test_an_unfinished_application_gets_a_code_and_is_signed_back_in(self):
+        self.assertEqual(self.post('/api/auth/email-code/', {'email': 'half@example.com'}).status_code, 200)
+        res = self.post('/api/auth/verify-code/', {'email': 'half@example.com', 'code': last_code()})
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertTrue(body['resumed'])
+        self.assertEqual(body['user']['application']['current_step'], 3)
+        me = self.client.get('/api/auth/me/').json()
+        self.assertEqual(me['user']['email'], 'half@example.com')
+
+    def test_a_wrong_code_does_not_sign_anyone_in(self):
+        self.post('/api/auth/email-code/', {'email': 'half@example.com'})
+        res = self.post('/api/auth/verify-code/', {'email': 'half@example.com', 'code': '000000'})
+        self.assertEqual(res.status_code, 400)
+        self.assertIsNone(self.client.get('/api/auth/me/').json()['user'])
+
+    def test_a_finished_account_must_sign_in_with_its_password(self):
+        self.app.status = 'submitted'
+        self.app.save()
+        res = self.post('/api/auth/email-code/', {'email': 'half@example.com'})
+        self.assertEqual(res.status_code, 409)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_staff_can_never_be_signed_in_with_a_code(self):
+        self.user.is_staff = True
+        self.user.save()
+        self.assertEqual(self.post('/api/auth/email-code/', {'email': 'half@example.com'}).status_code, 409)
+
+
+class InternationalSignUpTests(TestCase):
+    """People from any country can give their address and verify their identity."""
+
+    def test_an_address_outside_canada_is_accepted(self):
+        from .validation import validate_step
+        cleaned, errors = validate_step(3, {'street': '12 Admiralty Way', 'city': 'Lagos', 'country': 'NG',
+                                            'province': 'Lagos State', 'postal_code': '101233'})
+        self.assertEqual(errors, {})
+        self.assertEqual(cleaned['country'], 'NG')
+        self.assertEqual(cleaned['province'], 'Lagos State')
+
+    def test_region_and_postal_code_are_optional_outside_canada(self):
+        from .validation import validate_step
+        _, errors = validate_step(3, {'street': '1 Main Rd', 'city': 'Dubai', 'country': 'AE'})
+        self.assertEqual(errors, {})
+
+    def test_canada_still_needs_a_province_and_a_canadian_postal_code(self):
+        from .validation import validate_step
+        _, errors = validate_step(3, {'street': '1 Bay St', 'city': 'Toronto', 'country': 'CA',
+                                      'province': 'Lagos', 'postal_code': '101233'})
+        self.assertIn('province', errors)
+        self.assertIn('postal_code', errors)
+
+    def test_an_unknown_country_is_refused(self):
+        from .validation import validate_step
+        _, errors = validate_step(3, {'street': '1 Main Rd', 'city': 'X', 'country': 'ZZ'})
+        self.assertIn('country', errors)
+
+    def test_international_phone_numbers_are_accepted(self):
+        from .validation import validate_step
+        for phone in ('+234 803 123 4567', '+44 20 7946 0958', '416-555-0199', '+971 4 123 4567'):
+            _, errors = validate_step(2, {'title': 'ms', 'first_name': 'Ada', 'last_name': 'Obi', 'phone': phone,
+                                          'date_of_birth': '1990-01-01'})
+            self.assertNotIn('phone', errors, phone)
+        _, errors = validate_step(2, {'title': 'ms', 'first_name': 'Ada', 'last_name': 'Obi', 'phone': '12',
+                                      'date_of_birth': '1990-01-01'})
+        self.assertIn('phone', errors)
+
+
+class InternationalIdentityTests(IdentityBase):
+    def test_someone_outside_canada_verifies_with_an_international_document(self):
+        res = self.submit(country='NG', province=None, document_type='passport', back=None)
+        self.assertEqual(res.status_code, 201, res.content)
+        record = IdentityVerification.objects.get()
+        self.assertEqual((record.country, record.province, record.document_type), ('NG', '', 'passport'))
+
+    def test_a_canadian_only_document_is_refused_outside_canada(self):
+        res = self.submit(country='GB', province=None, document_type='citizenship_card')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('document_type', res.json()['errors'])
+
+    def test_the_lists_include_international_documents(self):
+        data = self.client.get('/api/verification/').json()
+        self.assertEqual([d['id'] for d in data['international_documents']][0], 'passport')

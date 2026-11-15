@@ -1108,3 +1108,26 @@ class CalendarTests(TestCase):
             res = self.client.get('/api/market/calendar/')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['events']), 2)
+
+
+class SeedMigrationTests(TestCase):
+    """A brand-new database gets the instrument list, so the market watch is never empty."""
+
+    def test_missing_instruments_are_added_and_existing_ones_are_left_alone(self):
+        import importlib
+
+        from django.apps import apps as global_apps
+        from django.test import override_settings
+
+        from trading.management.commands.seed_instruments import INSTRUMENTS
+        migration = importlib.import_module('trading.migrations.0011_seed_instruments')
+        Instrument.objects.all().delete()
+        Instrument.objects.create(symbol='EURUSD', feed_symbol='EURUSD=X', name='Kept', kind='forex',
+                                  quote_currency='USD', digits=5, contract_size=Decimal('100000'),
+                                  spread_points=99, leverage=5)
+        with override_settings(TESTING=False):
+            migration.add_missing(global_apps, None)
+            migration.add_missing(global_apps, None)  # running twice changes nothing
+        self.assertEqual(Instrument.objects.count(), len(INSTRUMENTS))
+        kept = Instrument.objects.get(symbol='EURUSD')
+        self.assertEqual((kept.name, kept.spread_points, kept.leverage), ('Kept', 99, 5))

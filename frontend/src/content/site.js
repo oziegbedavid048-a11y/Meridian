@@ -19,7 +19,7 @@ export const brand = {
 export const contact = {
   phone: '+1 657-678-1390',
   phoneHref: 'tel:+16576781390',
-  email: '', // add the real support email here; it stays hidden until then
+  email: 'support@zentradirect.com',
   hours: 'Monday to Friday, 8 a.m. to 8 p.m. ET',
 };
 
@@ -437,7 +437,7 @@ export const demo = {
 export const faq = {
   title: 'Frequently asked questions',
   items: [
-    { q: 'Who can open an account?', a: 'You must be a Canadian resident, 18 or older (or the age of majority in your province), and be able to verify your identity online.' },
+    { q: 'Who can open an account?', a: 'You must be 18 or older (or the age of majority where you live) and be able to verify your identity online.' },
     { q: 'How long does it take?', a: 'Most applications take about 15 minutes. You can save your progress and come back within 30 days.' },
     { q: 'Is there a minimum deposit?', a: 'No. You can open an account with any amount and add money when you are ready.' },
     { q: 'Can I transfer my investments from another broker?', a: 'Yes. Start a transfer from your dashboard. We cover up to $150 of the fees your current institution charges.' },

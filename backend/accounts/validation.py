@@ -11,13 +11,16 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
+from .countries import COUNTRY_CODES
+
 PROVINCES = {
     'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT',
 }
 TITLES = {'mr', 'ms', 'mx'}
 
 POSTAL_RE = re.compile(r'^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$', re.I)
-PHONE_RE = re.compile(r'^\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$')
+PHONE_RE = re.compile(r'^\+?[\d\s().-]{7,22}$')  # any country; the digit count is checked too
+INTL_POSTAL_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9 -]{1,10}$')
 NAME_RE = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$")
 
 
@@ -100,8 +103,10 @@ def validate_step(step, data, today=None):
             errors['middle_name'] = ['Enter a valid middle name.']
         cleaned['middle_name'] = middle
         need('last_name', 'Last name', max_len=60, pattern=NAME_RE)
-        need('phone', 'Phone number', max_len=20, pattern=PHONE_RE,
-             msg='Enter a 10-digit phone number.')
+        phone = need('phone', 'Phone number', max_len=22, pattern=PHONE_RE,
+                     msg='Enter a valid phone number.')
+        if 'phone' not in errors and not 7 <= len(re.sub(r'\D', '', phone)) <= 15:
+            errors['phone'] = ['Enter a valid phone number.']
         raw_dob = _clean_str(data, 'date_of_birth', 10)
         try:
             dob = date.fromisoformat(raw_dob)
@@ -120,16 +125,21 @@ def validate_step(step, data, today=None):
         need('street', 'Street address')
         cleaned['unit'] = _clean_str(data, 'unit', 20)
         need('city', 'City', max_len=60)
-        need('province', 'Province or territory', PROVINCES, max_len=2)
-        postal = need('postal_code', 'Postal code', max_len=7, pattern=POSTAL_RE,
-                      msg='Enter a postal code like A1A 1A1.')
-        if 'postal_code' not in errors:
-            compact = postal.replace(' ', '').upper()
-            cleaned['postal_code'] = f'{compact[:3]} {compact[3:]}'
-        resident = data.get('canadian_resident') is True
-        if not resident:
-            errors['canadian_resident'] = ['You must be a resident of Canada to apply.']
-        cleaned['canadian_resident'] = resident
+        country = need('country', 'Country', COUNTRY_CODES, max_len=2)
+        if country == 'CA':
+            need('province', 'Province or territory', PROVINCES, max_len=2)
+            postal = need('postal_code', 'Postal code', max_len=7, pattern=POSTAL_RE,
+                          msg='Enter a postal code like A1A 1A1.')
+            if 'postal_code' not in errors:
+                compact = postal.replace(' ', '').upper()
+                cleaned['postal_code'] = f'{compact[:3]} {compact[3:]}'
+        else:
+            # Not every country has regions or postal codes, so both are optional.
+            cleaned['province'] = _clean_str(data, 'province', 60)
+            postal = _clean_str(data, 'postal_code', 12).upper()
+            if postal and not INTL_POSTAL_RE.match(postal):
+                errors['postal_code'] = ['Enter a valid postal code.']
+            cleaned['postal_code'] = postal
 
     elif step == 4:
         for key, msg in (
@@ -150,7 +160,7 @@ def validate_step(step, data, today=None):
 # password, which are handled by validate_registration above.
 STEP_FIELDS = {
     2: ['title', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'phone'],
-    3: ['street', 'unit', 'city', 'province', 'postal_code', 'canadian_resident'],
+    3: ['street', 'unit', 'city', 'country', 'province', 'postal_code'],
     4: ['accepted_terms', 'confirmed_accurate'],
 }
 

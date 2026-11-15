@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2, RotateCcw } from 'lucide-react';
-import AccountShell, { ExecutionNotice, SummaryBar } from '../components/AccountShell.jsx';
+import AccountShell, { SummaryBar } from '../components/AccountShell.jsx';
 import LiveMarket from '../components/LiveMarket.jsx';
 import {
   fieldErrors, getFunding, getHistory, getPositions, money, price, requestFunding,
   resetAccount, signed, useAccountSummary, usePoll,
 } from '../lib/trading.js';
 import { useAuth } from '../lib/auth.jsx';
+import { fullName, greeting } from '../lib/names.js';
 import { IdentityGate } from './Verify.jsx';
 
 const dateFmt = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
@@ -57,8 +58,9 @@ export function AccountHome() {
 
   return (
     <AccountShell>
-      <h1 className="page-title">Hello, {user?.first_name || user?.email?.split('@')[0]}</h1>
-      <ExecutionNotice account={account} />
+      <h1 className="page-title page-title--greeting">
+        <span className="greeting__time">{greeting()},</span> {fullName(user)}
+      </h1>
       <SummaryBar account={account} />
 
       <LiveMarket />
@@ -174,10 +176,11 @@ function FundingForm({ kind }) {
   return (
     <AccountShell>
       <h1 className="page-title">{title}</h1>
-      <ExecutionNotice account={account} />
+      {/* Withdrawing needs a verified identity: the prompt sits at the top until then. */}
+      {locked && <IdentityGate identity={identity} />}
       <SummaryBar account={account} />
 
-      {locked ? <IdentityGate identity={identity} /> : (
+      {locked ? null : (
       <div className="panel panel--form">
         {done ? (
           <div className="form-success">

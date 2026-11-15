@@ -13,9 +13,9 @@ from .models import Application, ContactMessage, IdentityVerification
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name', 'city', 'province', 'status',
+    list_display = ('user', 'first_name', 'last_name', 'city', 'country', 'status',
                     'current_step', 'updated_at')
-    list_filter = ('status', 'province')
+    list_filter = ('status', 'country')
     search_fields = ('user__email', 'first_name', 'last_name')
     readonly_fields = ('created_at', 'updated_at', 'submitted_at')
 
@@ -53,13 +53,13 @@ class IdentityVerificationAdmin(admin.ModelAdmin):
     def person(self, obj):
         return obj.user.email
 
-    @admin.display(description='Province')
+    @admin.display(description='Lives in')
     def where(self, obj):
-        return identity.PROVINCE_NAMES.get(obj.province, obj.province)
+        return identity.where_label(obj.country, obj.province)
 
     @admin.display(description='Document')
     def document(self, obj):
-        doc = identity.find_document(obj.province, obj.document_type) if obj.province in identity.PROVINCE_NAMES else None
+        doc = identity.find_document(obj.country, obj.province, obj.document_type)
         return doc['label'] if doc else obj.document_type
 
     @admin.display(description='Result', ordering='status')
@@ -126,7 +126,7 @@ class IdentityVerificationAdmin(admin.ModelAdmin):
                                       messages.SUCCESS)
                     return redirect('admin:accounts_identityverification_changelist')
         app = getattr(record.user, 'application', None)
-        doc = identity.find_document(record.province, record.document_type) if record.province in identity.PROVINCE_NAMES else None
+        doc = identity.find_document(record.country, record.province, record.document_type)
         photos = [('front', 'Front of the document', bool(record.front_image))]
         if record.back_image:
             photos.append(('back', 'Back of the document', True))
@@ -137,7 +137,7 @@ class IdentityVerificationAdmin(admin.ModelAdmin):
             'original': record,
             'title': f'Identity check: {record.full_name}',
             'record': record,
-            'province_name': identity.PROVINCE_NAMES.get(record.province, record.province),
+            'province_name': identity.where_label(record.country, record.province),
             'document_label': doc['label'] if doc else record.document_type,
             'application_name': f'{app.first_name} {app.last_name}'.strip() if app else '',
             'photos': photos,

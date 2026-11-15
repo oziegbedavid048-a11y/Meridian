@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronDown, CircleHelp, Globe, Lock, Menu, Phone, X } from 'lucide-react';
+import { ArrowRight, ChevronDown, CircleHelp, Globe, Lock, Mail, Menu, Phone, X } from 'lucide-react';
 import { nav, contact } from '../content/site.js';
 import { useAuth } from '../lib/auth.jsx';
 import { Logo, SmartLink } from './ui.jsx';
@@ -64,7 +64,6 @@ export default function Header() {
         <div className="container topbar__inner">
           <span className="topbar__note">Self-directed investing</span>
           <nav aria-label="Utility" className="topbar__links">
-            <a href={contact.phoneHref} className="topbar__link"><Phone size={15} aria-hidden="true" /> {contact.phone}</a>
             <Link to="/help" className="topbar__link"><CircleHelp size={15} aria-hidden="true" /> Help</Link>
             <button type="button" className="topbar__link" title="Version française bientôt disponible" aria-label="Français (coming soon)">
               <Globe size={15} aria-hidden="true" /> FR
@@ -182,6 +181,7 @@ export default function Header() {
             </>
           )}
           <a href={contact.phoneHref} className="drawer__phone"><Phone size={16} aria-hidden="true" /> {contact.phone}</a>
+          <a href={`mailto:${contact.email}`} className="drawer__phone"><Mail size={16} aria-hidden="true" /> {contact.email}</a>
         </div>
       </div>
     </header>

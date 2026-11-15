@@ -1,12 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { KIND_LABELS, getInstruments, price, usePoll } from '../lib/trading.js';
+import { KIND_LABELS, getInstruments, price, startingInstruments, usePoll } from '../lib/trading.js';
 
 const ORDER = ['stock', 'index', 'forex', 'crypto', 'commodity'];
 
 /** Live quotes on the dashboard, in the same Market Watch style as the terminal. */
 export default function LiveMarket() {
-  const [instruments, setInstruments] = useState([]);
+  // Show prices at once; live ones replace them within seconds.
+  const [instruments, setInstruments] = useState(startingInstruments);
+  const [live, setLive] = useState(false);
   const [ticks, setTicks] = useState({});
   const [kind, setKind] = useState('stock');
   const [failed, setFailed] = useState(false);
@@ -23,7 +25,10 @@ export default function LiveMarket() {
         prev.current[i.symbol] = i.bid;
       });
       setTicks((t) => ({ ...t, ...dirs }));
-      setInstruments(res.instruments);
+      if (res.instruments.length) {
+        setInstruments(res.instruments);
+        setLive(true);
+      }
       setUpdated(new Date());
       setFailed(false);
     } catch {
@@ -39,7 +44,9 @@ export default function LiveMarket() {
     <section className="mt-watch mt-watch--dash" aria-labelledby="lm-title">
       <header className="mt-pane-title">
         <span id="lm-title">Market Watch</span>
-        {updated && <span className="mt-pane-title__time">{updated.toLocaleTimeString('en-CA', { hour12: false })}</span>}
+        {live && updated
+          ? <span className="mt-pane-title__time">{updated.toLocaleTimeString('en-CA', { hour12: false })}</span>
+          : <span className="mt-pane-title__time">{failed ? 'Reconnecting…' : 'Connecting…'}</span>}
       </header>
       <div className="mt-kinds" role="group" aria-label="Market">
         {kinds.map((k) => (
