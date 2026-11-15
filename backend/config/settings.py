@@ -92,6 +92,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'config.ipfilter.IPFilterMiddleware',          # firewall rules first
     'config.security.SecurityHeadersMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # serves collected static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -172,6 +173,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # `manage.py collectstatic` writes the admin's files here
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    # Compressed copies so the admin's files load quickly once hosted.
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
