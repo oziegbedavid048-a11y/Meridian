@@ -1108,6 +1108,7 @@ function CloseBySheet({ trade, positions, onClose, onDone }) {
 const RING = 104; // radius of the ring of timeframes, in pixels
 
 function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
+  const openMenu = useAccountMenu();
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -1141,6 +1142,14 @@ function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
             <Icon size={22} aria-hidden="true" />
           </button>
         ))}
+        <div className="cx-center">
+          <button type="button" aria-label="Menu" title="Menu" onClick={() => { onClose(); openMenu(); }}>
+            <Menu size={22} aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="New order" title="New order" onClick={() => onTool('order')}>
+            <FilePlus2 size={22} aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1477,13 +1486,13 @@ export default function Terminal() {
   // One screen at a time on every size, so the chart has the whole window.
   const screen = pane;
   const panes = (settings.ind.rsi ? 1 : 0) + (settings.ind.macd ? 1 : 0); // indicator panes under the price
-  const chartHeight = Math.max(220, h - 130 - panes * 102 - (account?.margin_call ? 70 : 0));
+  const chartHeight = Math.max(220, h - 74 - panes * 102 - (account?.margin_call ? 70 : 0));
 
   return (
     <AccountShell wide bare>
-      <TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
+      {screen !== 'chart' && <TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
         onCrosshair={() => setCrosshair((v) => !v)} onIndicators={() => setShowSettings(true)}
-        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} />
+        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} />}
       {feedError && (
         <p className="feed-error" role="status">
           <AlertCircle size={16} aria-hidden="true" /> Prices are not updating right now. Trading is paused until the feed returns.
@@ -1525,6 +1534,11 @@ export default function Terminal() {
                   <span>{price(last.o, digits)} {price(last.h, digits)} {price(last.l, digits)} {price(last.c, digits)}</span>
                 )}
               </p>
+              {crosshair && tool === 'none' && (
+                <button type="button" className="cx-toolchip" onClick={() => setCrosshair(false)}>
+                  Crosshair <X size={14} aria-hidden="true" />
+                </button>
+              )}
               {tool !== 'none' && (
                 <button type="button" className="cx-toolchip" onClick={() => setTool('none')}>
                   {(OBJECT_TOOLS.find(([id]) => id === tool) || [null, 'Remove a line'])[1]} <X size={14} aria-hidden="true" />
@@ -1603,6 +1617,7 @@ export default function Terminal() {
             if (which === 'shapes') setShapesOpen(true);
             if (which === 'crosshair') setCrosshair((v) => !v);
             if (which === 'indicators') setShowSettings(true);
+            if (which === 'order') openOrder();
           }} />
       )}
       {pairsOpen && (
