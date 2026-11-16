@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Link, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine, ArrowLeft, ArrowUpFromLine, CandlestickChart, History, LayoutDashboard,
@@ -40,7 +40,11 @@ export function SummaryBar({ account }) {
   );
 }
 
-export default function AccountShell({ children, wide = false }) {
+/** Lets a page with its own top bar (the trade screen) open the account menu. */
+const AccountMenu = createContext(() => {});
+export const useAccountMenu = () => useContext(AccountMenu);
+
+export default function AccountShell({ children, wide = false, bare = false }) {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -66,7 +70,9 @@ export default function AccountShell({ children, wide = false }) {
   ));
 
   return (
-    <div className={`app-shell ${wide ? 'app-shell--wide' : ''}`}>
+    <AccountMenu.Provider value={() => setOpen(true)}>
+    <div className={`app-shell ${wide ? 'app-shell--wide' : ''} ${bare ? 'app-shell--bare' : ''}`}>
+      {!bare && (
       <header className="app-bar">
         <span className="app-bar__user" title={user.email}>{fullName(user)}</span>
         <button type="button" className="app-bar__out" onClick={handleSignOut}>
@@ -83,6 +89,7 @@ export default function AccountShell({ children, wide = false }) {
           {open ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
         </button>
       </header>
+      )}
 
       <div className={`app-scrim ${open ? 'is-open' : ''}`} onClick={() => setOpen(false)} aria-hidden="true" />
 
@@ -96,5 +103,6 @@ export default function AccountShell({ children, wide = false }) {
 
       <main id="main" className="app-main">{children}</main>
     </div>
+    </AccountMenu.Provider>
   );
 }

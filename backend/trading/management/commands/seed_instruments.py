@@ -17,14 +17,20 @@ K = Instrument.Kind
 
 # symbol, feed symbol, name, kind, quote ccy, digits, contract size, spread pts, leverage
 INSTRUMENTS = [
+    ('BTCUSD', 'BTC-USD', 'Bitcoin vs US Dollar', K.CRYPTO, 'USD', 2, '1', 4000, 2),
+    ('ETHUSD', 'ETH-USD', 'Ethereum vs US Dollar', K.CRYPTO, 'USD', 2, '1', 300, 2),
+    ('SOLUSD', 'SOL-USD', 'Solana vs US Dollar', K.CRYPTO, 'USD', 2, '1', 30, 2),
+    ('XRPUSD', 'XRP-USD', 'XRP vs US Dollar', K.CRYPTO, 'USD', 4, '1', 20, 2),
+    ('BNBUSD', 'BNB-USD', 'BNB vs US Dollar', K.CRYPTO, 'USD', 2, '1', 100, 2),
+    ('ADAUSD', 'ADA-USD', 'Cardano vs US Dollar', K.CRYPTO, 'USD', 4, '1', 20, 2),
+    ('DOGEUSD', 'DOGE-USD', 'Dogecoin vs US Dollar', K.CRYPTO, 'USD', 5, '1', 40, 2),
+    ('LTCUSD', 'LTC-USD', 'Litecoin vs US Dollar', K.CRYPTO, 'USD', 2, '1', 30, 2),
+
     ('EURUSD', 'EURUSD=X', 'Euro vs US Dollar', K.FOREX, 'USD', 5, '100000', 12, 30),
     ('GBPUSD', 'GBPUSD=X', 'British Pound vs US Dollar', K.FOREX, 'USD', 5, '100000', 16, 30),
     ('USDJPY', 'USDJPY=X', 'US Dollar vs Japanese Yen', K.FOREX, 'JPY', 3, '100000', 14, 30),
     ('USDCAD', 'USDCAD=X', 'US Dollar vs Canadian Dollar', K.FOREX, 'CAD', 5, '100000', 18, 30),
     ('AUDUSD', 'AUDUSD=X', 'Australian Dollar vs US Dollar', K.FOREX, 'USD', 5, '100000', 16, 30),
-
-    ('BTCUSD', 'BTC-USD', 'Bitcoin vs US Dollar', K.CRYPTO, 'USD', 2, '1', 4000, 2),
-    ('ETHUSD', 'ETH-USD', 'Ethereum vs US Dollar', K.CRYPTO, 'USD', 2, '1', 300, 2),
 
     ('AAPL', 'AAPL', 'Apple Inc.', K.STOCK, 'USD', 2, '1', 6, 5),
     ('MSFT', 'MSFT', 'Microsoft Corporation', K.STOCK, 'USD', 2, '1', 8, 5),

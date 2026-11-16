@@ -95,10 +95,18 @@ def get_prices(instruments):
     key = 'trading:mid:' + ','.join(sorted(by_feed))
     mids = cache.get(key)
     if mids is None:
-        raw = fetch_quotes(list(by_feed))
-        mids = {k: {'price': v['price'], 'previous_close': v.get('previous_close'),
-                    'day_low': v.get('day_low'), 'day_high': v.get('day_high')} for k, v in raw.items()}
-        cache.set(key, mids, QUOTE_TTL)
+        try:
+            raw = fetch_quotes(list(by_feed))
+        except Exception:
+            # A feed hiccup: keep showing the last good prices (up to an hour old) rather than none.
+            mids = cache.get(key + ':last')
+            if mids is None:
+                raise
+        else:
+            mids = {k: {'price': v['price'], 'previous_close': v.get('previous_close'),
+                        'day_low': v.get('day_low'), 'day_high': v.get('day_high')} for k, v in raw.items()}
+            cache.set(key, mids, QUOTE_TTL)
+            cache.set(key + ':last', mids, 3600)
 
     for feed_symbol, data in mids.items():
         inst = by_feed.get(feed_symbol)
@@ -129,7 +137,14 @@ def get_candles(instrument, timeframe='H1', limit=300):
         # safe='' so a symbol can never add path segments of its own
         url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + urllib.parse.quote(instrument.feed_symbol, safe='')
         url += '?' + urllib.parse.urlencode({'range': rng, 'interval': interval})
-        results = (_get_json(url).get('chart') or {}).get('result') or []
+        try:
+            results = (_get_json(url).get('chart') or {}).get('result') or []
+        except Exception:
+            # A feed hiccup: show the last good candles (up to an hour old) instead of nothing.
+            stale = cache.get(key + ':last')
+            if stale is None:
+                raise
+            return stale[-limit:]
         if not results:
             raise ValueError('No data for this instrument')
         result = results[0]
@@ -146,6 +161,7 @@ def get_candles(instrument, timeframe='H1', limit=300):
         if group > 1:
             bars = _group(bars, group)
         cache.set(key, bars, CANDLE_TTL)
+        cache.set(key + ':last', bars, 3600)
     return bars[-limit:]
 
 

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  AlertCircle, ArrowUpDown, CandlestickChart, ChevronRight, FilePlus2, Inbox, Loader2, Minus,
-  BarChart3, CalendarDays, Download, Eraser, Filter, LineChart, ListX, MousePointer2, MoveUpRight,
-  Newspaper, Plus, Rows3, Search, Settings2, Trash2, TrendingUp, X,
+  AlertCircle, ArrowLeft, Menu, ArrowUpDown, CandlestickChart, ChevronDown, ChevronRight, CircleDollarSign, Crosshair,
+  FilePlus2, Inbox, Loader2, Minus, BarChart3, CalendarDays, Download, Eraser, Filter, LineChart, ListX,
+  MoveUpRight, Newspaper, Plus, Rows3, Search, Settings2, Shapes, SquareFunction, Trash2, TrendingUp, X,
 } from 'lucide-react';
-import AccountShell from '../components/AccountShell.jsx';
+import AccountShell, { useAccountMenu } from '../components/AccountShell.jsx';
 import CandleChart from '../components/CandleChart.jsx';
 import { API_ROOT, api } from '../lib/api.js';
 import {
@@ -37,10 +37,10 @@ const TABS = [
   ['history', 'History', Inbox],
   ['news', 'News', Newspaper],
 ];
-const SETTINGS_KEY = 'hd-terminal-settings';
+const SETTINGS_KEY = 'hd-terminal-settings-v2';
 const DEFAULT_SETTINGS = {
   advanced: true, ohlc: true, levels: true, askLine: true,
-  type: 'candles', ind: { sma: false, ema: false, bb: false, rsi: false, macd: false },
+  type: 'candles', ind: { sma: true, ema: false, bb: false, rsi: true, macd: false },
 };
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -130,6 +130,25 @@ function OrderDialog({ instruments, symbol, defaultVolume, onClose, onPlaced }) 
   const inst = instruments.find((i) => i.symbol === sym);
   const digits = inst?.digits ?? 2;
   const point = 10 ** -digits;
+  const step = inst?.lot_step || 0.01;
+
+  // Recent bid and ask prices, drawn as a small live chart under the order form.
+  const [tape, setTape] = useState([]);
+  useEffect(() => { setTape([]); }, [sym]);
+  useEffect(() => {
+    if (inst?.bid == null || inst?.ask == null) return;
+    setTape((t) => {
+      const lastTick = t[t.length - 1];
+      if (lastTick && lastTick.bid === inst.bid && lastTick.ask === inst.ask) return t;
+      return [...t.slice(-89), { bid: inst.bid, ask: inst.ask }];
+    });
+  }, [inst?.bid, inst?.ask]);
+
+  const bumpVolume = (by) => {
+    const current = parseFloat(volume);
+    const next = Math.max(step, (Number.isFinite(current) ? current : 0) + by);
+    setVolume(next.toFixed(2));
+  };
 
   useEffect(() => { firstRef.current?.focus(); }, []);
   useEffect(() => {
@@ -159,111 +178,169 @@ function OrderDialog({ instruments, symbol, defaultVolume, onClose, onPlaced }) 
     }
   };
 
-  return (
-    <div className="mt-scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mt-dialog" role="dialog" aria-modal="true" aria-labelledby="order-title">
-        <header className="mt-dialog__bar">
-          <h2 id="order-title">Order</h2>
-          <button type="button" onClick={onClose} aria-label="Close"><X size={16} /></button>
-        </header>
+  const pending = mode !== 'market';
+  const typeLabel = mode === 'market' ? 'Market Execution' : PENDING_TYPES.find(([v]) => v === mode)?.[1];
 
-        {done ? (
-          <div className="mt-dialog__body mt-done" role="status">
-            <p className="mt-done__line">
-              #{done.id} {done.side} {done.volume.toFixed(2)} {done.symbol} at{' '}
-              {price(done.status === 'pending' ? done.entry_price : done.open_price, done.digits)}
-              {done.stop_loss ? ` sl: ${price(done.stop_loss, done.digits)}` : ''}
-              {done.take_profit ? ` tp: ${price(done.take_profit, done.digits)}` : ''}
+  return (
+    <div className="ox" role="dialog" aria-modal="true" aria-labelledby="order-title">
+      <header className="ox-bar">
+        <button type="button" className="ox-back" onClick={onClose} aria-label="Back"><ArrowLeft size={24} aria-hidden="true" /></button>
+        <label className="ox-symbol">
+          <span id="order-title" className="ox-symbol__code">{sym}</span>
+          <span className="ox-symbol__name">{inst?.name}</span>
+          <select ref={firstRef} value={sym} aria-label="Pair"
+            onChange={(e) => { setSym(e.target.value); setSl(''); setTp(''); setAtPrice(''); setDone(null); }}>
+            {instruments.map((i) => <option key={i.symbol} value={i.symbol}>{i.symbol}, {i.name}</option>)}
+          </select>
+        </label>
+      </header>
+
+      {done ? (
+        <div className="ox-done" role="status">
+          <p className="ox-done__line">
+            #{done.id} {done.side} {done.volume.toFixed(2)} {done.symbol} at{' '}
+            {price(done.status === 'pending' ? done.entry_price : done.open_price, done.digits)}
+          </p>
+          {(done.stop_loss || done.take_profit) && (
+            <p className="ox-done__levels">
+              {done.stop_loss ? `sl: ${price(done.stop_loss, done.digits)}` : ''}
+              {done.stop_loss && done.take_profit ? '  ' : ''}
+              {done.take_profit ? `tp: ${price(done.take_profit, done.digits)}` : ''}
             </p>
-            <p>{done.status === 'pending' ? 'Pending order placed.' : 'Order filled.'}</p>
-            <button type="button" className="mt-btn mt-btn--wide" onClick={onClose}>OK</button>
-          </div>
-        ) : (
-          <div className="mt-dialog__body">
+          )}
+          <p>{done.status === 'pending' ? 'Pending order placed.' : 'Order filled.'}</p>
+          <button type="button" className="ox-ok" onClick={onClose}>OK</button>
+        </div>
+      ) : (
+        <>
+          <div className="ox-body">
             {errors.form && <p className="mt-alert" role="alert"><AlertCircle size={15} aria-hidden="true" /> {errors.form}</p>}
 
-            <div className={`mt-field ${errors.symbol ? 'has-error' : ''}`}>
-              <label htmlFor="o-symbol">Symbol</label>
-              <select id="o-symbol" ref={firstRef} value={sym} onChange={(e) => { setSym(e.target.value); setSl(''); setTp(''); setAtPrice(''); }}>
-                {instruments.map((i) => <option key={i.symbol} value={i.symbol}>{i.symbol}, {i.name}</option>)}
-              </select>
-              {errors.symbol && <p className="mt-field__err" role="alert">{errors.symbol}</p>}
-            </div>
-
-            <Stepper id="o-volume" label="Volume" value={volume} onChange={setVolume}
-              step={inst?.lot_step || 0.01} digits={2} error={errors.volume} />
-
-            <div className="mt-row2">
-              <Stepper id="o-sl" label="Stop Loss" value={sl} onChange={setSl} step={point * 10} digits={digits}
-                error={errors.stop_loss} placeholder={(0).toFixed(digits)} />
-              <Stepper id="o-tp" label="Take Profit" value={tp} onChange={setTp} step={point * 10} digits={digits}
-                error={errors.take_profit} placeholder={(0).toFixed(digits)} />
-            </div>
-
-            <div className="mt-field">
-              <label htmlFor="o-comment">Comment</label>
-              <input id="o-comment" type="text" maxLength={120} value={comment} onChange={(e) => setComment(e.target.value)} />
-            </div>
-
-            <Stepper id="o-trail" label="Trailing stop (points)" value={trail} onChange={setTrail}
-              step={10} digits={0} error={errors.trailing_points} placeholder="Off" />
-
-            <div className="mt-field">
-              <label htmlFor="o-mode">Type</label>
-              <select id="o-mode" value={mode} onChange={(e) => setMode(e.target.value)}>
+            <label className="ox-type">
+              <span className="sr-only">Order type</span>
+              <select value={mode} onChange={(e) => setMode(e.target.value)}>
                 <option value="market">Market Execution</option>
-                <option value="pending">Pending Order</option>
+                {PENDING_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
+              <span className="ox-type__label" aria-hidden="true">{typeLabel}</span>
+            </label>
+
+            <div className={`ox-vol ${errors.volume ? 'has-error' : ''}`} role="group" aria-label="Volume in lots">
+              <button type="button" onClick={() => bumpVolume(-0.1)}>-0.1</button>
+              <button type="button" onClick={() => bumpVolume(-step)}>-{step}</button>
+              <input type="text" inputMode="decimal" value={volume} aria-label="Volume in lots"
+                onChange={(e) => setVolume(e.target.value.replace(/[^0-9.]/g, ''))} />
+              <button type="button" onClick={() => bumpVolume(step)}>+{step}</button>
+              <button type="button" onClick={() => bumpVolume(0.1)}>+0.1</button>
+            </div>
+            {errors.volume && <p className="mt-field__err" role="alert">{errors.volume}</p>}
+
+            <p className="ox-quote" aria-live="off">
+              <BigPrice value={inst?.bid} digits={digits} dir="down" />
+              <BigPrice value={inst?.ask} digits={digits} dir="up" />
+            </p>
+
+            {pending && (
+              <>
+                <LevelField id="o-at" label={mode.includes('stop_limit') ? 'Stop price' : 'Price'} value={atPrice} onChange={setAtPrice}
+                  step={point * 10} digits={digits} error={errors.entry_price} start={inst?.ask} />
+                {mode.includes('stop_limit') && (
+                  <LevelField id="o-limit" label="Limit price" value={limitAt} onChange={setLimitAt}
+                    step={point * 10} digits={digits} error={errors.limit_price} start={inst?.ask} />
+                )}
+              </>
+            )}
+
+            <div className="ox-levels">
+              <LevelField id="o-sl" label="Stop loss" tone="sl" value={sl} onChange={setSl} step={point * 10}
+                digits={digits} error={errors.stop_loss} start={inst?.bid} />
+              <LevelField id="o-tp" label="Take profit" tone="tp" value={tp} onChange={setTp} step={point * 10}
+                digits={digits} error={errors.take_profit} start={inst?.ask} />
             </div>
 
-            {mode === 'market' ? (
-              <fieldset className="mt-group">
-                <legend>Market Execution</legend>
-                <p className="mt-quote" aria-live="off">
-                  <span className="mt-quote__bid">{price(inst?.bid, digits)}</span>
-                  <span aria-hidden="true"> / </span>
-                  <span className="mt-quote__ask">{price(inst?.ask, digits)}</span>
-                </p>
-                <div className="mt-bigbtns">
-                  <button type="button" className="mt-sell" disabled={!!busy || inst?.bid == null} onClick={() => send('sell', 'market')}>
-                    {busy === 'sell' && <Loader2 size={15} className="spin" aria-hidden="true" />} Sell by Market
-                  </button>
-                  <button type="button" className="mt-buy" disabled={!!busy || inst?.ask == null} onClick={() => send('buy', 'market')}>
-                    {busy === 'buy' && <Loader2 size={15} className="spin" aria-hidden="true" />} Buy by Market
-                  </button>
-                </div>
-                <p className="mt-note">The order fills at the current market price.</p>
-              </fieldset>
-            ) : (
-              <fieldset className="mt-group">
-                <legend>Pending Order</legend>
-                <p className="mt-quote">
-                  <span className="mt-quote__bid">{price(inst?.bid, digits)}</span>
-                  <span aria-hidden="true"> / </span>
-                  <span className="mt-quote__ask">{price(inst?.ask, digits)}</span>
-                </p>
-                <div className="mt-row2">
-                  <div className="mt-field">
-                    <label htmlFor="o-ptype">Type</label>
-                    <select id="o-ptype" value={pendType} onChange={(e) => setPendType(e.target.value)}>
-                      {PENDING_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  </div>
-                  <Stepper id="o-at" label={pendType.includes('stop_limit') ? 'Stop price' : 'At price'} value={atPrice} onChange={setAtPrice} step={point * 10}
-                    digits={digits} error={errors.entry_price} placeholder={price(inst?.ask, digits)} />
-                </div>
-                {pendType.includes('stop_limit') && (
-                  <Stepper id="o-limit" label="Limit price" value={limitAt} onChange={setLimitAt} step={point * 10}
-                    digits={digits} error={errors.limit_price} placeholder={price(inst?.ask, digits)} />
-                )}
-                <button type="button" className="mt-btn mt-btn--wide" disabled={!!busy} onClick={() => send(undefined, pendType)}>
-                  {busy ? 'Placing…' : 'Place'}
-                </button>
-              </fieldset>
-            )}
+            <details className="ox-more">
+              <summary>Trailing stop and comment</summary>
+              <LevelField id="o-trail" label="Trailing stop (points)" value={trail} onChange={setTrail}
+                step={10} digits={0} error={errors.trailing_points} start={0} placeholder="Off" />
+              <div className="mt-field">
+                <label htmlFor="o-comment">Comment</label>
+                <input id="o-comment" type="text" maxLength={120} value={comment} onChange={(e) => setComment(e.target.value)} />
+              </div>
+            </details>
+
+            <TickTape tape={tape} digits={digits} />
           </div>
-        )}
+
+          <footer className="ox-actions">
+            {pending ? (
+              <button type="button" className="ox-place" disabled={!!busy} onClick={() => send(undefined, mode)}>
+                {busy ? 'Placing…' : `Place ${typeLabel}`}
+              </button>
+            ) : (
+              <>
+                <button type="button" className="ox-sell" disabled={!!busy || inst?.bid == null} onClick={() => send('sell', 'market')}>
+                  {busy === 'sell' ? <Loader2 size={18} className="spin" aria-hidden="true" /> : 'SELL'}
+                </button>
+                <span className="ox-actions__line" aria-hidden="true" />
+                <button type="button" className="ox-buy" disabled={!!busy || inst?.ask == null} onClick={() => send('buy', 'market')}>
+                  {busy === 'buy' ? <Loader2 size={18} className="spin" aria-hidden="true" /> : 'BUY'}
+                </button>
+              </>
+            )}
+          </footer>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** A price level with minus and plus either side, underlined red (stop loss) or green (take profit). */
+function LevelField({ id, label, value, onChange, step, digits, error, tone = '', start, placeholder }) {
+  const bump = (dir) => {
+    const current = parseFloat(value);
+    const base = Number.isFinite(current) && current > 0 ? current : Number(start) || 0;
+    onChange(Math.max(0, base + dir * step).toFixed(digits));
+  };
+  return (
+    <div className={`ox-level ${tone ? `ox-level--${tone}` : ''} ${error ? 'has-error' : ''}`}>
+      <label htmlFor={id} className="ox-level__label">{label}</label>
+      <div className="ox-level__row">
+        <button type="button" onClick={() => bump(-1)} aria-label={`Lower ${label}`}><Minus size={18} aria-hidden="true" /></button>
+        <input id={id} type="text" inputMode="decimal" value={value} placeholder={placeholder ?? (0).toFixed(digits)}
+          onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ''))}
+          aria-invalid={error ? 'true' : undefined} aria-describedby={error ? `${id}-err` : undefined} />
+        <button type="button" onClick={() => bump(1)} aria-label={`Raise ${label}`}><Plus size={18} aria-hidden="true" /></button>
       </div>
+      {error && <p id={`${id}-err`} className="mt-field__err" role="alert">{error}</p>}
+    </div>
+  );
+}
+
+/** The last few dozen bid (blue) and ask (red) prices as step lines. */
+function TickTape({ tape: ticks, digits }) {
+  const W = 320;
+  const H = 140;
+  // One price so far: draw it as a flat line straight away.
+  const tape = ticks.length === 1 ? [ticks[0], ticks[0]] : ticks;
+  if (tape.length < 2) {
+    return <div className="ox-tape ox-tape--wait" aria-hidden="true"><span>Waiting for the next price…</span></div>;
+  }
+  const all = tape.flatMap((t) => [t.bid, t.ask]);
+  const hi = Math.max(...all);
+  const lo = Math.min(...all);
+  const span = hi - lo || hi * 0.0001 || 1;
+  const y = (v) => 8 + ((hi - v) / span) * (H - 16);
+  const x = (i) => (i / (tape.length - 1)) * (W - 70);
+  const steps = (key) => tape.map((t, i) => (i ? `H${x(i).toFixed(1)} V${y(t[key]).toFixed(1)}` : `M0,${y(t[key]).toFixed(1)}`)).join(' ');
+  const now = tape[tape.length - 1];
+  return (
+    <div className="ox-tape" aria-hidden="true">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        <path d={steps('ask')} className="ox-tape__ask" />
+        <path d={steps('bid')} className="ox-tape__bid" />
+      </svg>
+      <span className="ox-tape__tag ox-tape__tag--ask" style={{ top: `${(y(now.ask) / H) * 100}%` }}>{price(now.ask, digits)}</span>
+      <span className="ox-tape__tag ox-tape__tag--bid" style={{ top: `${(y(now.bid) / H) * 100}%` }}>{price(now.bid, digits)}</span>
     </div>
   );
 }
@@ -1027,12 +1104,188 @@ function CloseBySheet({ trade, positions, onClose, onDone }) {
   );
 }
 
+/* ---------- Circle menu: timeframes around the ring, tools in the middle ---------- */
+const RING = 104; // radius of the ring of timeframes, in pixels
+
+function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  // Clockwise from M1 on the left, over the top, to MN at the bottom right;
+  // the three tools sit on the bottom left of the ring. Angles: 0 = right, 90 = down.
+  const start = 165;
+  const sweep = 240;
+  const onRing = (deg) => {
+    const a = (deg * Math.PI) / 180;
+    return `translate(${Math.cos(a) * RING}px, ${Math.sin(a) * RING}px) translate(-50%, -50%)`;
+  };
+  return (
+    <div className="cx-scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="cx-ring" role="dialog" aria-label="Timeframe and tools" style={{ left: at.x, top: at.y }}>
+        {TIMEFRAMES.map((tf, i) => {
+          const deg = start + (sweep / (TIMEFRAMES.length - 1)) * i;
+          return (
+            <button key={tf} type="button" className={`cx-tf ${tf === timeframe ? 'is-on' : ''}`}
+              style={{ transform: onRing(deg) }}
+              aria-pressed={tf === timeframe} onClick={() => { onTimeframe(tf); onClose(); }}>
+              {tf}
+            </button>
+          );
+        })}
+        {[[135, 'shapes', 'Objects', Shapes], [105, 'crosshair', 'Crosshair', Crosshair],
+          [75, 'indicators', 'Indicators', SquareFunction]].map(([deg, id, label, Icon]) => (
+          <button key={id} type="button" className="cx-tool" style={{ transform: onRing(deg) }}
+            aria-label={label} title={label} onClick={() => onTool(id)}>
+            <Icon size={22} aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Pairs listed down the right of the chart; crypto first. */
+function PairList({ instruments, current, onPick, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const order = { crypto: 0, forex: 1, commodity: 2, index: 3, stock: 4 };
+  const list = [...instruments].sort((a, b) => (order[a.kind] ?? 9) - (order[b.kind] ?? 9));
+  return (
+    <div className="cx-scrim cx-scrim--clear" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <ul className="cx-pairs" role="listbox" aria-label="Choose a pair">
+        {list.map((i) => (
+          <li key={i.symbol}>
+            <button type="button" role="option" aria-selected={i.symbol === current}
+              className={i.symbol === current ? 'is-on' : ''} onClick={() => { onPick(i.symbol); onClose(); }}>
+              <b>{i.symbol}</b>
+              <span>{price(i.bid, i.digits)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* Drawing tool icons, drawn to match the lines they make. */
+const OBJECT_TOOLS = [
+  ['vline', 'Vertical line', <path key="v" d="M12 3v18" />],
+  ['trend', 'Trend line', <path key="t" d="M4 20 20 4" />],
+  ['hline', 'Horizontal line', <path key="h" d="M3 12h18" />],
+  ['arrow', 'Arrow', <g key="a"><path d="M5 19 19 5" /><path d="M9 5h10v10" /></g>],
+  ['fib', 'Fibonacci retracement', <g key="f"><path d="M4 3v18M20 3v18" /><circle cx="12" cy="7" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="12" cy="17" r="1.8" /></g>],
+];
+const OBJECT_NAMES = { h: 'Horizontal line', v: 'Vertical line', t: 'Trend line', arrow: 'Arrow', fib: 'Fibonacci retracement' };
+
+function ToolIcon({ children }) {
+  return (
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+  );
+}
+
+/** Objects: pick a drawing tool, see the lines on this chart, remove one or all. */
+function ObjectsPage({ symbol, timeframe, drawings, digits, onPick, onRemove, onClearAll, onClose }) {
+  const [named, setNamed] = useState(false); // the + button lists the tools with their names
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const describe = (d) => {
+    if (d.type === 'h') return price(d.p, digits);
+    if (d.type === 'v') return new Date(d.t * 1000).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${price(d.a.p, digits)} to ${price(d.b.p, digits)}`;
+  };
+  return (
+    <div className="ob" role="dialog" aria-modal="true" aria-labelledby="ob-title">
+      <header className="ob-bar">
+        <button type="button" className="ob-icon" onClick={onClose} aria-label="Back to the chart"><ArrowLeft size={24} aria-hidden="true" /></button>
+        <h2 id="ob-title">Objects</h2>
+        <button type="button" className={`ob-icon ${named ? 'is-on' : ''}`} onClick={() => setNamed((v) => !v)}
+          aria-pressed={named} aria-label="Add an object"><Plus size={24} aria-hidden="true" /></button>
+        <button type="button" className="ob-icon" onClick={onClearAll} disabled={!drawings.length}
+          aria-label="Remove all objects"><Trash2 size={22} aria-hidden="true" /></button>
+      </header>
+
+      <div className={`ob-tools ${named ? 'ob-tools--named' : ''}`} role="toolbar" aria-label="Drawing tools">
+        {OBJECT_TOOLS.map(([id, label, icon]) => (
+          <button key={id} type="button" title={label} aria-label={label} onClick={() => onPick(id)}>
+            <ToolIcon>{icon}</ToolIcon>
+            {named && <span>{label}</span>}
+          </button>
+        ))}
+      </div>
+
+      <div className="ob-list">
+        {!drawings.length ? (
+          <p className="ob-empty">No objects on {symbol}, {timeframe} yet. Choose a tool above, then tap the chart.</p>
+        ) : (
+          <ul>
+            {drawings.map((d) => (
+              <li key={d.id}>
+                <span><b>{OBJECT_NAMES[d.type] || 'Line'}</b><small>{describe(d)}</small></span>
+                <button type="button" className="ob-icon" onClick={() => onRemove(d.id)} aria-label={`Remove ${OBJECT_NAMES[d.type] || 'line'}`}>
+                  <X size={20} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', history: 'History', news: 'News' };
+
+/** The trade screen's own top bar, in place of the dashboard header. */
+function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade }) {
+  const openMenu = useAccountMenu();
+  return (
+    <header className="tx-bar">
+      <button type="button" className="cx-icon" aria-label="Open menu" onClick={openMenu}>
+        <Menu size={24} aria-hidden="true" />
+      </button>
+      {screen !== 'chart' && <h1 className="tx-bar__title">{SCREEN_TITLES[screen]}</h1>}
+      <span className="cx-bar__gap" aria-hidden="true" />
+      {screen === 'chart' && (
+        <>
+          <button type="button" className={`cx-icon ${crosshair ? 'is-on' : ''}`} aria-pressed={crosshair}
+            aria-label="Crosshair" title="Crosshair" onClick={onCrosshair}>
+            <Crosshair size={22} aria-hidden="true" />
+          </button>
+          <button type="button" className="cx-icon" aria-label="Indicators" title="Indicators" onClick={onIndicators}>
+            <SquareFunction size={22} aria-hidden="true" />
+          </button>
+          <button type="button" className={`cx-icon ${tool !== 'none' ? 'is-on' : ''}`} aria-label="Objects"
+            title="Objects" onClick={onObjects}>
+            <Shapes size={22} aria-hidden="true" />
+          </button>
+          <button type="button" className="cx-icon" aria-label="Trade" title="Trade" disabled={!canTrade} onClick={onTrade}>
+            <CircleDollarSign size={22} aria-hidden="true" />
+          </button>
+          <button type="button" className="cx-icon" aria-label="New order" title="New order" disabled={!canTrade} onClick={onTrade}>
+            <FilePlus2 size={22} aria-hidden="true" />
+          </button>
+        </>
+      )}
+    </header>
+  );
+}
+
 /* ---------- Page ---------- */
 export default function Terminal() {
   const [params] = useSearchParams();
   const [instruments, setInstruments] = useState(startingInstruments); // live prices replace these within seconds
   const [ticks, setTicks] = useState({});
-  const [symbol, setSymbol] = useState(() => (params.get('symbol') || '').toUpperCase() || null);
+  const [symbol, setSymbol] = useState(() => (params.get('symbol') || '').toUpperCase()
+    || startingInstruments().find((i) => i.kind === 'crypto')?.symbol || null);
   const [timeframe, setTimeframe] = useState('H1');
   const [chart, setChart] = useState(null);
   const [chartLoading, setChartLoading] = useState(true);
@@ -1051,6 +1304,11 @@ export default function Terminal() {
   const [tool, setTool] = useState('none');
   const [drawings, setDrawings] = useState([]);
   const [clock, setClock] = useState('');
+  const [ring, setRing] = useState(null); // where the circle menu is open
+  const [pairsOpen, setPairsOpen] = useState(false);
+  const [shapesOpen, setShapesOpen] = useState(false);
+  const [crosshair, setCrosshair] = useState(false);
+  const plotRef = useRef(null);
   const prevBids = useRef({});
   const { w, h } = useViewport();
   const wide = w >= 1000;
@@ -1104,7 +1362,8 @@ export default function Terminal() {
       if (!res.instruments.length) return; // keep showing the last known prices
       setInstruments(res.instruments);
       setFeedError(false);
-      setSymbol((s) => (s && res.instruments.some((i) => i.symbol === s) ? s : res.instruments[0]?.symbol || null));
+      setSymbol((s) => (s && res.instruments.some((i) => i.symbol === s) ? s
+        : (res.instruments.find((i) => i.kind === 'crypto') || res.instruments[0])?.symbol || null));
     } catch {
       setFeedError(true);
     }
@@ -1120,25 +1379,43 @@ export default function Terminal() {
     }
   }, []);
 
+  const retryRef = useRef(null);
   const loadChart = useCallback(async () => {
     if (!symbol) return;
+    window.clearTimeout(retryRef.current);
     try {
-      setChart(await getCandles(symbol, timeframe));
-    } catch {
-      setChart(null);
-    } finally {
+      const data = await getCandles(symbol, timeframe);
+      setChart(data);
       setChartLoading(false);
+    } catch {
+      // Keep what is on screen and try again shortly; only give up the spinner after a few tries.
+      setChart((c) => (c && c.symbol === symbol && c.timeframe === timeframe ? c : null));
+      retryRef.current = window.setTimeout(() => loadChart(), 3000);
+      chartFails.current += 1;
+      if (chartFails.current >= 3) setChartLoading(false);
+      return;
     }
+    chartFails.current = 0;
   }, [symbol, timeframe]);
+  const chartFails = useRef(0);
+  useEffect(() => () => window.clearTimeout(retryRef.current), []);
 
-  usePoll(loadInstruments, 5000);
+  usePoll(loadInstruments, 2000); // prices tick every two seconds
   usePoll(loadPositions, 5000);
-  usePoll(loadChart, 20000, [symbol, timeframe]);
-  useEffect(() => { setChartLoading(true); }, [symbol, timeframe]);
+  usePoll(loadChart, 15000, [symbol, timeframe]);
+  useEffect(() => { setChartLoading(true); chartFails.current = 0; }, [symbol, timeframe]);
 
   const selected = instruments.find((i) => i.symbol === symbol) || null;
   const digits = chart?.digits ?? selected?.digits ?? 2;
-  const last = chart?.candles?.[chart.candles.length - 1];
+  const liveCandles = useMemo(() => {
+    const list = chart?.candles || [];
+    const bid = selected?.bid;
+    if (!list.length || bid == null) return list;
+    const tail = list[list.length - 1];
+    const moved = { ...tail, c: bid, h: Math.max(tail.h, bid), l: Math.min(tail.l, bid) };
+    return [...list.slice(0, -1), moved];
+  }, [chart, selected?.bid]);
+  const last = liveCandles[liveCandles.length - 1];
 
   const lines = useMemo(() => (settings.levels ? positions
     .filter((p) => p.symbol === symbol)
@@ -1148,7 +1425,8 @@ export default function Terminal() {
       { kind: 'tp', tradeId: p.id, price: p.take_profit, label: 'tp', draggable: true },
     ]) : []), [positions, symbol, settings.levels]);
 
-  // One-click trading from the chart screen.
+  // One-click trading (kept for keyboard shortcuts and future use).
+  // eslint-disable-next-line no-unused-vars
   const oneClick = async (side) => {
     if (!selected) return;
     setBusy(side);
@@ -1196,12 +1474,16 @@ export default function Terminal() {
   const showChart = (s) => { setSymbol(s); setPane('chart'); setPicked(null); };
   const openOrder = (s) => { setPicked(null); setOrderFor(s || symbol || instruments[0]?.symbol); };
   const pickedInst = instruments.find((i) => i.symbol === picked);
-  // On a wide screen the quotes list is always open, so its tab shows the chart.
-  const screen = wide && pane === 'quotes' ? 'chart' : pane;
-  const chartHeight = Math.max(260, h - (wide ? 330 : 372));
+  // One screen at a time on every size, so the chart has the whole window.
+  const screen = pane;
+  const panes = (settings.ind.rsi ? 1 : 0) + (settings.ind.macd ? 1 : 0); // indicator panes under the price
+  const chartHeight = Math.max(220, h - 130 - panes * 102 - (account?.margin_call ? 70 : 0));
 
   return (
-    <AccountShell wide>
+    <AccountShell wide bare>
+      <TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
+        onCrosshair={() => setCrosshair((v) => !v)} onIndicators={() => setShowSettings(true)}
+        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} />
       {feedError && (
         <p className="feed-error" role="status">
           <AlertCircle size={16} aria-hidden="true" /> Prices are not updating right now. Trading is paused until the feed returns.
@@ -1218,42 +1500,13 @@ export default function Terminal() {
       )}
 
       <div className="mx" data-screen={screen}>
-        {(wide || screen === 'quotes') && (
+        {screen === 'quotes' && (
           <Quotes instruments={instruments} ticks={ticks} selected={symbol} advanced={settings.advanced}
             clock={clock} onPick={setPicked} />
         )}
 
         {screen === 'chart' && (
           <section className="mx-screen mx-chart" aria-label="Chart">
-            <header className="mx-head">
-              <h2>{selected ? selected.symbol : '—'}</h2>
-              <label className="mx-tfpick">
-                <span className="sr-only">Timeframe</span>
-                <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
-                  {TIMEFRAMES.map((tf) => <option key={tf} value={tf}>{tf}</option>)}
-                </select>
-              </label>
-              <button type="button" className="mx-icon" onClick={() => setShowSettings(true)} aria-label="Chart settings">
-                <Settings2 size={22} aria-hidden="true" />
-              </button>
-              <button type="button" className="mx-icon" onClick={() => openOrder()} disabled={!instruments.length} aria-label="New order">
-                <FilePlus2 size={22} aria-hidden="true" />
-              </button>
-            </header>
-
-            <div className="mx-oneclick" role="group" aria-label="One-click trading">
-              <button type="button" className="mx-oc mx-oc--sell" disabled={!selected?.bid || !!busy} onClick={() => oneClick('sell')}>
-                <span>SELL</span><b>{price(selected?.bid, selected?.digits ?? 2)}</b>
-              </button>
-              <label className="mx-oc__vol">
-                <span className="sr-only">Volume in lots</span>
-                <input type="text" inputMode="decimal" value={volume}
-                  onChange={(e) => setVolume(e.target.value.replace(/[^0-9.]/g, ''))} />
-              </label>
-              <button type="button" className="mx-oc mx-oc--buy" disabled={!selected?.ask || !!busy} onClick={() => oneClick('buy')}>
-                <span>BUY</span><b>{price(selected?.ask, selected?.digits ?? 2)}</b>
-              </button>
-            </div>
 
             {status && (
               <p className={`mx-status ${status.ok ? 'is-ok' : 'is-bad'}`} role="status">
@@ -1262,36 +1515,23 @@ export default function Terminal() {
               </p>
             )}
 
-            <div className="mx-tools" role="toolbar" aria-label="Chart tools">
-              {[['none', 'Move and zoom', MousePointer2], ['hline', 'Horizontal line', Minus],
-                ['trend', 'Trend line', MoveUpRight], ['erase', 'Remove a line', Eraser]].map(([id, label, Icon]) => (
-                <button key={id} type="button" className={tool === id ? 'is-on' : ''} aria-pressed={tool === id}
-                  aria-label={label} title={label} onClick={() => setTool(id)}>
-                  <Icon size={20} aria-hidden="true" />
-                </button>
-              ))}
-              <button type="button" aria-label="Remove all my lines" title="Remove all my lines"
-                disabled={!drawings.length} onClick={() => { saveDrawings([]); setTool('none'); }}>
-                <Trash2 size={20} aria-hidden="true" />
-              </button>
-              <span className="mx-tools__gap" aria-hidden="true" />
-              {[['candles', 'Candles', CandlestickChart], ['bars', 'Bars', BarChart3], ['line', 'Line', LineChart]].map(([id, label, Icon]) => (
-                <button key={id} type="button" className={settings.type === id ? 'is-on' : ''} aria-pressed={settings.type === id}
-                  aria-label={`${label} chart`} title={`${label} chart`} onClick={() => setSettings((st) => ({ ...st, type: id }))}>
-                  <Icon size={20} aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-
-            <div className="mx-chart__plot">
+            <div className="mx-chart__plot cx-plot" ref={plotRef}>
               <p className="mx-chart__info">
-                <b>{selected ? `${selected.symbol}, ${timeframe}` : ''}</b>
+                <button type="button" className="cx-pairbtn" onClick={() => setPairsOpen(true)} aria-haspopup="listbox"
+                  aria-label={`${selected?.symbol || ''}, ${timeframe}. Change pair`}>
+                  {selected ? `${selected.symbol}, ${timeframe}` : ''} <ChevronDown size={14} aria-hidden="true" />
+                </button>
                 {settings.ohlc && last && (
                   <span>{price(last.o, digits)} {price(last.h, digits)} {price(last.l, digits)} {price(last.c, digits)}</span>
                 )}
               </p>
+              {tool !== 'none' && (
+                <button type="button" className="cx-toolchip" onClick={() => setTool('none')}>
+                  {(OBJECT_TOOLS.find(([id]) => id === tool) || [null, 'Remove a line'])[1]} <X size={14} aria-hidden="true" />
+                </button>
+              )}
               <CandleChart
-                candles={chart?.candles || []}
+                candles={liveCandles}
                 digits={digits}
                 timeframe={timeframe}
                 bid={selected?.bid ?? null}
@@ -1303,8 +1543,18 @@ export default function Terminal() {
                 indicators={settings.ind}
                 drawings={drawings}
                 tool={tool}
+                crosshair={crosshair}
+                compact
                 onDrawingsChange={saveDrawings}
                 onLevelChange={changeLevel}
+                onTap={({ clientX, clientY }) => {
+                  // Open the circle menu where the chart was tapped, kept fully on screen.
+                  const margin = RING + 30;
+                  setRing({
+                    x: Math.min(Math.max(clientX, margin), window.innerWidth - margin),
+                    y: Math.min(Math.max(clientY, margin + 20), window.innerHeight - margin - 70),
+                  });
+                }}
               />
             </div>
           </section>
@@ -1345,6 +1595,25 @@ export default function Terminal() {
       )}
 
       {depthFor && <DepthSheet symbol={depthFor} onClose={() => setDepthFor(null)} />}
+
+      {ring && (
+        <CircleMenu at={ring} timeframe={timeframe} onTimeframe={setTimeframe} onClose={() => setRing(null)}
+          onTool={(which) => {
+            setRing(null);
+            if (which === 'shapes') setShapesOpen(true);
+            if (which === 'crosshair') setCrosshair((v) => !v);
+            if (which === 'indicators') setShowSettings(true);
+          }} />
+      )}
+      {pairsOpen && (
+        <PairList instruments={instruments} current={symbol} onPick={setSymbol} onClose={() => setPairsOpen(false)} />
+      )}
+      {shapesOpen && (
+        <ObjectsPage symbol={symbol} timeframe={timeframe} drawings={drawings} digits={digits}
+          onPick={(id) => { setTool(id); setShapesOpen(false); setPane('chart'); }}
+          onRemove={(id) => saveDrawings(drawings.filter((d) => d.id !== id))}
+          onClearAll={() => { saveDrawings([]); setTool('none'); }} onClose={() => setShapesOpen(false)} />
+      )}
 
       {showSettings && (
         <Sheet title="Settings" onClose={() => setShowSettings(false)}>

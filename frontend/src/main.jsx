@@ -10,6 +10,7 @@ import './styles/pages.css';
 import './styles/terminal.css';
 import './styles/mt.css';
 import './styles/mx.css';
+import './styles/trade.css';
 import './styles/verify.css';
 import './styles/mock.css';
 

@@ -2,9 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MARKET_SNAPSHOT } from '../content/marketSnapshot.js';
 import { api } from './api.js';
 
+const lastGood = {};
 export const getInstruments = async () => {
   const res = await api('/trading/instruments/');
-  if (res?.instruments?.length) rememberInstruments(res.instruments);
+  if (res?.instruments?.length) {
+    // A market that comes back without a price keeps the last one we had, so nothing goes blank.
+    res.instruments = res.instruments.map((i) => (i.bid == null && lastGood[i.symbol] ? { ...lastGood[i.symbol], ...i, bid: lastGood[i.symbol].bid, ask: lastGood[i.symbol].ask } : i));
+    res.instruments.forEach((i) => { if (i.bid != null) lastGood[i.symbol] = i; });
+    rememberInstruments(res.instruments);
+  }
   return res;
 };
 
@@ -16,7 +22,10 @@ const LAST_PRICES_KEY = 'market-last-prices';
 export function startingInstruments() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(LAST_PRICES_KEY) || 'null');
-    if (Array.isArray(saved) && saved.length && saved.every((i) => i && i.symbol && i.kind)) return saved;
+    if (Array.isArray(saved) && saved.length && saved.every((i) => i && i.symbol && i.kind)) {
+      saved.forEach((i) => { if (i.bid != null) lastGood[i.symbol] = i; });
+      return saved;
+    }
   } catch {
     /* storage blocked or corrupt: use the snapshot */
   }

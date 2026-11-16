@@ -55,6 +55,10 @@ function pathOf(values, x, y) {
   return d;
 }
 
+// Fibonacci retracement levels, as fractions of the move.
+export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+const TWO_POINT = { trend: 't', arrow: 'arrow', fib: 'fib' };
+
 function distToSegment(px, py, ax, ay, bx, by) {
   const dx = bx - ax;
   const dy = by - ay;
@@ -78,6 +82,9 @@ export default function CandleChart({
   tool = 'none',
   onDrawingsChange = null,
   onLevelChange = null,
+  onTap = null,       // a quick tap that did not move the chart (opens the circle menu)
+  crosshair = false,  // keep the crosshair on for touch screens
+  compact = false,    // no hint line under the chart; the readout floats only when needed
 }) {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -222,6 +229,12 @@ export default function CandleChart({
 
   const hitDrawing = (px, py) => drawings.find((d) => {
     if (d.type === 'h') return Math.abs(plot.y(d.p) - py) <= HIT;
+    if (d.type === 'v') return Math.abs(gx(d.t) - px) <= HIT;
+    if (d.type === 'fib') {
+      const [x1, x2] = [gx(d.a.t), gx(d.b.t)].sort((m, n) => m - n);
+      return px >= x1 - HIT && FIB_LEVELS.some((f) => Math.abs(plot.y(d.b.p + (d.a.p - d.b.p) * f) - py) <= HIT)
+        && px <= Math.max(x2, PAD.left + plot.w);
+    }
     return distToSegment(px, py, gx(d.a.t), plot.y(d.a.p), gx(d.b.t), plot.y(d.b.p)) <= HIT;
   });
 
@@ -229,11 +242,13 @@ export default function CandleChart({
     const c = toChart(e);
     if (tool === 'hline') {
       addDrawing({ type: 'h', p: c.p });
-    } else if (tool === 'trend') {
+    } else if (tool === 'vline') {
+      addDrawing({ type: 'v', t: c.t });
+    } else if (TWO_POINT[tool]) {
       if (!pending) {
         setPending({ t: c.t, p: c.p });
       } else {
-        addDrawing({ type: 't', a: pending, b: { t: c.t, p: c.p } });
+        addDrawing({ type: TWO_POINT[tool], a: pending, b: { t: c.t, p: c.p } });
         setPending(null);
       }
     } else if (tool === 'erase') {
@@ -247,7 +262,7 @@ export default function CandleChart({
     if (!plot) return;
     const { px, py } = local(e);
     const i = Math.floor((px - PAD.left) / plot.step);
-    setCursor(tool === 'trend' && pending ? toChart(e) : null);
+    setCursor(TWO_POINT[tool] && pending ? toChart(e) : null);
     if (i < 0 || i >= shown.length) { setHover(null); return; }
     setHover({ i, y: py });
   };
@@ -265,9 +280,12 @@ export default function CandleChart({
     const [a, b] = [...pointers.current.values()];
     return Math.hypot(a.x - b.x, a.y - b.y);
   };
+  const tapStart = useRef(null);
   const onPointerDown = (e) => {
     if (!plot) return;
     if (tool !== 'none') { drawWith(e); return; }
+    tapStart.current = pointers.current.size === 0 ? { x: e.clientX, y: e.clientY, at: Date.now() } : null;
+    if (crosshair) onMove(e);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     capture(e);
     gesture.current = pointers.current.size === 2
@@ -278,6 +296,7 @@ export default function CandleChart({
   const onPointerMove = (e) => {
     if (!pointers.current.has(e.pointerId)) { onMove(e); return; }
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (crosshair) { onMove(e); return; } // crosshair mode: the finger moves the crosshair, not the chart
     const g = gesture.current;
     if (!g || !plot) return;
     if (g.kind === 'pinch' && pointers.current.size === 2) {
@@ -287,6 +306,12 @@ export default function CandleChart({
     }
   };
   const onPointerUp = (e) => {
+    const t = tapStart.current;
+    if (t && e.type === 'pointerup' && pointers.current.size === 1 && !crosshair
+        && Math.hypot(e.clientX - t.x, e.clientY - t.y) < 8 && Date.now() - t.at < 600 && onTap) {
+      onTap({ clientX: e.clientX, clientY: e.clientY });
+    }
+    tapStart.current = null;
     pointers.current.delete(e.pointerId);
     gesture.current = null;
     if (pointers.current.size === 1) {
@@ -484,18 +509,53 @@ export default function CandleChart({
             {series.ema && <path d={pathOf(cut(series.ema), (i) => plot.x(i), plot.y)} className="chart__ind chart__ind--ema" />}
 
             {/* the client's own drawings */}
-            {drawings.map((d) => (d.type === 'h' ? (
-              <g key={d.id} className="chart__drawing">
-                <line x1={PAD.left} x2={PAD.left + plot.w} y1={plot.y(d.p)} y2={plot.y(d.p)} />
-                <text x={PAD.left + plot.w - 4} y={plot.y(d.p) - 4} textAnchor="end">{fmt(d.p)}</text>
-              </g>
-            ) : (
-              <g key={d.id} className="chart__drawing">
-                <line x1={gx(d.a.t)} y1={plot.y(d.a.p)} x2={gx(d.b.t)} y2={plot.y(d.b.p)} />
-                <circle cx={gx(d.a.t)} cy={plot.y(d.a.p)} r="3.5" />
-                <circle cx={gx(d.b.t)} cy={plot.y(d.b.p)} r="3.5" />
-              </g>
-            )))}
+            <defs>
+              <marker id="chart-arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" className="chart__arrowhead" />
+              </marker>
+            </defs>
+            {drawings.map((d) => {
+              if (d.type === 'h') {
+                return (
+                  <g key={d.id} className="chart__drawing">
+                    <line x1={PAD.left} x2={PAD.left + plot.w} y1={plot.y(d.p)} y2={plot.y(d.p)} />
+                    <text x={PAD.left + plot.w - 4} y={plot.y(d.p) - 4} textAnchor="end">{fmt(d.p)}</text>
+                  </g>
+                );
+              }
+              if (d.type === 'v') {
+                return (
+                  <g key={d.id} className="chart__drawing">
+                    <line x1={gx(d.t)} x2={gx(d.t)} y1={PAD.top} y2={PAD.top + plot.h} />
+                  </g>
+                );
+              }
+              if (d.type === 'fib') {
+                const x1 = Math.min(gx(d.a.t), gx(d.b.t));
+                return (
+                  <g key={d.id} className="chart__drawing chart__drawing--fib">
+                    <line className="chart__fib-base" x1={gx(d.a.t)} y1={plot.y(d.a.p)} x2={gx(d.b.t)} y2={plot.y(d.b.p)} />
+                    {FIB_LEVELS.map((f) => {
+                      const level = d.b.p + (d.a.p - d.b.p) * f;
+                      return (
+                        <g key={f}>
+                          <line x1={x1} x2={PAD.left + plot.w} y1={plot.y(level)} y2={plot.y(level)} />
+                          <text x={x1 + 3} y={plot.y(level) - 3}>{(f * 100).toFixed(1)}  {fmt(level)}</text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              }
+              return (
+                <g key={d.id} className="chart__drawing">
+                  <line x1={gx(d.a.t)} y1={plot.y(d.a.p)} x2={gx(d.b.t)} y2={plot.y(d.b.p)}
+                    markerEnd={d.type === 'arrow' ? 'url(#chart-arrowhead)' : undefined} />
+                  <circle cx={gx(d.a.t)} cy={plot.y(d.a.p)} r="3.5" />
+                  {d.type !== 'arrow' && <circle cx={gx(d.b.t)} cy={plot.y(d.b.p)} r="3.5" />}
+                </g>
+              );
+            })}
             {pending && cursor && (
               <g className="chart__drawing chart__drawing--draft">
                 <line x1={gx(pending.t)} y1={plot.y(pending.p)} x2={gx(cursor.t)} y2={plot.y(cursor.p)} />
@@ -567,13 +627,15 @@ export default function CandleChart({
         )}
       </svg>
 
-      <div className="chart__readout" aria-live="off">
+      {(!compact || dragLevel || tool !== 'none' || (crosshair && hovered)) && (
+      <div className={`chart__readout ${compact ? 'chart__readout--float' : ''}`} aria-live="off">
         {dragLevel ? (
           <span>Release to set {dragLevel.line.kind === 'sl' ? 'stop loss' : 'take profit'} at <b>{fmt(dragLevel.price)}</b></span>
         ) : tool !== 'none' ? (
           <span className="chart__hint">
             {tool === 'hline' && 'Tap the chart to place a horizontal line.'}
-            {tool === 'trend' && (pending ? 'Tap a second point to finish the trend line.' : 'Tap a first point for the trend line.')}
+            {tool === 'vline' && 'Tap the chart to place a vertical line.'}
+            {TWO_POINT[tool] && (pending ? 'Tap a second point to finish.' : 'Tap the first point.')}
             {tool === 'erase' && 'Tap a line to remove it.'}
           </span>
         ) : hovered ? (
@@ -589,6 +651,7 @@ export default function CandleChart({
           <span className="chart__hint">Scroll or pinch to zoom. Drag to move through time. Drag a stop loss or take profit line to change it.</span>
         )}
       </div>
+      )}
     </div>
   );
 }

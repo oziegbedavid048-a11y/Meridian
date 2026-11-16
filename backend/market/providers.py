@@ -26,8 +26,19 @@ def _get_json(url):
     return outbound.get_json(url, timeout=TIMEOUT)
 
 
+SPARK_BATCH = 20  # the feed refuses more symbols than this in one request
+
+
 def fetch_quotes(symbols):
     """Return {symbol: {price, previous_close, name, currency, time}} for the symbols."""
+    symbols = list(symbols)
+    out = {}
+    for start in range(0, len(symbols), SPARK_BATCH):
+        out.update(_fetch_quote_batch(symbols[start:start + SPARK_BATCH]))
+    return out
+
+
+def _fetch_quote_batch(symbols):
     url = 'https://query1.finance.yahoo.com/v7/finance/spark?' + urllib.parse.urlencode(
         {'symbols': ','.join(symbols), 'range': '1d', 'interval': '5m'}
     )

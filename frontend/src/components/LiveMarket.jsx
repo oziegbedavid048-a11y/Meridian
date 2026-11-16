@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { KIND_LABELS, getInstruments, price, startingInstruments, usePoll } from '../lib/trading.js';
 
-const ORDER = ['stock', 'index', 'forex', 'crypto', 'commodity'];
+const ORDER = ['crypto', 'forex', 'stock', 'index', 'commodity'];
 
 /** Live quotes on the dashboard, in the same Market Watch style as the terminal. */
 export default function LiveMarket() {
@@ -10,7 +10,7 @@ export default function LiveMarket() {
   const [instruments, setInstruments] = useState(startingInstruments);
   const [live, setLive] = useState(false);
   const [ticks, setTicks] = useState({});
-  const [kind, setKind] = useState('stock');
+  const [kind, setKind] = useState('crypto');
   const [failed, setFailed] = useState(false);
   const [updated, setUpdated] = useState(null);
   const prev = useRef({});

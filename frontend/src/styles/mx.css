@@ -832,7 +832,7 @@
 /* ---------- Chart: indicators, drawings, draggable levels ---------- */
 .chart__priceline { fill: none; stroke: var(--mx-up); stroke-width: 1.6; }
 .chart__ind { fill: none; stroke-width: 1.4; pointer-events: none; }
-.chart__ind--sma { stroke: #d97706; }
+.chart__ind--sma { stroke: #d63c31; }
 .chart__ind--ema { stroke: #7c3aed; }
 .chart__ind--bb { stroke: #64748b; stroke-dasharray: 4 3; }
 .chart__ind--bbmid { stroke: #94a3b8; }
