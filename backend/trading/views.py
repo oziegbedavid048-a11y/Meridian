@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from decimal import Decimal
 
 from django.db import transaction
@@ -9,11 +10,12 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from accounts import identity
 from accounts.identity_views import has_approved_identity, state_for
 from config.ratelimit import rate_limit
 
 from . import engine, pricing
-from .models import FundingRequest, Instrument, Trade, TradingAccount
+from .models import DepositWallet, FundingRequest, Instrument, Trade, TradingAccount
 
 log = logging.getLogger(__name__)
 
@@ -483,80 +485,137 @@ def cancel_order_view(request, trade_id):
 
 # ---------- funding ----------
 
-# Practice funding needs no payment method: the money is virtual.
-PRESET_AMOUNTS = [1000, 5000, 10000, 25000, 50000, 100000]
 MAX_PRACTICE_BALANCE = Decimal('1000000')
+MIN_DEPOSIT = Decimal('10')
+MAX_RECEIPT_REQUEST_BYTES = 12 * 1024 * 1024
+ADDRESS_PATTERN = re.compile(r'^[A-Za-z0-9:_-]{20,128}$')
 
 
 def _funding_json(f):
     return {
         'id': f.pk, 'kind': f.kind, 'amount': _num(f.amount), 'status': f.status,
         'balance_after': _num(f.balance_after), 'note': f.note,
+        'asset': f.asset, 'network': f.network, 'wallet_address': f.wallet_address,
+        'has_receipt': bool(f.receipt),
         'created_at': f.created_at.isoformat(),
     }
+
+
+def _wallets():
+    """Coins a client can pay with: switched on and with an address set in the admin."""
+    return [w for w in DepositWallet.objects.filter(enabled=True) if w.address.strip()]
+
+
+def _wallet_json(w):
+    return {'key': w.key, 'asset': w.asset, 'name': w.name, 'network': w.network, 'address': w.address.strip()}
+
+
+def _amount_from(raw):
+    try:
+        amount = Decimal(str(raw)).quantize(Decimal('0.01'))
+    except Exception:
+        return None, 'Enter an amount.'
+    if not amount.is_finite():  # quantize lets NaN through
+        return None, 'Enter an amount.'
+    if amount <= 0:
+        return None, 'Enter an amount above zero.'
+    return amount, None
 
 
 @require_http_methods(['GET', 'POST'])
 @login_required_json
 @rate_limit('funding')
 def funding(request):
-    """Add or remove virtual funds on a practice account.
-
-    The balance changes straight away. Nothing is charged and nothing is paid
-    out, so there is no payment method and no review step.
-    """
+    """Deposits in crypto (reviewed by staff) and withdrawals to a crypto address."""
     acc = _account(request)
     if request.method == 'GET':
         return JsonResponse({
             'requests': [_funding_json(f) for f in acc.funding_requests.all()[:100]],
             'currency': acc.currency,
             'is_demo': acc.is_demo,
-            'presets': PRESET_AMOUNTS,
+            'wallets': [_wallet_json(w) for w in _wallets()],
+            # Coins a client can be paid out in (every switched-on coin, address or not).
+            'payout_assets': [{'asset': w.asset, 'name': w.name, 'network': w.network}
+                              for w in DepositWallet.objects.filter(enabled=True)],
+            'min_deposit': _num(MIN_DEPOSIT),
             'starting_balance': _num(acc.starting_balance),
             'identity': state_for(request.user),
         })
+    if (request.content_type or '').startswith('multipart/'):
+        return _deposit(request, acc)
+    return _withdraw(request, acc)
 
-    if not acc.is_demo:
-        return _error('This account is not a practice account.', 'form', 409)
 
+def _deposit(request, acc):
+    """A crypto deposit: the amount, the coin paid with and a photo of the receipt. Staff approve it."""
+    try:
+        length = int(request.META.get('CONTENT_LENGTH') or 0)
+    except ValueError:
+        length = 0
+    if length > MAX_RECEIPT_REQUEST_BYTES:
+        return _error('The receipt is too large. Use a smaller screenshot.', 'receipt', 413)
+    amount, problem = _amount_from(request.POST.get('amount'))
+    if problem:
+        return _error(problem, 'amount')
+    if amount < MIN_DEPOSIT:
+        return _error(f'The smallest deposit is {MIN_DEPOSIT:,.0f} {acc.currency}.', 'amount')
+    wallet = next((w for w in _wallets() if w.key == (request.POST.get('wallet') or '').upper()), None)
+    if wallet is None:
+        return _error('Choose a coin to pay with.', 'wallet')
+    try:
+        receipt = identity.clean_photo(request.FILES.get('receipt'))
+    except identity.PhotoProblem as exc:
+        return _error(str(exc).replace('photo', 'receipt').replace('Photo', 'Receipt'), 'receipt')
+    summary = engine.account_summary(acc)
+    if summary['balance'] + amount > MAX_PRACTICE_BALANCE:
+        return _error(f'A balance can go up to {MAX_PRACTICE_BALANCE:,.0f} {acc.currency}.', 'amount')
+    req = FundingRequest(
+        account=acc, kind=FundingRequest.Kind.DEPOSIT, amount=amount, status=FundingRequest.Status.PENDING,
+        method='crypto', asset=wallet.asset, network=wallet.network, wallet_address=wallet.address.strip(),
+    )
+    req.receipt.save('receipt.jpg', receipt, save=False)
+    req.save()
+    log.info('deposit %s of %s %s sent for review', req.pk, amount, acc.currency)
+    return JsonResponse({'request': _funding_json(req), 'account': summary}, status=201)
+
+
+def _withdraw(request, acc):
+    """A withdrawal to the client's own crypto address. Needs an approved identity check."""
     data = _body(request)
     if data is None:
         return _error('Invalid request.')
-    kind = str(data.get('kind') or '')
-    if kind not in (FundingRequest.Kind.DEPOSIT, FundingRequest.Kind.WITHDRAWAL):
-        return _error('Choose whether to add or remove funds.', 'kind')
-    # The first withdrawal needs an approved identity check, like a real broker.
-    if kind == FundingRequest.Kind.WITHDRAWAL and not has_approved_identity(request.user):
+    if str(data.get('kind') or '') != FundingRequest.Kind.WITHDRAWAL:
+        return _error('Deposits are paid in crypto with a receipt.', 'kind')
+    # Every withdrawal needs an approved identity check, like a real broker.
+    if not has_approved_identity(request.user):
         return JsonResponse({'errors': {
             'verification': ['Verify your identity before your first withdrawal.'],
         }, 'identity': state_for(request.user)}, status=403)
-    try:
-        amount = Decimal(str(data.get('amount'))).quantize(Decimal('0.01'))
-    except Exception:
-        return _error('Enter an amount.', 'amount')
-    if not amount.is_finite():  # quantize lets NaN through
-        return _error('Enter an amount.', 'amount')
-    if amount <= 0:
-        return _error('Enter an amount above zero.', 'amount')
+    amount, problem = _amount_from(data.get('amount'))
+    if problem:
+        return _error(problem, 'amount')
+    asset = str(data.get('asset') or '').upper()[:12]
+    network = str(data.get('network') or '')[:40]
+    if not asset or not any(w.asset == asset for w in DepositWallet.objects.filter(enabled=True)):
+        return _error('Choose the coin to receive.', 'asset')
+    address = str(data.get('address') or '').strip()
+    if not ADDRESS_PATTERN.match(address):
+        return _error('Enter a valid wallet address.', 'address')
 
     with transaction.atomic():
         engine.lock_account(acc)
         summary = engine.account_summary(acc)
-        if kind == FundingRequest.Kind.DEPOSIT:
-            if summary['balance'] + amount > MAX_PRACTICE_BALANCE:
-                return _error(
-                    f'A practice balance can go up to {MAX_PRACTICE_BALANCE:,.0f} {acc.currency}.', 'amount')
-            acc.balance = engine.money(acc.balance + amount)
-        else:
-            if amount > summary['free_margin']:
-                return _error(f'You can remove up to {summary["free_margin"]} {acc.currency}.', 'amount')
-            acc.balance = engine.money(acc.balance - amount)
+        if amount > summary['free_margin']:
+            return _error(f'You can withdraw up to {summary["free_margin"]} {acc.currency}.', 'amount')
+        # Held now, so the same money cannot be traded or withdrawn twice; a rejection puts it back.
+        acc.balance = engine.money(acc.balance - amount)
         acc.save(update_fields=['balance'])
-
         req = FundingRequest.objects.create(
-            account=acc, kind=kind, amount=amount, balance_after=acc.balance,
-            status=FundingRequest.Status.COMPLETED,
+            account=acc, kind=FundingRequest.Kind.WITHDRAWAL, amount=amount, balance_after=acc.balance,
+            status=FundingRequest.Status.PENDING, method='crypto', asset=asset, network=network,
+            wallet_address=address,
         )
+    log.info('withdrawal %s of %s %s sent for review', req.pk, amount, acc.currency)
     return JsonResponse({'request': _funding_json(req), 'account': engine.account_summary(acc)}, status=201)
 
 

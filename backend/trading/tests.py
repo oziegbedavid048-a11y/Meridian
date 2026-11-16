@@ -8,6 +8,7 @@ from django.test import Client, TestCase
 
 from . import engine
 from .pricing import get_prices as pricing_get_prices
+from . import engine
 from .models import FundingRequest, Instrument, Trade, TradingAccount
 
 PASSWORD = 'ZentraTest2026x'
@@ -253,25 +254,71 @@ class ApiTests(TestCase):
             document_type='passport', front_image='x', selfie_image='y')  # the identity check is its own tests
         self.login()
         with self.patch_market():
-            res = self.post('/api/trading/funding/', {'kind': 'withdrawal', 'amount': '50000'})
+            res = self.post('/api/trading/funding/', {'kind': 'withdrawal', 'amount': '50000', 'asset': 'BTC',
+                                                      'address': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'})
         self.assertEqual(res.status_code, 400)
         self.assertIn('amount', res.json()['errors'])
 
-    def test_practice_funds_apply_straight_away(self):
-        self.login()
+    def deposit(self, amount='500', wallet='BTC-BITCOIN', receipt=True):
+        from accounts.tests_identity import upload
+        from .models import DepositWallet
+        DepositWallet.objects.filter(asset='BTC').update(address='bc1qdepositaddressforthetests0000000000')
+        data = {'amount': amount, 'wallet': wallet}
+        if receipt:
+            data['receipt'] = upload('r.jpg')
         with self.patch_market():
-            res = self.post('/api/trading/funding/', {'kind': 'deposit', 'amount': '500'})
-        self.assertEqual(res.status_code, 201)
+            return self.client.post('/api/trading/funding/', data,
+                                    HTTP_X_CSRFTOKEN=self.client.cookies['csrftoken'].value)
+
+    def test_a_deposit_waits_for_staff_and_then_reaches_the_balance(self):
+        self.login()
+        res = self.deposit('500')
+        self.assertEqual(res.status_code, 201, res.content)
+        self.account.refresh_from_db()
+        self.assertEqual(self.account.balance, Decimal('10000'))  # nothing until approved
+        record = FundingRequest.objects.get()
+        self.assertEqual((record.status, record.asset), (FundingRequest.Status.PENDING, 'BTC'))
+        self.assertTrue(record.receipt)
+        engine.decide_funding(record.pk, approve=True)
         self.account.refresh_from_db()
         self.assertEqual(self.account.balance, Decimal('10500.00'))
-        record = FundingRequest.objects.get()
-        self.assertEqual(record.status, FundingRequest.Status.COMPLETED)
-        self.assertEqual(record.balance_after, Decimal('10500.00'))
+        record.refresh_from_db()
+        self.assertEqual((record.status, record.balance_after), (FundingRequest.Status.COMPLETED, Decimal('10500.00')))
+        with self.assertRaises(engine.FundingDecisionError):
+            engine.decide_funding(record.pk, approve=True)  # never twice
+        record.delete()  # and the receipt file goes with it
+
+    def test_a_deposit_needs_a_receipt_and_a_listed_coin(self):
+        self.login()
+        self.assertIn('receipt', self.deposit(receipt=False).json()['errors'])
+        self.assertIn('wallet', self.deposit(wallet='DOGE-NOPE').json()['errors'])
+        self.assertFalse(FundingRequest.objects.exists())
+
+    def test_coins_without_an_address_are_not_offered(self):
+        self.login()
+        with self.patch_market():
+            wallets = self.client.get('/api/trading/funding/').json()['wallets']
+        self.assertEqual(wallets, [])  # the seeded coins have no addresses yet
+        self.assertIn('wallet', self.deposit_without_address().json()['errors'])
+
+    def deposit_without_address(self):
+        from accounts.tests_identity import upload
+        with self.patch_market():
+            return self.client.post('/api/trading/funding/', {'amount': '50', 'wallet': 'BTC-BITCOIN',
+                                                              'receipt': upload('r.jpg')},
+                                    HTTP_X_CSRFTOKEN=self.client.cookies['csrftoken'].value)
+
+    def test_a_rejected_deposit_never_reaches_the_balance(self):
+        self.login()
+        self.deposit('500')
+        engine.decide_funding(FundingRequest.objects.get().pk, approve=False)
+        self.account.refresh_from_db()
+        self.assertEqual(self.account.balance, Decimal('10000'))
+        FundingRequest.objects.all().delete()
 
     def test_practice_balance_is_capped(self):
         self.login()
-        with self.patch_market():
-            res = self.post('/api/trading/funding/', {'kind': 'deposit', 'amount': '9999999'})
+        res = self.deposit('9999999')
         self.assertEqual(res.status_code, 400)
 
     def test_accounts_are_practice_accounts(self):

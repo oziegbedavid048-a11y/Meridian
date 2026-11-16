@@ -11,12 +11,12 @@ import { fullName } from '../lib/names.js';
 const NAV = [
   ['/account', 'Dashboard', LayoutDashboard],
   ['/account/terminal', 'Trade', CandlestickChart],
-  ['/account/deposit', 'Add funds', ArrowDownToLine],
-  ['/account/withdraw', 'Remove funds', ArrowUpFromLine],
+  ['/account/deposit', 'Deposit', ArrowDownToLine],
+  ['/account/withdraw', 'Withdraw', ArrowUpFromLine],
   ['/account/history', 'Trade history', History],
   ['/account/funding-history', 'Balance history', Wallet],
 ];
-// Verify identity is not in the menu: it is offered on the Remove funds page, when it is needed.
+// Verify identity is not in the menu: it is offered on the Withdraw page, when it is needed.
 
 export function SummaryBar({ account }) {
   const c = account?.currency || 'CAD';

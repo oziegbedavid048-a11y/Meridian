@@ -421,8 +421,8 @@ class BadNumberTests(TestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_funding_rejects_nonsense_amounts(self):
-        for bad in ('NaN', 'Infinity', '-5', '0', 'abc', '1e40', None, [1], {'a': 1}):
-            res = post_json(self.client, '/api/trading/funding/', {'kind': 'deposit', 'amount': bad})
+        for bad in ('NaN', 'Infinity', '-5', '0', 'abc', '1e40', ''):
+            res = self.client.post('/api/trading/funding/', {'amount': bad, 'wallet': 'BTC-BITCOIN'})
             self.assertEqual(res.status_code, 400, repr(bad))
 
     def test_an_oversized_body_is_refused(self):

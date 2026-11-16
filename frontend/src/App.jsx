@@ -9,8 +9,9 @@ import SignUp from './pages/SignUp.jsx';
 import Terminal from './pages/Terminal.jsx';
 import { VerifyPage } from './pages/Verify.jsx';
 import {
-  AccountHome, DepositPage, FundingHistoryPage, TradeHistoryPage, WithdrawPage,
+  AccountHome, FundingHistoryPage, TradeHistoryPage,
 } from './pages/AccountPages.jsx';
+import { DepositPage, WithdrawPage } from './pages/Funding.jsx';
 import { LegalRoute, NotFound, PricingPage } from './pages/InfoPages.jsx';
 import {
   AboutPage, AccountsPage, ArticlePage, HelpPage, LearnPage, MarketsPage, PlatformPage, ServicesPage,

@@ -30,7 +30,7 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from . import engine, pricing, simulator
-from .models import FundingRequest, Instrument, Trade, TradingAccount
+from .models import DepositWallet, FundingRequest, Instrument, Trade, TradingAccount
 
 
 class MoveMarketForm(forms.Form):
@@ -403,10 +403,92 @@ class TradeAdmin(admin.ModelAdmin):
         self.message_user(request, f'Cancelled {cancelled} pending order(s).', messages.SUCCESS)
 
 
+@admin.register(DepositWallet)
+class DepositWalletAdmin(admin.ModelAdmin):
+    """The addresses clients pay deposits to. A coin shows to clients once it has an address."""
+    list_display = ('name', 'asset', 'network', 'address', 'enabled', 'sort_order')
+    list_editable = ('address', 'enabled', 'sort_order')
+    list_display_links = ('name',)
+    search_fields = ('asset', 'name', 'network')
+
+
 @admin.register(FundingRequest)
 class FundingRequestAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'account', 'kind', 'amount', 'balance_after', 'status',
-                    'made_by', 'created_at')
-    list_filter = ('kind', 'status')
-    search_fields = ('account__user__email',)
-    readonly_fields = ('created_at', 'balance_after', 'made_by')
+    """Deposits wait here until approved; then the balance goes up. Rejected withdrawals are refunded."""
+    list_display = ('pk', 'client', 'kind', 'amount', 'coin', 'status', 'receipt_link', 'created_at')
+    list_filter = ('status', 'kind', 'asset')
+    search_fields = ('account__user__email', 'wallet_address')
+    readonly_fields = ('account', 'kind', 'amount', 'asset', 'network', 'wallet_address', 'receipt_link',
+                       'balance_after', 'status', 'made_by', 'created_at', 'reviewed_at')
+    fields = readonly_fields + ('note',)
+    actions = ('approve_selected', 'reject_selected')
+
+    def get_queryset(self, request):
+        from django.db.models import Case, IntegerField, Value, When
+        waiting_first = Case(When(status='pending', then=Value(0)), default=Value(1), output_field=IntegerField())
+        return super().get_queryset(request).select_related('account__user').annotate(
+            _order=waiting_first).order_by('_order', '-created_at')
+
+    def has_add_permission(self, request):
+        return False  # requests come from clients; staff change balances with the account's Adjust tool
+
+    @admin.display(description='Client', ordering='account__user__email')
+    def client(self, obj):
+        return obj.account.user.email
+
+    @admin.display(description='Coin')
+    def coin(self, obj):
+        return f'{obj.asset} ({obj.network})' if obj.asset else '—'
+
+    @admin.display(description='Receipt')
+    def receipt_link(self, obj):
+        if not obj.receipt:
+            return '—'
+        url = reverse('admin:trading_fundingrequest_receipt', args=[obj.pk])
+        return format_html('<a href="{}" target="_blank" rel="noopener">View receipt</a>', url)
+
+    def get_urls(self):
+        return [
+            path('<int:pk>/receipt/', self.admin_site.admin_view(self.receipt_view),
+                 name='trading_fundingrequest_receipt'),
+        ] + super().get_urls()
+
+    def receipt_view(self, request, pk):
+        """The receipt photo, to staff only. Never cached, never run as a page."""
+        from django.core.exceptions import PermissionDenied
+        from django.http import FileResponse, Http404
+        record = get_object_or_404(FundingRequest, pk=pk)
+        if not self.has_view_permission(request, record):
+            raise PermissionDenied
+        if not record.receipt:
+            raise Http404
+        try:
+            handle = record.receipt.storage.open(record.receipt.name, 'rb')
+        except FileNotFoundError:
+            raise Http404 from None
+        response = FileResponse(handle, content_type='image/jpeg')
+        response['Content-Disposition'] = 'inline'
+        response['Cache-Control'] = 'no-store, private'
+        response['X-Content-Type-Options'] = 'nosniff'
+        response['Content-Security-Policy'] = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'"
+        return response
+
+    def _decide(self, request, queryset, approve):
+        done = skipped = 0
+        for req in queryset.filter(status=FundingRequest.Status.PENDING):
+            try:
+                engine.decide_funding(req.pk, approve, staff=request.user)
+                done += 1
+            except engine.FundingDecisionError:
+                skipped += 1
+        word = 'Approved' if approve else 'Rejected'
+        self.message_user(request, f'{word} {done} request(s).' + (f' {skipped} skipped.' if skipped else ''),
+                          messages.SUCCESS)
+
+    @admin.action(description='Approve: add deposits to the balance / mark withdrawals as paid')
+    def approve_selected(self, request, queryset):
+        self._decide(request, queryset, approve=True)
+
+    @admin.action(description='Reject: deposits are not added / withdrawals are refunded')
+    def reject_selected(self, request, queryset):
+        self._decide(request, queryset, approve=False)

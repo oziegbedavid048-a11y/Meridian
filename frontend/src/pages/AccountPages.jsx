@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, ArrowRight, CheckCircle2, Loader2, RotateCcw } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import AccountShell, { SummaryBar } from '../components/AccountShell.jsx';
 import LiveMarket from '../components/LiveMarket.jsx';
 import {
-  fieldErrors, getFunding, getHistory, getPositions, money, price, requestFunding,
-  resetAccount, signed, useAccountSummary, usePoll,
+  getFunding, getHistory, getPositions, money, price, signed, useAccountSummary, usePoll,
 } from '../lib/trading.js';
 import { useAuth } from '../lib/auth.jsx';
 import { fullName, greeting } from '../lib/names.js';
-import { IdentityGate } from './Verify.jsx';
 
 const dateFmt = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
 const showDate = (iso) => (iso ? dateFmt.format(new Date(iso)) : '—');
@@ -21,8 +19,8 @@ const STATUS_LABEL = {
 };
 
 const KIND_LABEL = {
-  deposit: 'Funds added',
-  withdrawal: 'Funds removed',
+  deposit: 'Deposit',
+  withdrawal: 'Withdrawal',
   reset: 'Balance reset',
 };
 
@@ -108,11 +106,11 @@ export function AccountHome() {
         </section>
 
         <section className="panel">
-          <h2>Practice balance</h2>
-          <p className="muted">Top up or reduce your virtual balance at any time, or reset the account and start again.</p>
+          <h2>Funds</h2>
+          <p className="muted">Deposit with Bitcoin, Ethereum and other top coins, or withdraw to your own wallet.</p>
           <div className="panel__actions">
-            <Link to="/account/deposit" className="btn btn--primary btn--sm">Add funds</Link>
-            <Link to="/account/withdraw" className="btn btn--outline btn--sm">Remove funds</Link>
+            <Link to="/account/deposit" className="btn btn--primary btn--sm">Deposit</Link>
+            <Link to="/account/withdraw" className="btn btn--outline btn--sm">Withdraw</Link>
           </div>
         </section>
       </div>
@@ -120,187 +118,7 @@ export function AccountHome() {
   );
 }
 
-/* ---------- Add and remove practice funds ---------- */
-function FundingForm({ kind }) {
-  const [account, reloadAccount] = useAccountSummary(10000);
-  const [presets, setPresets] = useState([]);
-  const [amount, setAmount] = useState('');
-  const [errors, setErrors] = useState({});
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(null);
-  const [identity, setIdentity] = useState(null); // the identity check, which gates withdrawals
 
-  const isDeposit = kind === 'deposit';
-  const title = isDeposit ? 'Add practice funds' : 'Remove practice funds';
-
-  useEffect(() => { document.title = `${title} | Zentra Direct`; }, [title]);
-
-  useEffect(() => {
-    getFunding().then((res) => { setPresets(res.presets || []); setIdentity(res.identity || null); }).catch(() => {});
-  }, []);
-
-  // While a check is under review, keep looking so approval unlocks this page by itself.
-  const locked = !isDeposit && identity && !identity.can_withdraw;
-  useEffect(() => {
-    if (!locked || identity.status !== 'pending') return undefined;
-    const timer = setInterval(() => {
-      getFunding().then((res) => setIdentity(res.identity || null)).catch(() => {});
-    }, 8000);
-    return () => clearInterval(timer);
-  }, [locked, identity?.status]);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setDone(null);
-    setBusy(true);
-    try {
-      const res = await requestFunding({ kind, amount });
-      setDone(res.request);
-      setAmount('');
-      reloadAccount();
-    } catch (err) {
-      if (err.data?.identity) {
-        setIdentity(err.data.identity); // the server says a check is needed: show the gate
-        return;
-      }
-      const fe = fieldErrors(err);
-      setErrors(Object.keys(fe).length ? fe : { form: err.message });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const currency = account?.currency || 'CAD';
-
-  return (
-    <AccountShell>
-      <h1 className="page-title">{title}</h1>
-      {/* Withdrawing needs a verified identity: the prompt sits at the top until then. */}
-      {locked && <IdentityGate identity={identity} />}
-      <SummaryBar account={account} />
-
-      {locked ? null : (
-      <div className="panel panel--form">
-        {done ? (
-          <div className="form-success">
-            <CheckCircle2 size={32} aria-hidden="true" />
-            <h2>{isDeposit ? 'Practice funds added' : 'Practice funds removed'}</h2>
-            <p>
-              Your practice balance is now {money(done.balance_after, currency)}. This is virtual
-              money for learning, not a real deposit or payout.
-            </p>
-            <div className="panel__actions">
-              <button type="button" className="btn btn--outline btn--sm" onClick={() => setDone(null)}>
-                {isDeposit ? 'Add more' : 'Remove more'}
-              </button>
-              <Link to="/account/terminal" className="btn btn--primary btn--sm">Go to the terminal</Link>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={submit} noValidate>
-            <p className="muted">
-              {isDeposit
-                ? 'Top up your practice balance so you can try larger positions. The change applies straight away: no payment is taken and nothing is charged.'
-                : `Take virtual funds out of your practice balance to try trading with less. You can remove up to your free margin, ${money(account?.free_margin, currency)}.`}
-            </p>
-            {errors.form && <p className="ticket__alert" role="alert"><AlertCircle size={16} aria-hidden="true" /> {errors.form}</p>}
-
-            {!!presets.length && (
-              <div className="preset-row" role="group" aria-label="Choose an amount">
-                {presets.map((v) => (
-                  <button key={v} type="button" className={Number(amount) === v ? 'is-active' : ''}
-                    onClick={() => setAmount(String(v))}>
-                    {new Intl.NumberFormat('en-CA', { style: 'currency', currency, maximumFractionDigits: 0 }).format(v)}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className={`field ${errors.amount ? 'has-error' : ''}`}>
-              <label htmlFor="amount">Amount ({currency})</label>
-              <input
-                id="amount" type="text" inputMode="decimal" value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                aria-invalid={errors.amount ? 'true' : undefined}
-                aria-describedby={errors.amount ? 'amount-err' : undefined}
-                placeholder="0.00"
-              />
-              {errors.amount && <p id="amount-err" className="field__error" role="alert">{errors.amount}</p>}
-            </div>
-
-            <button type="submit" className="btn btn--primary" disabled={busy}>
-              {busy ? <><Loader2 size={18} className="spin" aria-hidden="true" /> Updating...</>
-                : isDeposit ? 'Add practice funds' : 'Remove practice funds'}
-            </button>
-          </form>
-        )}
-      </div>
-      )}
-
-      {isDeposit && <ResetPanel account={account} onReset={reloadAccount} />}
-    </AccountShell>
-  );
-}
-
-/** Start again: close everything and put the balance back to its starting value. */
-function ResetPanel({ account, onReset }) {
-  const [confirming, setConfirming] = useState(false);
-  const [starting, setStarting] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const currency = account?.currency || 'CAD';
-
-  const run = async () => {
-    setBusy(true);
-    setError('');
-    try {
-      await resetAccount(starting ? { starting_balance: starting } : {});
-      setConfirming(false);
-      setStarting('');
-      onReset();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="panel panel--form panel--notice">
-      <h2>Start again</h2>
-      <p className="muted">
-        Resetting closes every open position, cancels pending orders and sets your practice balance
-        back to its starting value{account ? ` (${money(account.starting_balance, currency)})` : ''}.
-        Your trade history is kept.
-      </p>
-      {error && <p className="ticket__alert" role="alert">{error}</p>}
-      {confirming ? (
-        <>
-          <div className="field">
-            <label htmlFor="starting">New starting balance ({currency})</label>
-            <input id="starting" type="text" inputMode="decimal" value={starting}
-              onChange={(e) => setStarting(e.target.value.replace(/[^0-9.]/g, ''))}
-              placeholder={account ? String(account.starting_balance) : '100000'} />
-          </div>
-          <div className="panel__actions">
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => setConfirming(false)}>Cancel</button>
-            <button type="button" className="btn btn--primary btn--sm" onClick={run} disabled={busy}>
-              {busy ? 'Resetting...' : 'Yes, reset my practice account'}
-            </button>
-          </div>
-        </>
-      ) : (
-        <button type="button" className="btn btn--outline btn--sm" onClick={() => setConfirming(true)}>
-          <RotateCcw size={16} aria-hidden="true" /> Reset practice account
-        </button>
-      )}
-    </div>
-  );
-}
-
-export const DepositPage = () => <FundingForm kind="deposit" />;
-export const WithdrawPage = () => <FundingForm kind="withdrawal" />;
 
 /* ---------- Trade history ---------- */
 export function TradeHistoryPage() {
@@ -411,8 +229,8 @@ export function FundingHistoryPage() {
     <AccountShell>
       <h1 className="page-title">Balance history</h1>
       <div className="panel__actions panel__actions--top">
-        <Link to="/account/deposit" className="btn btn--primary btn--sm">Add funds</Link>
-        <Link to="/account/withdraw" className="btn btn--outline btn--sm">Remove funds</Link>
+        <Link to="/account/deposit" className="btn btn--primary btn--sm">Deposit</Link>
+        <Link to="/account/withdraw" className="btn btn--outline btn--sm">Withdraw</Link>
       </div>
 
       {!data ? (

@@ -447,13 +447,20 @@ class IdentityCsrfTests(IdentityBase):
 # ------------------------------------------------------------------ the withdrawal gate
 
 class WithdrawalGateTests(IdentityBase):
-    def withdraw(self, amount='10.00'):
-        return self.client.post('/api/trading/funding/', data=json.dumps({'kind': 'withdrawal', 'amount': amount}),
-                                content_type='application/json')
+    def withdraw(self, amount='10.00', address='bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'):
+        body = {'kind': 'withdrawal', 'amount': amount, 'asset': 'BTC', 'network': 'Bitcoin', 'address': address}
+        return self.client.post('/api/trading/funding/', data=json.dumps(body), content_type='application/json')
 
     def deposit(self, amount='100.00'):
-        return self.client.post('/api/trading/funding/', data=json.dumps({'kind': 'deposit', 'amount': amount}),
-                                content_type='application/json')
+        from trading.models import DepositWallet
+        DepositWallet.objects.filter(asset='BTC').update(address='bc1qdepositaddressforthetests0000000000')
+        return self.client.post('/api/trading/funding/', {'amount': amount, 'wallet': 'BTC-BITCOIN',
+                                                          'receipt': upload('r.jpg')})
+
+    def tearDown(self):
+        from trading.models import FundingRequest
+        FundingRequest.objects.all().delete()  # also deletes receipt files
+        super().tearDown()
 
     def test_depositing_never_needs_verification(self):
         self.assertEqual(self.deposit().status_code, 201)
@@ -485,7 +492,21 @@ class WithdrawalGateTests(IdentityBase):
         self.assertEqual(self.withdraw('10.00').status_code, 201)
         self.assertEqual(self.withdraw('10.00').status_code, 201)
         self.account.refresh_from_db()
-        self.assertEqual(self.account.balance, Decimal('4980.00'))
+        self.assertEqual(self.account.balance, Decimal('4980.00'))  # held while staff review them
+
+    def test_a_withdrawal_needs_a_real_looking_address_and_a_rejection_refunds_it(self):
+        from trading import engine
+        from trading.models import FundingRequest
+        IdentityVerification.objects.create(user=self.user, status='approved', full_name='A B', province='ON',
+                                            document_type='passport', front_image='x', selfie_image='y')
+        self.assertIn('address', self.withdraw(address='short').json()['errors'])
+        self.assertIn('address', self.withdraw(address='bad address with spaces 1234567890').json()['errors'])
+        self.assertEqual(self.withdraw('25.00').status_code, 201)
+        req = FundingRequest.objects.get(kind='withdrawal')
+        self.assertEqual((req.status, req.asset), ('pending', 'BTC'))
+        engine.decide_funding(req.pk, approve=False, note='Address could not be checked')
+        self.account.refresh_from_db()
+        self.assertEqual(self.account.balance, Decimal('5000.00'))
 
     def test_the_funding_page_data_includes_the_identity_status(self):
         self.assertEqual(self.client.get('/api/trading/funding/').json()['identity']['status'], 'none')

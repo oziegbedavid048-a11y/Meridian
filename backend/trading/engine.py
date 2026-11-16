@@ -541,3 +541,41 @@ def close_by(first, second):
         close_trade(second, close_price=common, reason=Trade.CloseReason.CLOSE_BY, volume=size),
     ]
     return done
+
+
+# ---------- deposits and withdrawals reviewed by staff ----------
+
+class FundingDecisionError(Exception):
+    """A funding request that cannot be decided (already decided, or the balance no longer allows it)."""
+
+
+def decide_funding(request_id, approve, staff=None, note=''):
+    """Approve or reject a pending deposit or withdrawal.
+
+    Approving a deposit adds the amount to the balance. A withdrawal was taken
+    off the balance when it was asked for, so approving it changes nothing more
+    and rejecting it puts the amount back.
+    """
+    from django.utils import timezone
+
+    from .models import FundingRequest
+
+    with transaction.atomic():
+        req = FundingRequest.objects.select_for_update().select_related('account').get(pk=request_id)
+        if req.status != FundingRequest.Status.PENDING:
+            raise FundingDecisionError('This request has already been decided.')
+        acc = lock_account(req.account)
+        if req.kind == FundingRequest.Kind.DEPOSIT and approve:
+            acc.balance = money(acc.balance + req.amount)
+            acc.save(update_fields=['balance'])
+        elif req.kind == FundingRequest.Kind.WITHDRAWAL and not approve:
+            acc.balance = money(acc.balance + req.amount)
+            acc.save(update_fields=['balance'])
+        req.status = FundingRequest.Status.COMPLETED if approve else FundingRequest.Status.REJECTED
+        req.balance_after = acc.balance
+        req.reviewed_at = timezone.now()
+        req.made_by = staff
+        if note:
+            req.note = note[:200]
+        req.save(update_fields=['status', 'balance_after', 'reviewed_at', 'made_by', 'note'])
+        return req

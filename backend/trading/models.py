@@ -17,6 +17,8 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
+from accounts.storage import get_private_storage
+
 # A symbol is letters, digits and a few marks (^GSPC, EURUSD=X, RY.TO, BTC-USD).
 # No slashes, spaces, "?" or ".." so it can never change the address it is placed in.
 FEED_SYMBOL_PATTERN = r'^(?!.*\.\.)[A-Za-z0-9^=.\-_]{1,30}$'
@@ -197,11 +199,47 @@ class Trade(models.Model):
         return f'#{self.pk} {self.side} {self.volume} {self.instrument.symbol}'
 
 
-class FundingRequest(models.Model):
-    """A change to the practice balance, kept so the client can see a history.
+def receipt_path(instance, filename):
+    # A random name, so a receipt's address can never be guessed.
+    import uuid
+    return f'receipts/{instance.account_id}/{uuid.uuid4().hex}.jpg'
 
-    On a practice account this is virtual money: the balance changes straight
-    away and nothing is charged or paid out.
+
+class DepositWallet(models.Model):
+    """A crypto address clients send deposits to. Set the addresses in the admin.
+
+    A coin is offered to clients only when it is switched on and has an address.
+    """
+
+    asset = models.CharField(max_length=12, help_text='Short code, for example BTC.')
+    name = models.CharField(max_length=40, help_text='For example Bitcoin.')
+    network = models.CharField(max_length=40, help_text='The network to send on, for example Bitcoin or TRC20.')
+    address = models.CharField(max_length=128, blank=True,
+                               help_text='Your wallet address on that network. Leave empty to hide this coin.')
+    enabled = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'asset']
+        constraints = [models.UniqueConstraint(fields=['asset', 'network'], name='unique_wallet_per_network')]
+
+    def __str__(self):
+        return f'{self.name} ({self.network})'
+
+    @property
+    def key(self):
+        """How the client refers to this wallet: BTC, or USDT-TRC20 when one coin has several networks."""
+        return f'{self.asset}-{self.network}'.upper().replace(' ', '')
+
+
+class FundingRequest(models.Model):
+    """Money in or out of an account, kept so the client can see a history.
+
+    Deposits are paid in crypto: the client sends coins to one of our wallet
+    addresses and uploads a receipt, and the balance changes only when staff
+    approve it. A withdrawal takes the amount off the balance straight away
+    (so it cannot be traded twice) and staff then pay it out, or reject it and
+    the amount goes back.
     """
 
     class Kind(models.TextChoices):
@@ -220,6 +258,11 @@ class FundingRequest(models.Model):
     balance_after = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
     amount = models.DecimalField(max_digits=16, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     method = models.CharField(max_length=30, blank=True)
+    asset = models.CharField(max_length=12, blank=True)
+    network = models.CharField(max_length=40, blank=True)
+    # Deposits: our address the client paid to. Withdrawals: the client's address to pay out to.
+    wallet_address = models.CharField(max_length=128, blank=True)
+    receipt = models.FileField(upload_to=receipt_path, storage=get_private_storage, max_length=200, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.COMPLETED)
     note = models.CharField(max_length=200, blank=True)
     # Who made the change, when staff did it rather than the client.
@@ -233,3 +276,12 @@ class FundingRequest(models.Model):
 
     def __str__(self):
         return f'{self.get_kind_display()} {self.amount} ({self.get_status_display()})'
+
+
+def _delete_receipt(sender, instance, **kwargs):
+    """A deleted request (or account) takes its receipt photo with it."""
+    if instance.receipt:
+        instance.receipt.storage.delete(instance.receipt.name)
+
+
+models.signals.post_delete.connect(_delete_receipt, sender=FundingRequest, dispatch_uid='funding-receipt-cleanup')
