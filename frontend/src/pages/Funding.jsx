@@ -5,6 +5,7 @@ import {
   AlertCircle, ArrowLeft, Check, ChevronRight, Clock3, Copy, ImageUp, Loader2, ShieldAlert, X,
 } from 'lucide-react';
 import AccountShell from '../components/AccountShell.jsx';
+import CoinLogo from '../components/CoinLogo.jsx';
 import { api } from '../lib/api.js';
 import { fieldErrors, getFunding, money, requestFunding, useAccountSummary } from '../lib/trading.js';
 import { shrinkImage } from '../lib/images.js';
@@ -16,17 +17,8 @@ import { shrinkImage } from '../lib/images.js';
  * Staff approve every request before the balance changes (deposits) or the coins are sent (withdrawals).
  */
 
-const COIN_COLOURS = {
-  BTC: '#f7931a', ETH: '#627eea', USDT: '#26a17b', USDC: '#2775ca', BNB: '#f3ba2f',
-  SOL: '#9945ff', XRP: '#23292f', LTC: '#345d9d', TRX: '#eb0029', DOGE: '#c2a633', ADA: '#0033ad',
-};
-
 function CoinBadge({ asset, size = 40 }) {
-  return (
-    <span className="fx-coin" style={{ width: size, height: size, background: COIN_COLOURS[asset] || '#334155' }} aria-hidden="true">
-      {asset.slice(0, asset === 'USDT' || asset === 'USDC' ? 4 : 3)}
-    </span>
-  );
+  return <CoinLogo asset={asset} size={size} />;
 }
 
 function Steps({ labels, current }) {
@@ -184,7 +176,8 @@ function PayStep({ coin, amount, currency, onSent }) {
 
   useEffect(() => {
     let live = true;
-    QRCode.toDataURL(coin.address, { margin: 1, width: 440, errorCorrectionLevel: 'M' })
+    // High error correction, so the coin logo in the middle never stops it scanning.
+    QRCode.toDataURL(coin.address, { margin: 1, width: 440, errorCorrectionLevel: 'H' })
       .then((url) => live && setQr(url)).catch(() => live && setQr(''));
     return () => { live = false; };
   }, [coin.address]);
@@ -229,7 +222,12 @@ function PayStep({ coin, amount, currency, onSent }) {
       </div>
 
       <div className="fx-qr">
-        {qr ? <img src={qr} alt={`QR code for the ${coin.name} address`} width="220" height="220" /> : <Loader2 size={28} className="spin" aria-label="Making the QR code" />}
+        {qr ? (
+          <>
+            <img src={qr} alt={`QR code for the ${coin.name} address`} width="220" height="220" />
+            <span className="fx-qr__logo"><CoinLogo asset={coin.asset} size={44} /></span>
+          </>
+        ) : <Loader2 size={28} className="spin" aria-label="Making the QR code" />}
       </div>
 
       <p className="fx-warn">

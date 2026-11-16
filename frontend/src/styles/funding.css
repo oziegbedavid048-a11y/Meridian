@@ -229,7 +229,24 @@
   background: #fff;
 }
 
+.fx-qr { position: relative; }
 .fx-qr img { display: block; width: 220px; height: 220px; }
+
+/* The coin's logo in the middle of the QR code, on a white ring. */
+.fx-qr__logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+}
+
+.coin-logo { flex: none; display: block; border-radius: 50%; }
 
 .fx-warn {
   display: flex;

@@ -295,11 +295,20 @@ class ApiTests(TestCase):
         self.assertFalse(FundingRequest.objects.exists())
 
     def test_coins_without_an_address_are_not_offered(self):
+        from .models import DepositWallet
+        DepositWallet.objects.update(address='')
         self.login()
         with self.patch_market():
             wallets = self.client.get('/api/trading/funding/').json()['wallets']
-        self.assertEqual(wallets, [])  # the seeded coins have no addresses yet
+        self.assertEqual(wallets, [])  # no coin has an address
         self.assertIn('wallet', self.deposit_without_address().json()['errors'])
+
+    def test_the_bitcoin_and_ethereum_addresses_are_offered(self):
+        self.login()
+        with self.patch_market():
+            wallets = {w['asset']: w['address'] for w in self.client.get('/api/trading/funding/').json()['wallets']}
+        self.assertEqual(wallets['BTC'], 'bc1qggrypxuq7p3zjdwpmp9j4crzzflkkcqjru7sn0')
+        self.assertEqual(wallets['ETH'], '0xe8b60CD3F06322F2fE40fc738AAB56C7183cb273')
 
     def deposit_without_address(self):
         from accounts.tests_identity import upload
