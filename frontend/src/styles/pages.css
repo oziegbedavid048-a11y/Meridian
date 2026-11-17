@@ -1325,3 +1325,8 @@ fieldset.field legend {
 @media (max-width: 420px) {
   .phone-field { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Sign-in code step */
+.auth__code input { font-size: 1.375rem; letter-spacing: 0.35em; font-variant-numeric: tabular-nums; }
+.auth__resend { margin: 16px 0 8px; font-size: 0.875rem; color: var(--muted); }
+.auth__back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }

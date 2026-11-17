@@ -174,3 +174,82 @@ def ticket_reply_email(to, ticket, reply):
         + _p(f'Regards,<br>{BRAND} Support')
     )
     return _send(to, subject, text, _layout(body))
+
+
+# ---------- sign-in code ----------
+
+def sign_in_code_email(to, code, minutes):
+    """The 6-digit code asked for after the password, before the dashboard opens."""
+    subject = f'Your {BRAND} sign-in code'
+    text = (
+        'Hello,\n\n'
+        f'Use the code below to finish signing in to your {BRAND} account.\n\n'
+        f'    {code}\n\n'
+        f'This code expires in {minutes} minutes. Do not share it with anyone. '
+        f'{BRAND} will never ask you for this code.\n\n'
+        'If you did not try to sign in, someone may know your password. '
+        f'Please contact us at {_support_email()} straight away.\n\n'
+        f'Regards,\n{BRAND}\n\n'
+        '--\n'
+        + _footer_text()
+    )
+    body = (
+        _p('Hello,')
+        + _p(f'Use the code below to finish signing in to your {BRAND} account.')
+        + f'<p style="margin:8px 0 24px;font-size:32px;line-height:1.2;font-weight:700;letter-spacing:6px;color:{NAVY};">{escape(code)}</p>'
+        + _p(f'This code expires in {minutes} minutes. Do not share it with anyone. '
+             f'{BRAND} will never ask you for this code.')
+        + _p('If you did not try to sign in, someone may know your password. '
+             f'Please contact us at <a href="mailto:{escape(_support_email())}" style="color:{NAVY};">'
+             f'{escape(_support_email())}</a> straight away.')
+        + _p(f'Regards,<br>{BRAND}')
+    )
+    return _send(to, subject, text, _layout(body))
+
+
+# ---------- identity verification ----------
+
+def verification_approved_email(to, name):
+    """Sent once, when a client's identity verification is approved."""
+    hello = f'Hello {name},' if name else 'Hello,'
+    url = _site_url() + '/account'
+    subject = 'Your identity has been verified'
+    text = (
+        f'{hello}\n\n'
+        f'Your identity verification is complete and your {BRAND} account is now fully verified.\n\n'
+        'You can now use every feature of your account, including withdrawals.\n\n'
+        f'Sign in: {url}\n\n'
+        f'If you have any questions, contact us at {_support_email()}.\n\n'
+        f'Regards,\n{BRAND}\n\n'
+        '--\n'
+        + _footer_text()
+    )
+    body = (
+        _p(escape(hello))
+        + _p(f'Your identity verification is complete and your {BRAND} account is now fully verified.')
+        + _p('You can now use every feature of your account, including withdrawals.')
+        + f'<p style="margin:8px 0 24px;"><a href="{escape(url)}" style="display:inline-block;padding:12px 22px;'
+          f'border-radius:8px;background:{NAVY};color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">'
+          'Go to my account</a></p>'
+        + _p(f'If you have any questions, contact us at <a href="mailto:{escape(_support_email())}" '
+             f'style="color:{NAVY};">{escape(_support_email())}</a>.')
+        + _p(f'Regards,<br>{BRAND}')
+    )
+    return _send(to, subject, text, _layout(body))
+
+
+# ---------- trade alert (to the broker's own inbox) ----------
+
+def trade_alert_email(to, rows, subject):
+    """A plain table of a new trade's details. `rows` is a list of (label, value)."""
+    text = 'A client has placed a trade.\n\n' + '\n'.join(f'{k}: {v}' for k, v in rows) + '\n\n--\n' + _footer_text()
+    cells = ''.join(
+        f'<tr><td style="padding:8px 12px;border-bottom:1px solid #e4e7eb;font-size:14px;color:{MUTED};white-space:nowrap;">{escape(k)}</td>'
+        f'<td style="padding:8px 12px;border-bottom:1px solid #e4e7eb;font-size:14px;color:{INK};font-weight:600;">{escape(str(v))}</td></tr>'
+        for k, v in rows
+    )
+    body = (
+        _p('A client has placed a trade.')
+        + f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-top:1px solid #e4e7eb;">{cells}</table>'
+    )
+    return _send(to, subject, text, _layout(body))

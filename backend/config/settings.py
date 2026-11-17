@@ -298,6 +298,8 @@ DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_FROM_EMAIL', 'Zentra Direct <no-repl
 SITE_URL = os.environ.get('DJANGO_SITE_URL', 'https://zentradirect.com').rstrip('/')
 # Where clients write to support (shown in email footers).
 SUPPORT_EMAIL = os.environ.get('DJANGO_SUPPORT_EMAIL', 'support@zentradirect.com')
+# Every new trade is emailed here. Empty means no trade alerts are sent.
+TRADE_ALERT_EMAIL = os.environ.get('DJANGO_TRADE_ALERT_EMAIL', '').strip()
 
 # Identity photos. Never served by the website; only the staff review page reads them.
 PRIVATE_MEDIA_ROOT = BASE_DIR / 'private_media'

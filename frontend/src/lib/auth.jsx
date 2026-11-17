@@ -25,11 +25,21 @@ export function AuthProvider({ children }) {
     refresh();
   }, [refresh]);
 
+  // Step one: the password. The server then emails a code and returns { code_required }.
   const signIn = useCallback(async (email, password, remember) => {
     const data = await api('/auth/login/', { method: 'POST', body: { email, password, remember } });
+    if (data.user) setUser(data.user);
+    return data;
+  }, []);
+
+  // Step two: the 6-digit code from the email opens the dashboard.
+  const verifySignIn = useCallback(async (code) => {
+    const data = await api('/auth/login/verify/', { method: 'POST', body: { code } });
     setUser(data.user);
     return data.user;
   }, []);
+
+  const resendSignIn = useCallback(() => api('/auth/login/resend/', { method: 'POST' }), []);
 
   const register = useCallback(async (email, password, emailConsent, verificationToken) => {
     const data = await api('/auth/register/', {
@@ -50,8 +60,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, refresh, signIn, register, signOut, setUser }),
-    [user, loading, refresh, signIn, register, signOut],
+    () => ({ user, loading, refresh, signIn, verifySignIn, resendSignIn, register, signOut, setUser }),
+    [user, loading, refresh, signIn, verifySignIn, resendSignIn, register, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

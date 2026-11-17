@@ -1,8 +1,10 @@
 import json
+import re
 from datetime import date
 
 from django.contrib.auth import get_user_model
 from django.core import signing
+from django.core import mail
 from django.core.cache import cache
 from django.test import Client, TestCase
 
@@ -24,6 +26,14 @@ class ApiTestCase(TestCase):
             url, data=json.dumps(body or {}), content_type='application/json',
             HTTP_X_CSRFTOKEN=token,
         )
+
+    def sign_in(self, email, password=GOOD_PASSWORD):
+        """Password, then the emailed code, as a real visitor would."""
+        res = self.call('post', '/api/auth/login/', {'email': email, 'password': password})
+        if res.status_code != 200:
+            return res
+        code = re.search(r'(\d{6})', mail.outbox[-1].body).group(1)
+        return self.call('post', '/api/auth/login/verify/', {'code': code})
 
     def register(self, email='ana@example.com', password=GOOD_PASSWORD):
         # Sign-up needs an email that was proven with a code. Tests mint that proof directly.
@@ -94,9 +104,9 @@ class AuthFlowTests(ApiTestCase):
         self.register()
         self.call('post', '/api/auth/logout/')
         self.assertIsNone(self.client.get('/api/auth/me/').json()['user'])
-        res = self.call('post', '/api/auth/login/',
-                        {'email': 'Ana@Example.com', 'password': GOOD_PASSWORD})
+        res = self.sign_in('Ana@Example.com')
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.client.get('/api/auth/me/').json()['user']['email'], 'ana@example.com')
 
     def test_lockout_after_failed_attempts(self):
         get_user_model().objects.create_user('bo@example.com', 'bo@example.com', GOOD_PASSWORD)
@@ -131,7 +141,7 @@ class ApplicationFlowTests(ApiTestCase):
         self.assertEqual(res.status_code, 200, res.content)
         # Sign out and back in: progress is kept.
         self.call('post', '/api/auth/logout/')
-        self.call('post', '/api/auth/login/', {'email': 'ana@example.com', 'password': GOOD_PASSWORD})
+        self.sign_in('ana@example.com')
         app = self.client.get('/api/application/').json()['application']
         self.assertEqual(app['current_step'], 3)
         self.assertEqual(app['first_name'], 'Ana')

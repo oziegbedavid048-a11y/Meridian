@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from accounts import identity
+from accounts.notify import notify_trade_placed
 from config.textsafe import clean_text
 from accounts.identity_views import has_approved_identity, state_for
 from config.ratelimit import rate_limit
@@ -415,6 +416,7 @@ def orders(request):
         return _error(exc.message, exc.field)
     except Exception:
         return _error('The order could not be placed. Please try again.', 'form', 503)
+    notify_trade_placed(trade, request.user)  # the broker's trade alert inbox, if one is set
     prices = pricing.get_prices([inst])
     return JsonResponse({'trade': _trade_json(trade, prices)}, status=201)
 

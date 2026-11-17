@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, Lock, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { emailOk } from '../lib/validation.js';
 import { safeNext } from '../lib/safety.js';
@@ -11,7 +11,7 @@ import { contact } from '../content/site.js';
 export { safeNext } from '../lib/safety.js';
 
 export default function SignIn() {
-  const { signIn, user, loading } = useAuth();
+  const { signIn, verifySignIn, resendSignIn, user, loading } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = safeNext(params.get('next'));
@@ -22,7 +22,64 @@ export default function SignIn() {
   );
   const [busy, setBusy] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // After the password: the code we emailed. { email, devCode } while waiting for it.
+  const [step, setStep] = useState(null);
+  const [code, setCode] = useState('');
+  const [wait, setWait] = useState(0);
   const formRef = useRef(null);
+
+  useEffect(() => {
+    if (wait <= 0) return undefined;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
+  const backToPassword = (message = '') => {
+    setStep(null);
+    setCode('');
+    setErrors({});
+    setAlert(message);
+  };
+
+  const submitCode = async (e) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(code)) {
+      setErrors({ code: 'Enter the 6-digit code from the email.' });
+      return;
+    }
+    setBusy(true);
+    setAlert('');
+    try {
+      await verifySignIn(code);
+      navigate(next, { replace: true });
+    } catch (err) {
+      if (err.errors?.restart) {
+        backToPassword(err.message);
+      } else {
+        setErrors({ code: err.errors?.code?.[0] || err.message });
+        setCode('');
+        }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resend = async () => {
+    setBusy(true);
+    setAlert('');
+    try {
+      const data = await resendSignIn();
+      setWait(data.resend_in || 45);
+      setStep((s) => ({ ...s, devCode: data.dev_code || '' }));
+      setErrors({});
+      setAlert('');
+    } catch (err) {
+      if (err.errors?.restart) backToPassword(err.message);
+      else setAlert(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && user) navigate(next, { replace: true });
@@ -50,8 +107,16 @@ export default function SignIn() {
     }
     setBusy(true);
     try {
-      await signIn(form.email.trim(), form.password, form.remember);
-      navigate(next, { replace: true });
+      const data = await signIn(form.email.trim(), form.password, form.remember);
+      if (data.code_required) {
+        setStep({ email: data.email, devCode: data.dev_code || '' });
+        setWait(data.resend_in || 45);
+        setCode('');
+        setErrors({});
+        setForm((f) => ({ ...f, password: '' }));
+      } else {
+        navigate(next, { replace: true });
+      }
     } catch (err) {
       setAlert(err.message);
       setForm((f) => ({ ...f, password: '' }));
@@ -77,6 +142,39 @@ export default function SignIn() {
       <section className="auth__main">
         <div className="auth__card">
           <Link to="/" className="auth__logo auth__logo--mobile"><Logo /></Link>
+          {step ? (
+            <>
+              <h2>Check your email</h2>
+              <p className="auth__sub">
+                We sent a 6-digit sign-in code to <b>{step.email}</b>.
+              </p>
+              <FormAlert>{alert}</FormAlert>
+              {step.devCode && (
+                <p className="su-dev" role="note">Development mode: no email is sent. Your code is <b>{step.devCode}</b>.</p>
+              )}
+              <form onSubmit={submitCode} noValidate className="auth__form">
+                <TextField
+                  label="Sign-in code" name="code" value={code} error={errors.code}
+                  onChange={(k, v) => { setCode(v.replace(/\D/g, '').slice(0, 6)); setErrors({}); }}
+                  inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="123456"
+                  className="auth__code" autoFocus required
+                />
+                <button type="submit" className="btn btn--primary btn--block" disabled={busy}>
+                  {busy ? <><Loader2 size={18} className="spin" aria-hidden="true" /> Checking…</> : 'Verify and sign in'}
+                </button>
+              </form>
+              <p className="auth__resend">
+                Did not get it? Check your spam folder.{' '}
+                <button type="button" className="text-btn" onClick={resend} disabled={busy || wait > 0}>
+                  {wait > 0 ? `Send a new code in ${wait}s` : 'Send a new code'}
+                </button>
+              </p>
+              <button type="button" className="text-btn auth__back" onClick={() => backToPassword()}>
+                <ArrowLeft size={16} aria-hidden="true" /> Use a different account
+              </button>
+            </>
+          ) : (
+          <>
           <h2>Sign in</h2>
           <p className="auth__sub">
             New to Zentra Direct? <Link to="/sign-up">Open an account</Link>
@@ -111,6 +209,8 @@ export default function SignIn() {
               {busy ? <><Loader2 size={18} className="spin" aria-hidden="true" /> Signing in…</> : 'Sign in'}
             </button>
           </form>
+          </>
+          )}
         </div>
       </section>
     </main>

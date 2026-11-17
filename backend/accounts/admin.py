@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 from . import identity
+from .notify import notify_verification_approved
 from .models import Application, ContactMessage, IdentityVerification, SupportMessage, SupportTicket
 
 
@@ -99,11 +100,14 @@ class IdentityVerificationAdmin(admin.ModelAdmin):
         self.message_user(request, f'Approved {count}. Those clients can now make withdrawals.', messages.SUCCESS)
 
     def _decide(self, request, record, approved, reason=''):
+        first_approval = approved and record.status != IdentityVerification.Status.APPROVED
         record.status = IdentityVerification.Status.APPROVED if approved else IdentityVerification.Status.REJECTED
         record.rejection_reason = '' if approved else reason
         record.reviewed_by = request.user
         record.reviewed_at = timezone.now()
         record.save(update_fields=['status', 'rejection_reason', 'reviewed_by', 'reviewed_at'])
+        if first_approval:
+            notify_verification_approved(record)
 
     def review_view(self, request, pk):
         record = get_object_or_404(IdentityVerification.objects.select_related('user'), pk=pk)

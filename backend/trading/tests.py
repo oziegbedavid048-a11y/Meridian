@@ -1,8 +1,10 @@
 import json
+import re
 from decimal import Decimal
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.cache import cache
 from django.test import Client, TestCase
 
@@ -177,6 +179,8 @@ class ApiTests(TestCase):
 
     def login(self):
         self.post('/api/auth/login/', {'email': 'b@example.com', 'password': PASSWORD})
+        code = re.search(r'(\d{6})', mail.outbox[-1].body).group(1)
+        self.post('/api/auth/login/verify/', {'code': code})
 
     def patch_market(self):
         return mock.patch('trading.pricing.get_prices', side_effect=lambda items: {

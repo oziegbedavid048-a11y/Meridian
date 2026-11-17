@@ -16,7 +16,7 @@ from django.core import signing
 from django.db import transaction
 from django.utils import timezone
 
-from .emails import verification_code_email
+from .emails import sign_in_code_email, verification_code_email
 from .models import EmailCode
 
 CODE_TTL = timedelta(minutes=10)
@@ -40,11 +40,16 @@ class CodeProblem(Exception):
     """A wrong, expired or used-up code. The message is safe to show."""
 
 
-def _hash(email, code):
-    return hmac.new(settings.SECRET_KEY.encode(), f'{email}:{code}'.encode(), hashlib.sha256).hexdigest()
+def _hash(email, code, purpose='signup'):
+    # The purpose is part of the hash, so a sign-up code never works for signing in.
+    label = email if purpose == 'signup' else f'{purpose}:{email}'
+    return hmac.new(settings.SECRET_KEY.encode(), f'{label}:{code}'.encode(), hashlib.sha256).hexdigest()
 
 
-def send_code(email):
+EMAILS = {'signup': verification_code_email, 'signin': sign_in_code_email}
+
+
+def send_code(email, purpose='signup'):
     """Create and email a code. Returns (seconds until it expires, the code)."""
     now = timezone.now()
     latest = EmailCode.objects.filter(email=email).order_by('-created_at').first()
@@ -54,16 +59,16 @@ def send_code(email):
     code = f'{secrets.randbelow(10 ** 6):06d}'
     EmailCode.objects.filter(email=email, used=False).update(used=True)  # only the newest code works
     EmailCode.objects.filter(created_at__lt=now - timedelta(days=1)).delete()
-    record = EmailCode.objects.create(email=email, code_hash=_hash(email, code), expires_at=now + CODE_TTL)
+    record = EmailCode.objects.create(email=email, code_hash=_hash(email, code, purpose), expires_at=now + CODE_TTL)
     try:
-        verification_code_email(email, code, int(CODE_TTL.total_seconds() // 60)).send(fail_silently=False)
+        EMAILS[purpose](email, code, int(CODE_TTL.total_seconds() // 60)).send(fail_silently=False)
     except Exception as exc:
         record.delete()  # not sent, so it must not block asking again
         raise SendFailed(str(exc)) from exc
     return int(CODE_TTL.total_seconds()), code
 
 
-def check_code(email, code):
+def check_code(email, code, purpose='signup'):
     """Check a typed code. Returns a signed token that proves the email was verified.
 
     The code's row is locked while it is checked, so guesses sent at the same
@@ -83,7 +88,7 @@ def check_code(email, code):
             problem = 'Too many wrong codes. Ask for a new one.'
         else:
             entry.attempts += 1
-            right = len(code) == 6 and code.isdigit() and hmac.compare_digest(entry.code_hash, _hash(email, code))
+            right = len(code) == 6 and code.isdigit() and hmac.compare_digest(entry.code_hash, _hash(email, code, purpose))
             if right:
                 entry.used = True
                 problem = ''

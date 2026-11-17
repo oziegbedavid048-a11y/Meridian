@@ -8,6 +8,7 @@ GET /api/auth/csrf/ and send the `csrftoken` cookie value back in the
 
 import json
 import logging
+import time
 from datetime import date
 
 from django.conf import settings
@@ -220,10 +221,84 @@ def sign_in(request):
         return _bad_request({'form': ['The email or password is incorrect.']}, status=401)
 
     cache.delete(key)  # only this account's counter resets; the shared-address counter just ages out
-    login(request, user)
-    if data.get('remember') is not True:
+    # The password is right. The dashboard opens only after the code we email now.
+    request.session[PENDING_LOGIN] = {
+        'uid': user.pk, 'email': user.email or email, 'remember': data.get('remember') is True,
+        'at': int(time.time()),
+    }
+    return _send_sign_in_code(request, request.session[PENDING_LOGIN]['email'])
+
+
+PENDING_LOGIN = 'pending_login'
+PENDING_LOGIN_SECONDS = 10 * 60
+
+
+def _mask(email):
+    name, _, domain = email.partition('@')
+    return (name[:2] + '***@' + domain) if domain else email
+
+
+def _send_sign_in_code(request, email):
+    body = {'code_required': True, 'email': _mask(email),
+            'resend_in': int(verification.RESEND_AFTER.total_seconds())}
+    try:
+        seconds, code = verification.send_code(email, purpose='signin')
+    except verification.Cooldown as wait:
+        body['resend_in'] = wait.seconds  # a code was sent moments ago and still works
+        return JsonResponse(body)
+    except verification.SendFailed as failure:
+        log.error('could not send a sign-in code: %s', failure)
+        return _bad_request({'form': ['We could not send your sign-in code right now. Please try again shortly.']},
+                            status=503)
+    body['expires_in'] = seconds
+    if settings.DEBUG and 'console' in settings.EMAIL_BACKEND:
+        body['dev_code'] = code  # development only, never in production
+    return JsonResponse(body)
+
+
+def _pending_login(request):
+    pending = request.session.get(PENDING_LOGIN)
+    if not pending or time.time() - pending.get('at', 0) > PENDING_LOGIN_SECONDS:
+        request.session.pop(PENDING_LOGIN, None)
+        return None
+    return pending
+
+
+@require_http_methods(['POST'])
+@rate_limit('email-verify', by='ip')
+def sign_in_verify(request):
+    """Second step of signing in: the 6-digit code from the email."""
+    data = _json_body(request)
+    if data is None:
+        return _bad_request({'body': ['Invalid request.']})
+    pending = _pending_login(request)
+    if pending is None:
+        return _bad_request({'form': ['Your sign-in has timed out. Please enter your password again.'],
+                             'restart': ['1']})
+    try:
+        verification.check_code(pending['email'], data.get('code'), purpose='signin')
+    except verification.CodeProblem as problem:
+        log.warning('wrong sign-in code for %s from %s', pending['email'], client_ip(request))
+        return _bad_request({'code': [str(problem)]})
+    user = User.objects.filter(pk=pending['uid'], is_active=True).first()
+    if user is None:
+        request.session.pop(PENDING_LOGIN, None)
+        return _bad_request({'form': ['This account cannot sign in. Please contact support.'], 'restart': ['1']})
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')  # a new session, the old one is gone
+    if not pending.get('remember'):
         request.session.set_expiry(0)  # end the session when the browser closes
     return JsonResponse({'user': _serialize_user(user)})
+
+
+@require_http_methods(['POST'])
+@rate_limit('email-code', by='ip')
+def sign_in_resend(request):
+    """Send a new sign-in code to the account waiting for one."""
+    pending = _pending_login(request)
+    if pending is None:
+        return _bad_request({'form': ['Your sign-in has timed out. Please enter your password again.'],
+                             'restart': ['1']})
+    return _send_sign_in_code(request, pending['email'])
 
 
 @require_http_methods(['POST'])
