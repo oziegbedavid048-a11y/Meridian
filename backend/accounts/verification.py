@@ -13,6 +13,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core import signing
+from django.db import transaction
 from django.utils import timezone
 
 from .emails import verification_code_email
@@ -63,26 +64,38 @@ def send_code(email):
 
 
 def check_code(email, code):
-    """Check a typed code. Returns a signed token that proves the email was verified."""
+    """Check a typed code. Returns a signed token that proves the email was verified.
+
+    The code's row is locked while it is checked, so guesses sent at the same
+    moment are counted one by one and a code can only ever be used once. The
+    guess count is saved before any error is raised, so a wrong guess always
+    counts.
+    """
     code = str(code or '').strip()
-    entry = EmailCode.objects.filter(email=email, used=False).order_by('-created_at').first()
-    if entry is None or entry.expires_at < timezone.now():
-        raise CodeProblem('That code has expired. Ask for a new one.')
-    if entry.attempts >= MAX_GUESSES:
-        entry.used = True
-        entry.save(update_fields=['used'])
-        raise CodeProblem('Too many wrong codes. Ask for a new one.')
-    entry.attempts += 1
-    if not (len(code) == 6 and code.isdigit()) or not hmac.compare_digest(entry.code_hash, _hash(email, code)):
-        left = MAX_GUESSES - entry.attempts
-        if left <= 0:
+    with transaction.atomic():
+        entry = (EmailCode.objects.select_for_update()
+                 .filter(email=email, used=False).order_by('-created_at').first())
+        if entry is None or entry.expires_at < timezone.now():
+            problem = 'That code has expired. Ask for a new one.'
+        elif entry.attempts >= MAX_GUESSES:
             entry.used = True
-        entry.save(update_fields=['attempts', 'used'])
-        raise CodeProblem(
-            'That code is not right. Check it and try again.' if left > 0
-            else 'Too many wrong codes. Ask for a new one.')
-    entry.used = True
-    entry.save(update_fields=['attempts', 'used'])
+            entry.save(update_fields=['used'])
+            problem = 'Too many wrong codes. Ask for a new one.'
+        else:
+            entry.attempts += 1
+            right = len(code) == 6 and code.isdigit() and hmac.compare_digest(entry.code_hash, _hash(email, code))
+            if right:
+                entry.used = True
+                problem = ''
+            else:
+                left = MAX_GUESSES - entry.attempts
+                if left <= 0:
+                    entry.used = True
+                problem = ('That code is not right. Check it and try again.' if left > 0
+                           else 'Too many wrong codes. Ask for a new one.')
+            entry.save(update_fields=['attempts', 'used'])
+    if problem:
+        raise CodeProblem(problem)
     return signing.dumps({'email': email}, salt=TOKEN_SALT)
 
 

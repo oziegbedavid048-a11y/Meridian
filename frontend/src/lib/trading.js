@@ -50,6 +50,10 @@ export const closeAll = (scope) => api('/trading/positions/close-all/', { method
 export const modifyPosition = (id, body) => api(`/trading/positions/${id}/modify/`, { method: 'POST', body });
 export const cancelOrder = (id) => api(`/trading/orders/${id}/cancel/`, { method: 'POST' });
 export const getFunding = () => api('/trading/funding/');
+// The deposit and withdraw pages need the coins and limits, not the history.
+export const getFundingForm = () => api('/trading/funding/?view=form');
+// One kind of request for the history under the deposit or withdraw form.
+export const getFundingHistory = (kind) => api(`/trading/funding/?kind=${encodeURIComponent(kind)}`);
 export const requestFunding = (body) => api('/trading/funding/', { method: 'POST', body });
 export const resetAccount = (body) => api('/trading/reset/', { method: 'POST', body });
 
@@ -75,14 +79,15 @@ export function usePoll(fn, ms, deps = []) {
 }
 
 /** Formats money in the account currency. */
-export function money(value, currency = 'CAD') {
+export function money(value, currency = 'USD') {
   if (value === null || value === undefined) return '—';
-  return new Intl.NumberFormat('en-CA', {
+  // en-US writes US dollars as plain "$" (en-CA would write "US$").
+  return new Intl.NumberFormat('en-US', {
     style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(value);
 }
 
-export function signed(value, currency = 'CAD') {
+export function signed(value, currency = 'USD') {
   if (value === null || value === undefined) return '—';
   const text = money(Math.abs(value), currency);
   return value < 0 ? `-${text}` : `+${text}`;

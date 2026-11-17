@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { pricing } from '../content/site.js';
 
-export default function PricingTable() {
-  const [tab, setTab] = useState(pricing.tabs[0].id);
-  const current = pricing.tabs.find((t) => t.id === tab);
+/** Fee tables in tabs. `only` limits which tabs show (the home page shows fewer). */
+export default function PricingTable({ only = null }) {
+  const tabs = only ? pricing.tabs.filter((t) => only.includes(t.id)) : pricing.tabs;
+  const [tab, setTab] = useState(tabs[0].id);
+  const current = tabs.find((t) => t.id === tab);
   return (
     <div className="pricing">
       <div className="pill-tabs" role="tablist" aria-label="Fee categories">
-        {pricing.tabs.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             type="button"

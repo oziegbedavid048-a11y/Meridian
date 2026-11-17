@@ -177,6 +177,10 @@ def current_mid(instrument, live_mid=None, now=None):
     return float(live_mid)
 
 
+# Fields _pin_to_now sets, so the admin actions write only what they change.
+SIM_FIELDS = ['sim_base_price', 'sim_anchor_at', 'sim_trend_percent', 'price_source']
+
+
 def _pin_to_now(instrument, live_mid=None):
     """Make the price right now the starting point, so nothing jumps."""
     from decimal import Decimal
@@ -205,20 +209,21 @@ def start_move(instrument, percent, minutes, delay_minutes=0, live_mid=None, vol
     instrument.sim_shock_minutes = int(minutes)
     if volatility is not None:
         instrument.sim_volatility_percent = Decimal(str(volatility))
-    instrument.save()
+    instrument.save(update_fields=[*SIM_FIELDS, 'sim_shock_at', 'sim_shock_percent', 'sim_shock_minutes',
+                                   'sim_volatility_percent'])
 
 
 def hold_steady(instrument):
     """Stop any move and keep the price where it is."""
     _pin_to_now(instrument)
-    instrument.save()
+    instrument.save(update_fields=[*SIM_FIELDS, 'sim_shock_at', 'sim_shock_percent'])
 
 
 def use_live_prices(instrument):
     instrument.price_source = instrument.PriceSource.FEED
     instrument.sim_shock_at = None
     instrument.sim_shock_percent = 0
-    instrument.save()
+    instrument.save(update_fields=['price_source', 'sim_shock_at', 'sim_shock_percent'])
 
 
 def plain_status(instrument, now=None):

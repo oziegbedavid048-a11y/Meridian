@@ -30,12 +30,50 @@ SPARK_BATCH = 20  # the feed refuses more symbols than this in one request
 
 
 def fetch_quotes(symbols):
-    """Return {symbol: {price, previous_close, name, currency, time}} for the symbols."""
+    """Return {symbol: {price, previous_close, name, currency, time}} for the symbols.
+
+    Yahoo Finance is the main source. Crypto pairs it does not answer for
+    (for example while it is down) are filled from Coinbase's public prices,
+    so one provider failing does not stop crypto prices.
+    """
     symbols = list(symbols)
     out = {}
+    failure = None
     for start in range(0, len(symbols), SPARK_BATCH):
-        out.update(_fetch_quote_batch(symbols[start:start + SPARK_BATCH]))
+        try:
+            out.update(_fetch_quote_batch(symbols[start:start + SPARK_BATCH]))
+        except Exception as exc:  # one batch failing must not lose the others
+            failure = exc
+    missing = [s for s in symbols if s not in out and BACKUP_CRYPTO.match(s)]
+    for symbol in missing[:12]:
+        try:
+            out[symbol] = _coinbase_quote(symbol)
+        except Exception:
+            log.warning('backup price unavailable for %s', symbol)
+    if not out and failure is not None:
+        raise failure
     return out
+
+
+# Coinbase lists these as BASE-USD, the same form our feed symbols use.
+BACKUP_CRYPTO = __import__('re').compile(r'^(BTC|ETH|SOL|XRP|ADA|DOGE|LTC)-USD$')
+
+
+def _coinbase_quote(symbol):
+    """One crypto price from Coinbase's public 24-hour statistics."""
+    data = outbound.get_json(f'https://api.exchange.coinbase.com/products/{symbol}/stats', timeout=4)
+    last = float(data['last'])
+    if not last > 0:
+        raise ValueError('no price')
+    return {
+        'price': last,
+        'day_high': float(data.get('high') or last),
+        'day_low': float(data.get('low') or last),
+        'previous_close': float(data['open']) if data.get('open') else None,
+        'name': symbol,
+        'currency': 'USD',
+        'time': None,
+    }
 
 
 def _fetch_quote_batch(symbols):

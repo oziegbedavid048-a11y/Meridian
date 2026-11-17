@@ -9,7 +9,7 @@ import SignUp from './pages/SignUp.jsx';
 import Terminal from './pages/Terminal.jsx';
 import { VerifyPage } from './pages/Verify.jsx';
 import {
-  AccountHome, FundingHistoryPage, TradeHistoryPage,
+  AccountHome, TradeHistoryPage,
 } from './pages/AccountPages.jsx';
 import { DepositPage, WithdrawPage } from './pages/Funding.jsx';
 import { LegalRoute, NotFound, PricingPage } from './pages/InfoPages.jsx';
@@ -90,7 +90,7 @@ export default function App() {
         <Route path="account/withdraw" element={<WithdrawPage />} />
         <Route path="account/verify" element={<VerifyPage />} />
         <Route path="account/history" element={<TradeHistoryPage />} />
-        <Route path="account/funding-history" element={<FundingHistoryPage />} />
+        <Route path="account/funding-history" element={<Navigate to="/account/deposit" replace />} />
         <Route path="dashboard" element={<Navigate to="/account" replace />} />
       </Routes>
     </>

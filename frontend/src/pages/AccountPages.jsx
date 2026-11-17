@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import AccountShell, { SummaryBar } from '../components/AccountShell.jsx';
 import LiveMarket from '../components/LiveMarket.jsx';
 import {
-  getFunding, getHistory, getPositions, money, price, signed, useAccountSummary, usePoll,
+  getHistory, getPositions, price, signed, useAccountSummary, usePoll,
 } from '../lib/trading.js';
 import { useAuth } from '../lib/auth.jsx';
 import { fullName, greeting } from '../lib/names.js';
@@ -12,17 +12,7 @@ import { fullName, greeting } from '../lib/names.js';
 const dateFmt = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
 const showDate = (iso) => (iso ? dateFmt.format(new Date(iso)) : '—');
 
-const STATUS_LABEL = {
-  completed: 'Done',
-  pending: 'Pending review',
-  rejected: 'Rejected',
-};
 
-const KIND_LABEL = {
-  deposit: 'Deposit',
-  withdrawal: 'Withdrawal',
-  reset: 'Balance reset',
-};
 
 const CLOSE_REASON = {
   manual: 'Closed by you',
@@ -51,7 +41,7 @@ export function AccountHome() {
   usePoll(load, 10000);
 
   const app = user?.application;
-  const currency = account?.currency || 'CAD';
+  const currency = account?.currency || 'USD';
   const open = positions.filter((p) => p.status === 'open');
 
   return (
@@ -145,7 +135,7 @@ export function TradeHistoryPage() {
   }, [data, filter]);
 
   const s = data?.summary;
-  const currency = s?.currency || 'CAD';
+  const currency = s?.currency || 'USD';
 
   return (
     <AccountShell wide>
@@ -208,58 +198,3 @@ export function TradeHistoryPage() {
 }
 
 /* ---------- Transfer history ---------- */
-export function FundingHistoryPage() {
-  const [data, setData] = useState(null);
-
-  useEffect(() => { document.title = 'Balance history | Zentra Direct'; }, []);
-
-  const load = useCallback(async () => {
-    try {
-      setData(await getFunding());
-    } catch {
-      /* ignore */
-    }
-  }, []);
-  usePoll(load, 15000);
-
-  const rows = data?.requests || [];
-  const currency = data?.currency || 'CAD';
-
-  return (
-    <AccountShell>
-      <h1 className="page-title">Balance history</h1>
-      <div className="panel__actions panel__actions--top">
-        <Link to="/account/deposit" className="btn btn--primary btn--sm">Deposit</Link>
-        <Link to="/account/withdraw" className="btn btn--outline btn--sm">Withdraw</Link>
-      </div>
-
-      {!data ? (
-        <p className="muted">Loading…</p>
-      ) : !rows.length ? (
-        <div className="panel"><p className="muted">Your practice balance has not changed yet.</p></div>
-      ) : (
-        <div className="table-scroll">
-          <table className="pos-table pos-table--cards">
-            <thead>
-              <tr>
-                <th scope="col">Date</th><th scope="col">Change</th>
-                <th scope="col">Amount</th><th scope="col">Balance after</th><th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <th scope="row" data-label="Date">{showDate(r.created_at)}</th>
-                  <td data-label="Change">{KIND_LABEL[r.kind] || r.kind}</td>
-                  <td data-label="Amount">{r.kind === 'withdrawal' ? '\u2212' : ''}{money(r.amount, currency)}</td>
-                  <td data-label="Balance after">{money(r.balance_after, currency)}</td>
-                  <td data-label="Status"><span className={`chip chip--${r.status}`}>{STATUS_LABEL[r.status] || r.status}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </AccountShell>
-  );
-}

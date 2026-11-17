@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
@@ -7,7 +7,9 @@ import {
 import AccountShell from '../components/AccountShell.jsx';
 import CoinLogo from '../components/CoinLogo.jsx';
 import { api } from '../lib/api.js';
-import { fieldErrors, getFunding, money, requestFunding, useAccountSummary } from '../lib/trading.js';
+import {
+  fieldErrors, getFundingForm, getFundingHistory, money, requestFunding, useAccountSummary, usePoll,
+} from '../lib/trading.js';
 import { shrinkImage } from '../lib/images.js';
 import { addressProblem } from '../lib/addresses.js';
 
@@ -98,10 +100,57 @@ function Processing({ title, text, onDone, doneLabel }) {
       <h2>{title}</h2>
       <p>{text}</p>
       <div className="fx-done__actions">
-        <Link to="/account/funding-history" className="fx-btn fx-btn--ghost">See balance history</Link>
         <button type="button" className="fx-btn" onClick={onDone}>{doneLabel}</button>
       </div>
     </div>
+  );
+}
+
+const STATUS_TEXT = { pending: 'Processing', completed: 'Completed', rejected: 'Rejected' };
+const whenFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+/** Past deposits or withdrawals, newest first, under the form. */
+function FundingHistory({ kind, refreshKey }) {
+  const [rows, setRows] = useState(null);
+  const [currency, setCurrency] = useState('USD');
+  const load = useCallback(async () => {
+    try {
+      const res = await getFundingHistory(kind);
+      setRows(res.requests || []);
+      setCurrency(res.currency || 'USD');
+    } catch {
+      setRows((r) => r || []);
+    }
+  }, [kind]);
+  usePoll(load, 15000);
+  useEffect(() => { if (refreshKey) load(); }, [refreshKey, load]);
+
+  const title = kind === 'deposit' ? 'Deposit history' : 'Withdrawal history';
+  return (
+    <section className="fx-history" aria-labelledby={`fx-h-${kind}`}>
+      <h2 id={`fx-h-${kind}`}>{title}</h2>
+      {rows === null ? (
+        <p className="fx-note">Loading…</p>
+      ) : !rows.length ? (
+        <p className="fx-note">{kind === 'deposit' ? 'No deposits yet.' : 'No withdrawals yet.'}</p>
+      ) : (
+        <ul className="fx-card fx-hist">
+          {rows.map((r) => (
+            <li key={r.id}>
+              {r.asset ? <CoinBadge asset={r.asset} size={34} /> : <span className="fx-hist__dot" aria-hidden="true" />}
+              <span className="fx-hist__main">
+                <b>{r.asset ? `${r.asset}${r.network ? ` · ${r.network}` : ''}` : (r.kind === 'deposit' ? 'Deposit' : 'Withdrawal')}</b>
+                <small>{whenFmt.format(new Date(r.created_at))}</small>
+              </span>
+              <span className="fx-hist__side">
+                <b>{kind === 'withdrawal' ? '\u2212' : '+'}{money(r.amount, currency)}</b>
+                <span className={`fx-status fx-status--${r.status}`}>{STATUS_TEXT[r.status] || r.status}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -128,7 +177,7 @@ export function DepositPage() {
   const minimum = info?.min_deposit ?? 10;
 
   useEffect(() => { document.title = 'Deposit | Zentra Direct'; }, []);
-  useEffect(() => { getFunding().then(setInfo).catch(() => {}); }, []);
+  useEffect(() => { getFundingForm().then(setInfo).catch(() => {}); }, []);
 
   const toCoins = () => {
     const n = Number(amount);
@@ -164,6 +213,7 @@ export function DepositPage() {
             text="Thank you. We are confirming your payment. Please check back in a few minutes; it can take up to a few hours. Your balance updates as soon as it is approved."
             doneLabel="Make another deposit" onDone={() => { setStep(0); setAmount(''); setCoin(null); }} />
         )}
+        <FundingHistory kind="deposit" refreshKey={step === 3 ? 'sent' : ''} />
       </div>
     </AccountShell>
   );
@@ -289,7 +339,7 @@ export function WithdrawPage() {
   const identity = info?.identity;
 
   useEffect(() => { document.title = 'Withdraw | Zentra Direct'; }, []);
-  useEffect(() => { getFunding().then(setInfo).catch(() => {}); }, []);
+  useEffect(() => { getFundingForm().then(setInfo).catch(() => {}); }, []);
 
   const coins = useMemo(() => (info?.payout_assets || []).map((c) => ({ ...c, key: `${c.asset}-${c.network}` })), [info]);
 
@@ -370,6 +420,7 @@ export function WithdrawPage() {
             text="Your request is with our team. Please check back in a few minutes; it can take up to a few hours. The amount is held from your balance while it is processed."
             doneLabel="Done" onDone={() => { setStep(0); setAmount(''); setCoin(null); setAddress(''); }} />
         )}
+        <FundingHistory kind="withdrawal" refreshKey={step === 4 ? 'sent' : ''} />
       </div>
     </AccountShell>
   );

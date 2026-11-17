@@ -76,3 +76,36 @@ class NewsEndpointTests(TestCase):
     @mock.patch('market.providers.fetch_news', return_value=[])
     def test_news_unavailable(self, _):
         self.assertEqual(self.client.get('/api/market/news/').status_code, 503)
+
+
+class BackupCryptoPriceTests(TestCase):
+    """When the main feed fails, crypto prices come from the backup source."""
+
+    STATS = {'open': '64000.00', 'high': '65500.00', 'low': '63800.00', 'last': '64950.25', 'volume': '1'}
+
+    def test_crypto_falls_back_when_the_main_feed_is_down(self):
+        with mock.patch.object(providers, '_fetch_quote_batch', side_effect=OSError('feed down')), \
+                mock.patch.object(providers.outbound, 'get_json', return_value=self.STATS) as backup:
+            quotes = providers.fetch_quotes(['BTC-USD', 'AAPL'])
+        self.assertEqual(quotes['BTC-USD']['price'], 64950.25)
+        self.assertEqual(quotes['BTC-USD']['previous_close'], 64000.0)
+        self.assertNotIn('AAPL', quotes)  # no backup for shares: they keep their last price instead
+        backup.assert_called_once()
+        self.assertIn('api.exchange.coinbase.com/products/BTC-USD/stats', backup.call_args[0][0])
+
+    def test_the_backup_is_not_used_while_the_main_feed_answers(self):
+        main = {'BTC-USD': {'price': 1.0}}
+        with mock.patch.object(providers, '_fetch_quote_batch', return_value=main), \
+                mock.patch.object(providers.outbound, 'get_json') as backup:
+            self.assertEqual(providers.fetch_quotes(['BTC-USD']), main)
+        backup.assert_not_called()
+
+    def test_with_both_sources_down_the_error_is_raised(self):
+        with mock.patch.object(providers, '_fetch_quote_batch', side_effect=OSError('feed down')), \
+                mock.patch.object(providers.outbound, 'get_json', side_effect=OSError('backup down')):
+            with self.assertRaises(OSError):
+                providers.fetch_quotes(['BTC-USD'])
+
+    def test_the_backup_host_is_on_the_outbound_allow_list(self):
+        from config import outbound
+        self.assertIn('api.exchange.coinbase.com', outbound.ALLOWED_HOSTS)

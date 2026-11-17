@@ -389,6 +389,9 @@ def modify_trade(trade, stop_loss, take_profit, trailing_points=None):
 
 @transaction.atomic
 def cancel_order(trade):
+    lock_account(trade.account)
+    # It may have been filled by a price check a moment ago: re-read it under the lock.
+    trade.refresh_from_db(fields=['status'])
     if trade.status != Trade.Status.PENDING:
         raise TradeError('Only a pending order can be cancelled.')
     trade.status = Trade.Status.CANCELLED
@@ -417,35 +420,11 @@ def process_account(account, prices=None):
             continue
         bid, ask = quote['bid'], quote['ask']
 
-        if trade.status == Trade.Status.PENDING and trade.order_type in STOP_LIMIT_TYPES:
-            # Waits for the stop price, then becomes an ordinary limit order.
-            buying = trade.side == Trade.Side.BUY
-            if (ask >= trade.entry_price) if buying else (bid <= trade.entry_price):
-                trade.order_type = Trade.Type.BUY_LIMIT if buying else Trade.Type.SELL_LIMIT
-                trade.entry_price, trade.limit_price = trade.limit_price, None
-                trade.save(update_fields=['order_type', 'entry_price', 'limit_price'])
-            continue
-
         if trade.status == Trade.Status.PENDING:
-            fill = ask if trade.side == Trade.Side.BUY else bid
-            triggered = (
-                (trade.order_type == Trade.Type.BUY_LIMIT and ask <= trade.entry_price)
-                or (trade.order_type == Trade.Type.BUY_STOP and ask >= trade.entry_price)
-                or (trade.order_type == Trade.Type.SELL_LIMIT and bid >= trade.entry_price)
-                or (trade.order_type == Trade.Type.SELL_STOP and bid <= trade.entry_price)
-            )
-            if not triggered:
-                continue
-            margin = margin_required(trade.instrument, trade.volume, fill, account.currency)
-            if margin > account_summary(account)['free_margin']:
-                cancel_order(trade)  # not enough margin by the time it triggered
-                continue
-            trade.status = Trade.Status.OPEN
-            trade.open_price = price_q(fill, trade.instrument)
-            trade.margin = margin
-            trade.fx_rate = pricing.fx_rate(trade.instrument.quote_currency, account.currency)
-            trade.opened_at = timezone.now()
-            trade.save(update_fields=['status', 'open_price', 'margin', 'fx_rate', 'opened_at'])
+            try:
+                _work_pending(account, trade, bid, ask)
+            except TradeError:
+                pass  # cancelled or filled by another request a moment ago
             continue
 
         current = bid if trade.side == Trade.Side.BUY else ask
@@ -465,6 +444,47 @@ def process_account(account, prices=None):
             continue  # closed by another request a moment ago
 
     _stop_out(account, prices)
+
+
+@transaction.atomic
+def _work_pending(account, trade, bid, ask):
+    """Fill a pending order (or arm a stop-limit) if the price has reached it.
+
+    Runs under the account lock and re-reads the order first, so two price
+    checks at the same moment (a page refresh and the background monitor)
+    can never fill one order twice or spend the same free margin twice.
+    """
+    lock_account(account)
+    trade.refresh_from_db(fields=['status', 'order_type', 'entry_price', 'limit_price'])
+    if trade.status != Trade.Status.PENDING:
+        return
+    buying = trade.side == Trade.Side.BUY
+    if trade.order_type in STOP_LIMIT_TYPES:
+        # Waits for the stop price, then becomes an ordinary limit order.
+        if (ask >= trade.entry_price) if buying else (bid <= trade.entry_price):
+            trade.order_type = Trade.Type.BUY_LIMIT if buying else Trade.Type.SELL_LIMIT
+            trade.entry_price, trade.limit_price = trade.limit_price, None
+            trade.save(update_fields=['order_type', 'entry_price', 'limit_price'])
+        return
+    fill = ask if buying else bid
+    triggered = (
+        (trade.order_type == Trade.Type.BUY_LIMIT and ask <= trade.entry_price)
+        or (trade.order_type == Trade.Type.BUY_STOP and ask >= trade.entry_price)
+        or (trade.order_type == Trade.Type.SELL_LIMIT and bid >= trade.entry_price)
+        or (trade.order_type == Trade.Type.SELL_STOP and bid <= trade.entry_price)
+    )
+    if not triggered:
+        return
+    margin = margin_required(trade.instrument, trade.volume, fill, account.currency)
+    if margin > account_summary(account)['free_margin']:
+        cancel_order(trade)  # not enough margin by the time it triggered
+        return
+    trade.status = Trade.Status.OPEN
+    trade.open_price = price_q(fill, trade.instrument)
+    trade.margin = margin
+    trade.fx_rate = pricing.fx_rate(trade.instrument.quote_currency, account.currency)
+    trade.opened_at = timezone.now()
+    trade.save(update_fields=['status', 'open_price', 'margin', 'fx_rate', 'opened_at'])
 
 
 def _trail(trade, current):

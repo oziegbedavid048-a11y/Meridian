@@ -754,3 +754,12 @@
     margin-top: auto;
   }
 }
+
+/* The website name in the dashboard bar. */
+.app-bar__brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.app-bar__brand:hover { color: var(--gold-300); }

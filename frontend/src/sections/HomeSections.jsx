@@ -280,7 +280,7 @@ export function PricingPreview() {
     <section className="section" id="pricing" aria-labelledby="pricing-title">
       <div className="container">
         <RuleHeading id="pricing-title" title="Pricing tailored to your needs" intro="Always $0 commission on online stock and ETF trades." />
-        <PricingTable />
+        <PricingTable only={['trades', 'accounts']} />
         <div className="center-buttons"><ArrowLink href="/pricing">See all fees</ArrowLink></div>
       </div>
     </section>

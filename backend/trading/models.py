@@ -112,7 +112,7 @@ class Instrument(models.Model):
 
 class TradingAccount(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trading_account')
-    currency = models.CharField(max_length=3, default='CAD')
+    currency = models.CharField(max_length=3, default='USD')  # every account is in US dollars, like deposits
     balance = models.DecimalField(max_digits=16, decimal_places=2, default=Decimal('0'))
     # Practice account: virtual balance, no deposits, no market execution.
     # Only turn this off once a licensed broker or clearing partner really

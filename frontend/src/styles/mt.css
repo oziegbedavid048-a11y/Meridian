@@ -676,7 +676,11 @@
 }
 
 /* ---------- Market Watch: market picker ---------- */
-.mw-head { gap: 10px; }
+.mw-head { gap: 10px; overflow: visible; position: relative; z-index: 5; }
+
+/* The picker's menu must be able to open over the list, so the box does not clip it. */
+.mt-watch--dash { overflow: visible; }
+.mt-watch--dash .mt-watch__scroll { overflow-y: auto; }
 .mw-head #lm-title { margin-right: auto; }
 
 .mw-pick { position: relative; }

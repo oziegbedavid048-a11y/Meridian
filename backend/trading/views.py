@@ -4,12 +4,13 @@ import json
 import logging
 from decimal import Decimal
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from accounts import identity
+from config.textsafe import clean_text
 from accounts.identity_views import has_approved_identity, state_for
 from config.ratelimit import rate_limit
 
@@ -33,8 +34,15 @@ def _error(message, field='form', status=400):
 
 
 def _account(request):
-    account, _ = TradingAccount.objects.get_or_create(user=request.user)
-    return account
+    try:
+        return TradingAccount.objects.get(user=request.user)
+    except TradingAccount.DoesNotExist:
+        pass
+    try:
+        with transaction.atomic():
+            return TradingAccount.objects.create(user=request.user)
+    except IntegrityError:  # another request created it a moment ago
+        return TradingAccount.objects.get(user=request.user)
 
 
 def login_required_json(view):
@@ -399,7 +407,7 @@ def orders(request):
             entry_price=data.get('entry_price'),
             limit_price=data.get('limit_price'),
             trailing_points=data.get('trailing_points'),
-            comment=str(data.get('comment') or ''),
+            comment=clean_text(data.get('comment'), 120),
         )
     except engine.TradeError as exc:
         return _error(exc.message, exc.field)
@@ -528,8 +536,15 @@ def funding(request):
     """Deposits in crypto (reviewed by staff) and withdrawals to a crypto address."""
     acc = _account(request)
     if request.method == 'GET':
+        # The deposit and withdraw pages ask with ?view=form and get no history;
+        # their history lists ask for one kind with ?kind=deposit or ?kind=withdrawal.
+        history = request.GET.get('view') != 'form'
+        found = acc.funding_requests.all()
+        kind = request.GET.get('kind')
+        if kind in (FundingRequest.Kind.DEPOSIT, FundingRequest.Kind.WITHDRAWAL):
+            found = found.filter(kind=kind)
         return JsonResponse({
-            'requests': [_funding_json(f) for f in acc.funding_requests.all()[:100]],
+            **({'requests': [_funding_json(f) for f in found[:100]]} if history else {}),
             'currency': acc.currency,
             'is_demo': acc.is_demo,
             'wallets': [_wallet_json(w) for w in _wallets()],

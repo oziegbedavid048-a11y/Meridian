@@ -807,3 +807,44 @@
 }
 
 .cx-center button:hover { background: rgb(52 62 78 / 0.95); }
+
+/* News: compact Headlines / Calendar switch and importance filter. */
+.app-shell--bare .mx-seg {
+  margin: 10px 12px 6px;
+  padding: 3px;
+  border-radius: 10px;
+}
+
+.app-shell--bare .mx-seg button {
+  min-height: 34px;
+  padding: 4px 10px;
+  font-size: 0.875rem;
+}
+
+.mx-filter {
+  display: flex;
+  gap: 6px;
+  padding: 4px 12px 10px;
+}
+
+.mx-filter button {
+  min-height: 32px;
+  padding: 4px 14px;
+  border: 1px solid var(--mx-line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mx-filter button.is-on {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--white);
+}
+
+.tx-bar__title { margin-left: 10px !important; }

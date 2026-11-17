@@ -29,6 +29,8 @@ ALLOWED_HOSTS = frozenset({
     # Zoho's email REST API (sign-up codes), by region. See config/zohomail.py.
     'cpaas.zoho.com', 'cpaas.zoho.eu', 'cpaas.zoho.in',
     'api.zeptomail.com', 'api.zeptomail.eu', 'api.zeptomail.in', 'api.zeptomail.com.au',
+    # Backup crypto prices when the main feed is down (see market/providers.py).
+    'api.exchange.coinbase.com',
 })
 MAX_BYTES = 5 * 1024 * 1024
 USER_AGENT = 'Mozilla/5.0 (compatible; ZentraDirect/1.0)'

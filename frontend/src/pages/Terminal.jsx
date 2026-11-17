@@ -492,7 +492,7 @@ function Check({ label, hint, checked, onChange }) {
 }
 
 /* ---------- Close sheet: close all of a position, or part of it ---------- */
-function CloseSheet({ trade, onClose, onDone }) {
+function CloseSheet({ trade, onClose, onDone, onStart, onFail }) {
   const full = trade.volume;
   const step = trade.lot_step || 0.01;
   const [vol, setVol] = useState(full.toFixed(2));
@@ -511,8 +511,13 @@ function CloseSheet({ trade, onClose, onDone }) {
   };
 
   const confirm = async () => {
+    // A whole close or a delete leaves the list straight away; the server's answer
+    // confirms it, or the row comes back with the reason. A partial close waits,
+    // because the size left comes from the server.
+    const optimistic = (isPending || !partial) && onStart;
     setBusy(true);
     setError('');
+    if (optimistic) onStart(trade.id, isPending ? `Deleting order #${trade.id}…` : `Closing #${trade.id}…`);
     try {
       if (isPending) {
         await cancelOrder(trade.id);
@@ -524,6 +529,10 @@ function CloseSheet({ trade, onClose, onDone }) {
       }
     } catch (err) {
       const fe = fieldErrors(err);
+      if (optimistic) {
+        onFail(trade.id, fe.volume || err.message);
+        return;
+      }
       setError(fe.volume || err.message);
       setBusy(false);
     }
@@ -631,11 +640,14 @@ function TradeScreen({ positions, account, onChanged, onSelect, onNew }) {
   const [closing, setClosing] = useState(null);
   const [many, setMany] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [noticeBad, setNoticeBad] = useState(false);
   const [closingBy, setClosingBy] = useState(null);
+  const [hidden, setHidden] = useState([]); // closes sent but not yet confirmed
 
-  const open = positions.filter((p) => p.status === 'open');
-  const pending = positions.filter((p) => p.status === 'pending');
-  const c = account?.currency || 'CAD';
+  const shown = positions.filter((p) => !hidden.includes(p.id));
+  const open = shown.filter((p) => p.status === 'open');
+  const pending = shown.filter((p) => p.status === 'pending');
+  const c = account?.currency || 'USD';
   const floating = account?.floating_profit ?? 0;
 
   const finished = (text) => {
@@ -643,9 +655,27 @@ function TradeScreen({ positions, account, onChanged, onSelect, onNew }) {
     setMany(false);
     setClosingBy(null);
     setOpenId(null);
+    setNoticeBad(false);
     setNotice(text);
     onChanged();
   };
+  const closeStarted = (id, text) => {
+    setHidden((h) => [...h, id]);
+    setClosing(null);
+    setOpenId(null);
+    setNoticeBad(false);
+    setNotice(text);
+  };
+  const closeFailed = (id, text) => {
+    setHidden((h) => h.filter((x) => x !== id)); // it is still open: show it again
+    setNoticeBad(true);
+    setNotice(text);
+    onChanged();
+  };
+  // Once the list from the server no longer has a closed trade, stop hiding it.
+  useEffect(() => {
+    setHidden((h) => (h.some((id) => !positions.some((p) => p.id === id)) ? h.filter((id) => positions.some((p) => p.id === id)) : h));
+  }, [positions]);
   // Keep the sheet's numbers live while it is open.
   const liveClosing = closing ? positions.find((p) => p.id === closing.id) : null;
 
@@ -704,7 +734,7 @@ function TradeScreen({ positions, account, onChanged, onSelect, onNew }) {
         </button>
       </header>
       {notice && (
-        <p className="mx-status is-ok" role="status">
+        <p className={`mx-status ${noticeBad ? 'is-bad' : 'is-ok'}`} role="status">
           {notice}
           <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss"><X size={16} aria-hidden="true" /></button>
         </p>
@@ -730,7 +760,8 @@ function TradeScreen({ positions, account, onChanged, onSelect, onNew }) {
         )}
       </div>
       {editing && <ModifyDialog trade={editing} onClose={() => setEditing(null)} onSaved={onChanged} />}
-      {closing && <CloseSheet trade={liveClosing || closing} onClose={() => setClosing(null)} onDone={finished} />}
+      {closing && <CloseSheet trade={liveClosing || closing} onClose={() => setClosing(null)} onDone={finished}
+        onStart={closeStarted} onFail={closeFailed} />}
       {many && <CloseManySheet open={open} onClose={() => setMany(false)} onDone={finished} />}
       {closingBy && <CloseBySheet trade={closingBy} positions={positions} onClose={() => setClosingBy(null)} onDone={finished} />}
     </section>
@@ -961,9 +992,9 @@ function Calendar() {
 
   return (
     <>
-      <div className="mx-quick mx-quick--3" role="group" aria-label="Importance">
-        {[['All', 1], ['Medium and high', 2], ['High only', 3]].map(([label, n]) => (
-          <button key={label} type="button" className={`mx-chip ${minImpact === n ? 'is-on' : ''}`}
+      <div className="mx-filter" role="group" aria-label="Importance">
+        {[['All', 1, 'All events'], ['Medium+', 2, 'Medium and high importance'], ['High', 3, 'High importance only']].map(([label, n, full]) => (
+          <button key={label} type="button" className={minImpact === n ? 'is-on' : ''} title={full} aria-label={full}
             aria-pressed={minImpact === n} onClick={() => setMinImpact(n)}>{label}</button>
         ))}
       </div>
@@ -1256,12 +1287,8 @@ const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', histor
 
 /** The trade screen's own top bar, in place of the dashboard header. */
 function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade }) {
-  const openMenu = useAccountMenu();
   return (
     <header className="tx-bar">
-      <button type="button" className="cx-icon" aria-label="Open menu" onClick={openMenu}>
-        <Menu size={24} aria-hidden="true" />
-      </button>
       {screen !== 'chart' && <h1 className="tx-bar__title">{SCREEN_TITLES[screen]}</h1>}
       <span className="cx-bar__gap" aria-hidden="true" />
       {screen === 'chart' && (
@@ -1471,10 +1498,14 @@ export default function Terminal() {
     const body = { stop_loss: p.stop_loss, take_profit: p.take_profit };
     body[line.kind === 'sl' ? 'stop_loss' : 'take_profit'] = value;
     const what = line.kind === 'sl' ? 'Stop loss' : 'Take profit';
+    const field = line.kind === 'sl' ? 'stop_loss' : 'take_profit';
+    // Show the new level at once; the server confirms it, or it moves back with the reason.
+    setPositions((list) => list.map((x) => (x.id === p.id ? { ...x, [field]: value } : x)));
     try {
       await modifyPosition(p.id, body);
       setStatus({ ok: true, text: `#${p.id} ${what.toLowerCase()} set to ${price(value, p.digits)}.` });
     } catch (err) {
+      setPositions((list) => list.map((x) => (x.id === p.id ? { ...x, [field]: p[field] } : x)));
       setStatus({ ok: false, text: err.message });
     } finally {
       refreshAll();

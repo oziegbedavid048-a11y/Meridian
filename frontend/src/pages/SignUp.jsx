@@ -484,22 +484,32 @@ export default function SignUp() {
   }, []);
 
   // Load the saved application once per signed-in user (not on every save).
+  const [appReady, setAppReady] = useState(false);
   const loadedFor = useRef(null);
+  const fetchingFor = useRef(null);
   useEffect(() => {
-    if (loading || !user?.application || loadedFor.current === user.email) return;
-    loadedFor.current = user.email;
-    const a = user.application;
-    setApp(a);
-    const draft = readDraft(user.email);
-    const fresh = fromApp(a);
-    if (draft) {
-      // Fill in what they typed last time but had not saved yet.
-      Object.keys(EMPTY).forEach((k) => {
-        if (k in draft && typeof draft[k] === typeof EMPTY[k]) fresh[k] = draft[k];
-      });
-    }
-    setData(fresh);
-    setStep(Math.min(Math.max(a.current_step, 2), LAST_STEP));
+    if (loading || !user?.application || user.application.status === 'submitted') return;
+    if (loadedFor.current === user.email || fetchingFor.current === user.email) return;
+    fetchingFor.current = user.email;
+    // The full application (with date of birth, phone and address) is fetched only here.
+    api('/application/').then((res) => {
+      const a = res.application;
+      setApp(a);
+      const draft = readDraft(user.email);
+      const fresh = fromApp(a);
+      if (draft) {
+        // Fill in what they typed last time but had not saved yet.
+        Object.keys(EMPTY).forEach((k) => {
+          if (k in draft && typeof draft[k] === typeof EMPTY[k]) fresh[k] = draft[k];
+        });
+      }
+      setData(fresh);
+      setStep(Math.min(Math.max(a.current_step, 2), LAST_STEP));
+      loadedFor.current = user.email; // only now may the draft be saved over
+      setAppReady(true);
+    }).catch(() => {
+      fetchingFor.current = null; // try again on the next render
+    });
   }, [loading, user]);
 
   // Keep a copy of the answers on this device as they type.
@@ -645,6 +655,8 @@ export default function SignUp() {
             <section className="signup__main" aria-live="polite">
               {!signedIn ? (
                 <Credentials onDone={() => setStep(2)} />
+              ) : !appReady && user?.application ? (
+                <div className="page-loading"><Loader2 size={28} className="spin" aria-label="Loading your application" /></div>
               ) : (
                 <form ref={formRef} onSubmit={next} noValidate className="step-form" key={step}>
                   <FormAlert>{alert}</FormAlert>

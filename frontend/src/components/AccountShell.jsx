@@ -2,11 +2,10 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Link, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine, ArrowLeft, ArrowUpFromLine, CandlestickChart, History, LayoutDashboard,
-  Loader2, LogOut, Menu, Wallet, X,
+  Loader2, LogOut, Menu, X,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { money } from '../lib/trading.js';
-import { fullName } from '../lib/names.js';
 
 const NAV = [
   ['/account', 'Dashboard', LayoutDashboard],
@@ -14,12 +13,11 @@ const NAV = [
   ['/account/deposit', 'Deposit', ArrowDownToLine],
   ['/account/withdraw', 'Withdraw', ArrowUpFromLine],
   ['/account/history', 'Trade history', History],
-  ['/account/funding-history', 'Balance history', Wallet],
 ];
 // Verify identity is not in the menu: it is offered on the Withdraw page, when it is needed.
 
 export function SummaryBar({ account }) {
-  const c = account?.currency || 'CAD';
+  const c = account?.currency || 'USD';
   const items = [
     ['Balance', money(account?.balance, c), ''],
     ['Equity', money(account?.equity, c), ''],
@@ -103,7 +101,7 @@ export default function AccountShell({ children, wide = false, bare = false }) {
     <div className={`app-shell ${wide ? 'app-shell--wide' : ''} ${bare ? 'app-shell--bare' : ''}`}>
       {!bare && (
       <header className="app-bar">
-        <span className="app-bar__user" title={user.email}>{fullName(user)}</span>
+        <Link to="/account" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}>Zentra Direct</Link>
         <button type="button" className="app-bar__out" onClick={handleSignOut}>
           <LogOut size={18} aria-hidden="true" /><span>Sign out</span>
         </button>

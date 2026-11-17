@@ -17,6 +17,8 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
+
+from config.textsafe import clean_text
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
@@ -67,12 +69,18 @@ def _serialize_application(app):
     return data
 
 
+# What every page needs about the signed-in person. The full application
+# (date of birth, phone, address) is sent only by GET /api/application/,
+# to the sign-up page that edits it.
+USER_APPLICATION_FIELDS = ('status', 'current_step', 'first_name', 'last_name', 'country', 'province')
+
+
 def _serialize_user(user):
     app = getattr(user, 'application', None)
     return {
         'email': user.email,
         'first_name': app.first_name if app else '',
-        'application': _serialize_application(app) if app else None,
+        'application': {f: getattr(app, f) for f in USER_APPLICATION_FIELDS} if app else None,
     }
 
 
@@ -260,10 +268,16 @@ def application(request):
     cleaned, errors = validate_step(step, data.get('data') or {})
     if errors:
         return _bad_request(errors)
-    for field, value in cleaned.items():
-        setattr(app, field, value)
-    app.current_step = max(app.current_step, step + 1)
-    app.save()
+    with transaction.atomic():
+        # Locked and re-read, and only this step's fields written, so two tabs
+        # saving different steps can never undo each other's answers.
+        app = Application.objects.select_for_update().get(pk=app.pk)
+        if app.status == Application.Status.SUBMITTED:
+            return _bad_request({'form': ['This application has already been submitted.']}, status=409)
+        for field, value in cleaned.items():
+            setattr(app, field, value)
+        app.current_step = max(app.current_step, step + 1)
+        app.save(update_fields=[*cleaned, 'current_step', 'updated_at'])
     return JsonResponse({'application': _serialize_application(app)})
 
 
@@ -291,11 +305,16 @@ def submit_application(request):
     cleaned, errors = validate_step(REVIEW_STEP, data)
     if errors:
         return _bad_request(errors)
-    for field, value in cleaned.items():
-        setattr(app, field, value)
-    app.status = Application.Status.SUBMITTED
-    app.submitted_at = timezone.now()
-    app.save()
+    with transaction.atomic():
+        locked = Application.objects.select_for_update().get(pk=app.pk)
+        if locked.status == Application.Status.SUBMITTED:
+            return _bad_request({'form': ['This application has already been submitted.']}, status=409)
+        for field, value in cleaned.items():
+            setattr(locked, field, value)
+        locked.status = Application.Status.SUBMITTED
+        locked.submitted_at = timezone.now()
+        locked.save(update_fields=[*cleaned, 'status', 'submitted_at', 'updated_at'])
+        app = locked
     return JsonResponse({'application': _serialize_application(app)})
 
 
@@ -305,10 +324,10 @@ def contact(request):
     data = _json_body(request)
     if data is None:
         return _bad_request({'body': ['Invalid request.']})
-    name = str(data.get('name', '')).strip()[:80]
+    name = clean_text(data.get('name'), 80)
     email = str(data.get('email', '')).strip().lower()[:254]
     topic = str(data.get('topic', '')).strip()
-    message = str(data.get('message', '')).strip()
+    message = clean_text(data.get('message'), 2001, allow_markup_chars=True)
     errors = {}
     if not name:
         errors['name'] = ['Enter your name.']

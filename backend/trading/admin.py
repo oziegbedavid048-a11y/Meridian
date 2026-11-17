@@ -27,7 +27,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 
 from . import engine, pricing, simulator
 from .models import DepositWallet, FundingRequest, Instrument, Trade, TradingAccount
@@ -249,9 +249,7 @@ class TradingAccountAdmin(admin.ModelAdmin):
         ]
         return format_html(
             '<table style="margin:0">{}</table>',
-            format_html(''.join(
-                f'<tr><th style="text-align:left;padding-right:18px">{k}</th><td>{v}</td></tr>'
-                for k, v in rows)),
+            format_html_join('', '<tr><th style="text-align:left;padding-right:18px">{}</th><td>{}</td></tr>', rows),
         )
 
     @admin.display(description='Actions')

@@ -105,6 +105,9 @@ def get_prices(instruments):
         else:
             mids = {k: {'price': v['price'], 'previous_close': v.get('previous_close'),
                         'day_low': v.get('day_low'), 'day_high': v.get('day_high')} for k, v in raw.items()}
+            # A market the feed skipped this time keeps its last good price.
+            last = cache.get(key + ':last') or {}
+            mids = {**{k: v for k, v in last.items() if k in by_feed}, **mids}
             cache.set(key, mids, QUOTE_TTL)
             cache.set(key + ':last', mids, 3600)
 

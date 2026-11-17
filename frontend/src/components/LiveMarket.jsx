@@ -118,13 +118,8 @@ export default function LiveMarket() {
       </header>
       <div className="mt-watch__scroll">
         <table className="mt-table mt-watch__table">
-          <thead>
-            <tr>
-              <th scope="col">Symbol</th><th scope="col" className="mt-hide-sm">Name</th>
-              <th scope="col">Bid</th><th scope="col">Ask</th><th scope="col">Change</th>
-              <th scope="col"><span className="sr-only">Trade</span></th>
-            </tr>
-          </thead>
+          {/* No visible header row; the columns are still named for screen readers. */}
+          <caption className="sr-only">Symbol, name, bid, ask and change for each market</caption>
           {!groups.length && (
             <tbody><tr><td colSpan={6} className="mt-empty">{failed ? 'Prices are unavailable right now.' : 'Loading prices…'}</td></tr></tbody>
           )}

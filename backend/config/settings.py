@@ -91,6 +91,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Compresses responses (JSON included). Django adds random padding against the BREACH attack.
+    'django.middleware.gzip.GZipMiddleware',
     'config.ipfilter.IPFilterMiddleware',          # firewall rules first
     'config.security.SecurityHeadersMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',   # serves collected static files
