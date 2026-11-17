@@ -116,6 +116,7 @@ export const KIND_LABELS = {
   stock: 'Shares',
   index: 'Indices',
   commodity: 'Commodities',
+  bond: 'Bonds',
 };
 
 /** Keeps a live account summary that several panels can share. */

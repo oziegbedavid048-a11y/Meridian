@@ -1,45 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, ArrowRight, Camera, Check, CircleCheckBig, Hourglass, IdCard, Info, Loader2, RotateCcw,
+  AlertCircle, ArrowRight, Camera, Check, CircleCheckBig, Clock3, IdCard, Loader2, RotateCcw,
   ScanFace, ShieldCheck, Upload,
 } from 'lucide-react';
 import AccountShell from '../components/AccountShell.jsx';
 import CameraCapture from '../components/CameraCapture.jsx';
+import FaceScan from '../components/FaceScan.jsx';
 import { api } from '../lib/api.js';
 import { shrinkImage } from '../lib/images.js';
 import { useAuth } from '../lib/auth.jsx';
 import { COUNTRIES, countryName } from '../content/countries.js';
 
-const STEPS = ['Details', 'Document', 'Photos', 'Face check', 'Review'];
+const STEPS = ['Details', 'Document', 'Photos', 'Face check'];
 const whenFmt = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
-
-/** Shown on the withdraw page until the identity check is approved. */
-export function IdentityGate({ identity }) {
-  const status = identity?.status || 'none';
-  const copy = {
-    none: ['Verify your identity to make your first withdrawal',
-      'It takes about three minutes: your name, a photo of your ID, and a quick face check. After that, withdrawals are open to you.'],
-    pending: ['Your verification is under review',
-      'We have your details and photos. You can withdraw as soon as they are approved. This page updates by itself.'],
-    rejected: ['We could not approve your verification',
-      identity?.rejection_reason ? `Reason: ${identity.rejection_reason}` : 'Please send new photos to try again.'],
-  }[status] || [];
-  const Icon = status === 'pending' ? Hourglass : status === 'rejected' ? AlertCircle : ShieldCheck;
-  return (
-    <div className={`vf-gate vf-gate--${status}`} role="status">
-      <span className="vf-gate__icon"><Icon size={28} aria-hidden="true" /></span>
-      <div>
-        <h2>{copy[0]}</h2>
-        <p>{copy[1]}</p>
-        <Link to="/account/verify" className="btn btn--primary btn--sm">
-          {status === 'pending' ? 'See my verification' : status === 'rejected' ? 'Send new photos' : 'Start verification'}
-          <ArrowRight size={16} aria-hidden="true" />
-        </Link>
-      </div>
-    </div>
-  );
-}
 
 function Stepper({ step }) {
   return (
@@ -90,8 +64,12 @@ function Wizard({ info, onSubmitted }) {
   const app = user?.application;
   const [step, setStep] = useState(1);
   const [name, setName] = useState([app?.first_name, app?.last_name].filter(Boolean).join(' '));
-  const [country, setCountry] = useState(app?.country || info.home_country || '');
+  // The country (and Canadian province) given at sign-up decide which documents apply.
+  const fromSignUp = app?.country || info.home_country || '';
+  const [country, setCountry] = useState(fromSignUp);
   const [province, setProvince] = useState(app?.country === 'CA' ? app?.province || '' : '');
+  const countryLocked = !!fromSignUp;
+  const provinceLocked = countryLocked && fromSignUp === 'CA' && info.provinces.some((p) => p.code === app?.province);
   const [docId, setDocId] = useState('');
   const [photos, setPhotos] = useState({});
   const [camera, setCamera] = useState(null); // 'front' | 'back' | 'selfie'
@@ -202,13 +180,6 @@ function Wizard({ info, onSubmitted }) {
           </div>
         </div>
       )}
-      <div className="vf-note" role="note">
-        <Info size={18} aria-hidden="true" />
-        <p>
-          This is a practice account, so nothing you send is checked against real records. Only our staff can see these
-          photos, and they are kept only as long as the review needs. A sample document is fine.
-        </p>
-      </div>
       <Stepper step={step} />
 
       <div className="panel vf-panel">
@@ -225,6 +196,12 @@ function Wizard({ info, onSubmitted }) {
                 aria-invalid={errors.full_name ? 'true' : undefined} />
               {errors.full_name && <p className="field__error" role="alert">{errors.full_name}</p>}
             </div>
+            {countryLocked ? (
+              <div className="vx-country">
+                <span><small>Country you live in</small><br /><b>{countryName(country)}{provinceLocked ? `, ${place}` : ''}</b></span>
+                <small>From your application</small>
+              </div>
+            ) : (
             <div className={`field ${errors.country ? 'has-error' : ''}`}>
               <label htmlFor="vf-country">Country you live in</label>
               <select id="vf-country" value={country} autoComplete="country"
@@ -235,7 +212,8 @@ function Wizard({ info, onSubmitted }) {
               </select>
               {errors.country && <p className="field__error" role="alert">{errors.country}</p>}
             </div>
-            {country === 'CA' && (
+            )}
+            {country === 'CA' && !provinceLocked && (
             <div className={`field ${errors.province ? 'has-error' : ''}`}>
               <label htmlFor="vf-prov">Province or territory</label>
               <select id="vf-prov" value={province}
@@ -286,57 +264,62 @@ function Wizard({ info, onSubmitted }) {
           </>
         )}
 
-        {step === 4 && (
-          <>
-            <h2>Face check</h2>
-            <p className="muted">
-              We will ask to use your camera. Fit your face in the oval and follow the prompts. It takes about five seconds.
-            </p>
-            <div className="vf-slots vf-slots--one">
-              <PhotoSlot label="Your face" photo={photos.selfie} error={errors.selfie} shape="face"
-                onTake={() => setCamera('selfie')} onPick={(f) => pick('selfie', f)} />
-            </div>
-            {!photos.selfie && (
-              <button type="button" className="btn btn--primary" onClick={() => setCamera('selfie')}>
-                <ScanFace size={18} aria-hidden="true" /> Start face check
-              </button>
-            )}
-          </>
+        {step === 4 && !photos.selfie && (
+          <div className="vx">
+            <span className="vx-badge vx-badge--scan"><ScanFace size={44} aria-hidden="true" /></span>
+            <h2>Verify your face</h2>
+            <p>We will take a quick photo of your face to match it with your ID. Find good light and look straight at the camera.</p>
+            {errors.selfie && <p className="field__error" role="alert">{errors.selfie}</p>}
+            <button type="button" className="vx-btn" onClick={() => setCamera('selfie')}>Let&apos;s verify</button>
+          </div>
         )}
 
-        {step === 5 && (
-          <>
-            <h2>Check and send</h2>
-            <dl className="vf-review">
-              <div><dt>Name</dt><dd>{name.trim()}</dd></div>
-              <div><dt>Lives in</dt><dd>{place}</dd></div>
-              <div><dt>Document</dt><dd>{doc?.label}</dd></div>
-            </dl>
-            <div className="vf-thumbs">
-              {[['front', needsBack ? 'Front' : 'Photo page'], needsBack && ['back', 'Back'], ['selfie', 'Face']].filter(Boolean).map(([k, l]) => (
-                <figure key={k}><img src={photos[k]?.url} alt={`${l} photo`} /><figcaption>{l}</figcaption></figure>
-              ))}
-            </div>
+        {step === 4 && photos.selfie && (
+          <div className="vx">
+            <span className="vx-badge vx-badge--ok"><ShieldCheck size={44} aria-hidden="true" /></span>
+            <h2>Face captured</h2>
+            <img className="vx-face" src={photos.selfie.url} alt="Your face photo" />
+            <p>Your face and ID photos are ready. Send them for review to finish.</p>
             <label className="vf-confirm">
               <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-              <span>These photos are of me and my document, and the details above are correct.</span>
+              <span>These photos are of me and my {doc?.label || 'document'}, and my details are correct.</span>
             </label>
-          </>
-        )}
-
-        <div className="vf-actions">
-          {step > 1 && <button type="button" className="btn btn--outline" onClick={() => go(step - 1)} disabled={busy}>Back</button>}
-          {step < 5 ? (
-            <button type="button" className="btn btn--primary" onClick={next}>Continue</button>
-          ) : (
-            <button type="button" className="btn btn--primary" onClick={submit} disabled={busy}>
+            <button type="button" className="vx-btn" onClick={submit} disabled={busy || !confirmed}>
               {busy ? <><Loader2 size={18} className="spin" aria-hidden="true" /> Sending…</> : 'Send for review'}
             </button>
-          )}
-        </div>
+            <button type="button" className="vx-link" onClick={() => setCamera('selfie')} disabled={busy}>Retake face photo</button>
+          </div>
+        )}
+
+        {step < 4 && (
+          <div className="vf-actions">
+            {step > 1 && <button type="button" className="btn btn--outline" onClick={() => go(step - 1)} disabled={busy}>Back</button>}
+            <button type="button" className="btn btn--primary" onClick={next}>Continue</button>
+          </div>
+        )}
+        {step === 4 && (
+          <div className="vf-actions">
+            <button type="button" className="btn btn--outline" onClick={() => go(3)} disabled={busy}>Back</button>
+          </div>
+        )}
       </div>
 
-      {camera && (
+      {camera === 'selfie' && (
+        <FaceScan
+          onCapture={captured}
+          onCancel={() => setCamera(null)}
+          onUpload={() => {
+            setCamera(null);
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/jpeg,image/png,image/webp';
+            input.onchange = () => { const f = input.files?.[0]; if (f) pick('selfie', f); };
+            uploadFallback.current = input;
+            input.click();
+          }}
+        />
+      )}
+      {camera && camera !== 'selfie' && (
         <CameraCapture
           mode={camera === 'selfie' ? 'face' : 'document'}
           onCapture={captured}
@@ -359,16 +342,16 @@ function Wizard({ info, onSubmitted }) {
 
 function UnderReview({ info }) {
   return (
-    <div className="panel vf-status">
-      <span className="vf-status__icon vf-status__icon--wait"><Hourglass size={40} aria-hidden="true" /></span>
-      <h2>Your verification is under review</h2>
+    <div className="panel vf-status vx">
+      <span className="vx-badge vx-badge--wait"><Clock3 size={42} aria-hidden="true" /></span>
+      <h2>Verification in review</h2>
       <p>
-        Thank you, {info.full_name.split(' ')[0]}. Your details and photos were sent {info.submitted_at && whenFmt.format(new Date(info.submitted_at))}.
-        A member of our team is looking at them. You will be able to make withdrawals as soon as they are approved.
-        This page updates by itself.
+        Thank you, {info.full_name.split(' ')[0]}. Our team is reviewing your ID and face photos and we will get back
+        to you shortly. You can withdraw as soon as it is approved; this page updates by itself.
       </p>
+      {info.submitted_at && <p className="vx-when">Sent {whenFmt.format(new Date(info.submitted_at))}</p>}
       <ol className="vf-timeline">
-        <li className="done"><Check size={16} aria-hidden="true" /> Details and photos sent</li>
+        <li className="done"><Check size={16} aria-hidden="true" /> ID and face captured</li>
         <li className="now"><Loader2 size={16} className="spin" aria-hidden="true" /> Review by our team</li>
         <li>Withdrawals open</li>
       </ol>
@@ -421,7 +404,7 @@ export function VerifyPage() {
       {info?.status === 'approved' && <Approved />}
       {(info?.status === 'none' || info?.status === 'rejected') && <Wizard info={info} onSubmitted={setInfo} />}
       {info && info.status !== 'approved' && (
-        <p className="muted vf-foot"><RotateCcw size={14} aria-hidden="true" /> Questions? Call us on the number at the top of the website.</p>
+        <p className="muted vf-foot"><RotateCcw size={14} aria-hidden="true" /> Questions? Contact support from the bottom of the website.</p>
       )}
     </AccountShell>
   );

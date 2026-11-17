@@ -254,7 +254,7 @@ class ApiTests(TestCase):
             document_type='passport', front_image='x', selfie_image='y')  # the identity check is its own tests
         self.login()
         with self.patch_market():
-            res = self.post('/api/trading/funding/', {'kind': 'withdrawal', 'amount': '50000', 'asset': 'BTC',
+            res = self.post('/api/trading/funding/', {'kind': 'withdrawal', 'amount': '50000', 'asset': 'BTC', 'network': 'Bitcoin',
                                                       'address': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'})
         self.assertEqual(res.status_code, 400)
         self.assertIn('amount', res.json()['errors'])

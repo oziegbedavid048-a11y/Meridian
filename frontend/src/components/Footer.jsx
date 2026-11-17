@@ -40,8 +40,8 @@ export default function Footer() {
             <p className="footer__disclaimer">{footer.disclaimer}</p>
           </div>
           <div className="footer__social">
-            <a href="https://www.youtube.com" aria-label="YouTube (opens in a new tab)" target="_blank" rel="noreferrer"><Youtube size={16} /></a>
-            <a href="https://www.linkedin.com" aria-label="LinkedIn (opens in a new tab)" target="_blank" rel="noreferrer"><Linkedin size={16} /></a>
+            <a href="https://www.youtube.com" aria-label="YouTube (opens in a new tab)" target="_blank" rel="noopener noreferrer"><Youtube size={16} /></a>
+            <a href="https://www.linkedin.com" aria-label="LinkedIn (opens in a new tab)" target="_blank" rel="noopener noreferrer"><Linkedin size={16} /></a>
           </div>
         </div>
       </div>

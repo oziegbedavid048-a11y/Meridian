@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { clearPersonalData } from './safety.js';
 import { api } from './api.js';
 
 const AuthContext = createContext(null);
@@ -43,6 +44,7 @@ export function AuthProvider({ children }) {
     try {
       await api('/auth/logout/', { method: 'POST' });
     } finally {
+      clearPersonalData();
       setUser(null);
     }
   }, []);

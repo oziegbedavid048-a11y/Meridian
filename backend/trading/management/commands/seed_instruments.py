@@ -43,6 +43,12 @@ INSTRUMENTS = [
     ('XIC', 'XIC.TO', 'S&P/TSX Capped Composite ETF', K.INDEX, 'CAD', 2, '1', 6, 10),
 
     ('XAUUSD', 'GC=F', 'Gold vs US Dollar', K.COMMODITY, 'USD', 2, '100', 30, 20),
+
+    # Bond funds: traded like shares, priced from the market feed.
+    ('TLT', 'TLT', 'US Treasury 20+ Year Bond ETF', K.BOND, 'USD', 2, '1', 6, 5),
+    ('IEF', 'IEF', 'US Treasury 7-10 Year Bond ETF', K.BOND, 'USD', 2, '1', 6, 5),
+    ('BND', 'BND', 'Total Bond Market ETF', K.BOND, 'USD', 2, '1', 6, 5),
+    ('ZAG', 'ZAG.TO', 'Canadian Aggregate Bond ETF', K.BOND, 'CAD', 2, '1', 6, 5),
 ]
 
 

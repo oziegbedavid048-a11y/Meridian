@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { safeUrl } from '../lib/safety.js';
 import { Link } from 'react-router-dom';
 import { ExternalLink, TrendingDown, TrendingUp } from 'lucide-react';
 import { insights } from '../content/site.js';
@@ -185,7 +186,7 @@ export function Insights({ count = 3 }) {
                   <div className="photo-card__body">
                     <p className="meta"><span>{n.publisher}</span>{n.published && <> · <time dateTime={n.published}>{timeAgo(n.published)}</time></>}</p>
                     <h3>
-                      <a href={n.link} target="_blank" rel="noopener noreferrer">
+                      <a href={safeUrl(n.link) || undefined} target="_blank" rel="noopener noreferrer">
                         {n.title}
                         <span className="sr-only"> (opens in a new tab)</span>
                       </a>

@@ -501,6 +501,8 @@ class WithdrawalGateTests(IdentityBase):
                                             document_type='passport', front_image='x', selfie_image='y')
         self.assertIn('address', self.withdraw(address='short').json()['errors'])
         self.assertIn('address', self.withdraw(address='bad address with spaces 1234567890').json()['errors'])
+        # an Ethereum address for a Bitcoin withdrawal (wrong network) is refused
+        self.assertIn('address', self.withdraw(address='0xe8b60CD3F06322F2fE40fc738AAB56C7183cb273').json()['errors'])
         self.assertEqual(self.withdraw('25.00').status_code, 201)
         req = FundingRequest.objects.get(kind='withdrawal')
         self.assertEqual((req.status, req.asset), ('pending', 'BTC'))
@@ -756,13 +758,29 @@ class InternationalSignUpTests(TestCase):
 
     def test_international_phone_numbers_are_accepted(self):
         from .validation import validate_step
-        for phone in ('+234 803 123 4567', '+44 20 7946 0958', '416-555-0199', '+971 4 123 4567'):
-            _, errors = validate_step(2, {'title': 'ms', 'first_name': 'Ada', 'last_name': 'Obi', 'phone': phone,
-                                          'date_of_birth': '1990-01-01'})
+        for phone, country in (('+234 803 123 4567', 'NG'), ('0803 123 4567', 'NG'), ('+44 20 7946 0958', 'GB'),
+                               ('416-555-0199', 'CA'), ('+971 50 123 4567', 'AE')):
+            cleaned, errors = validate_step(2, {'title': 'ms', 'first_name': 'Ada', 'last_name': 'Obi', 'phone': phone,
+                                                'phone_country': country, 'date_of_birth': '1990-01-01'})
             self.assertNotIn('phone', errors, phone)
+            self.assertTrue(cleaned['phone'].startswith('+'), cleaned['phone'])  # saved in +international form
         _, errors = validate_step(2, {'title': 'ms', 'first_name': 'Ada', 'last_name': 'Obi', 'phone': '12',
                                       'date_of_birth': '1990-01-01'})
         self.assertIn('phone', errors)
+
+    def test_a_phone_number_must_belong_to_the_country_chosen(self):
+        from .validation import validate_step
+        base = {'title': 'ms', 'first_name': 'Ada', 'last_name': 'Obi', 'date_of_birth': '1990-01-01'}
+        _, errors = validate_step(2, {**base, 'phone': '+234 803 123 4567', 'phone_country': 'GB'})
+        self.assertIn('phone', errors)  # a Nigerian number with the UK chosen
+        _, errors = validate_step(2, {**base, 'phone': '0803 123', 'phone_country': 'NG'})
+        self.assertIn('phone', errors)  # too short for Nigeria
+
+    def test_addresses_refuse_markup_and_symbols(self):
+        from .validation import validate_step
+        _, errors = validate_step(3, {'street': '<script>alert(1)</script>', 'city': 'Lagos{x}', 'country': 'NG'})
+        self.assertIn('street', errors)
+        self.assertIn('city', errors)
 
 
 class InternationalIdentityTests(IdentityBase):

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { safeUrl } from '../lib/safety.js';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle, ArrowLeft, Menu, ArrowUpDown, CandlestickChart, ChevronDown, ChevronRight, CircleDollarSign, Crosshair,
@@ -921,7 +922,7 @@ function Headlines() {
       <ul className="mx-list">
         {items?.map((n) => (
           <li key={n.link}>
-            <a className="mx-news" href={n.link} target="_blank" rel="noopener noreferrer">
+            <a className="mx-news" href={safeUrl(n.link) || undefined} target="_blank" rel="noopener noreferrer">
               <b>{n.title}</b>
               <span>{n.publisher}{n.published ? ` · ${stamp(n.published)}` : ''}</span>
             </a>
@@ -1162,7 +1163,7 @@ function PairList({ instruments, current, onPick, onClose }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  const order = { crypto: 0, forex: 1, commodity: 2, index: 3, stock: 4 };
+  const order = { crypto: 0, forex: 1, commodity: 2, index: 3, stock: 4, bond: 5 };
   const list = [...instruments].sort((a, b) => (order[a.kind] ?? 9) - (order[b.kind] ?? 9));
   return (
     <div className="cx-scrim cx-scrim--clear" onClick={(e) => e.target === e.currentTarget && onClose()}>

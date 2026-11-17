@@ -48,6 +48,10 @@ export function PasswordField({ label = 'Password', name = 'password', value, on
           value={value}
           onChange={(e) => onChange(name, e.target.value)}
           autoComplete={autoComplete}
+          maxLength={128}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck="false"
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={[describedBy, error && `${id}-err`].filter(Boolean).join(' ') || undefined}
           required

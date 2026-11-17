@@ -31,6 +31,7 @@ class Instrument(models.Model):
         STOCK = 'stock', 'Shares'
         INDEX = 'index', 'Indices'
         COMMODITY = 'commodity', 'Commodities'
+        BOND = 'bond', 'Bonds'
 
     symbol = models.CharField(max_length=20, unique=True, help_text='Shown to clients, e.g. EURUSD')
     feed_symbol = models.CharField(

@@ -1309,3 +1309,19 @@ fieldset.field legend {
 .consent-control p {
   margin-bottom: 12px;
 }
+
+/* Phone number: country code picker beside the number. */
+.phone-field {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+  gap: 8px;
+}
+
+.phone-field__code {
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 420px) {
+  .phone-field { grid-template-columns: minmax(0, 1fr); }
+}

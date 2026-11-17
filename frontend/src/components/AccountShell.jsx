@@ -42,6 +42,8 @@ export function SummaryBar({ account }) {
 
 /** Lets a page with its own top bar (the trade screen) open the account menu. */
 const AccountMenu = createContext(() => {});
+const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_KEY = 'last-activity';
 export const useAccountMenu = () => useContext(AccountMenu);
 
 export default function AccountShell({ children, wide = false, bare = false }) {
@@ -53,6 +55,33 @@ export default function AccountShell({ children, wide = false, bare = false }) {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
+
+  // Sign out after a while without any activity, as trading platforms do.
+  // Activity in any open tab counts, so a second tab does not sign the first one out.
+  useEffect(() => {
+    if (!user) return undefined;
+    const touch = () => {
+      try { window.localStorage.setItem(IDLE_KEY, String(Date.now())); } catch { /* storage blocked */ }
+    };
+    let last = Date.now();
+    const lastActive = () => {
+      try { return Math.max(last, Number(window.localStorage.getItem(IDLE_KEY)) || 0); } catch { return last; }
+    };
+    const onActivity = () => { last = Date.now(); touch(); };
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, onActivity, { passive: true }));
+    touch();
+    const timer = window.setInterval(async () => {
+      if (Date.now() - lastActive() < IDLE_LIMIT_MS) return;
+      window.clearInterval(timer);
+      await signOut();
+      navigate('/sign-in?idle=1', { replace: true });
+    }, 30_000);
+    return () => {
+      window.clearInterval(timer);
+      events.forEach((e) => window.removeEventListener(e, onActivity));
+    };
+  }, [user, signOut, navigate]);
 
   if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" aria-label="Loading" /></div>;
   if (!user) return <Navigate to="/sign-in?next=/account" replace />;

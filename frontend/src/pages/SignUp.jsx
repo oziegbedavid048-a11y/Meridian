@@ -11,6 +11,7 @@ import {
 } from '../components/Form.jsx';
 import { Logo } from '../components/ui.jsx';
 import { COUNTRIES, countryName } from '../content/countries.js';
+import { PHONE_COUNTRIES, guessPhoneCountry, phoneExample, splitPhone } from '../lib/phone.js';
 
 const STEPS = [
   { n: 1, label: 'Sign-in details' },
@@ -34,13 +35,13 @@ const OPTIONS = {
 const label = (key, v) => OPTIONS[key]?.find(([k]) => k === v)?.[1] || v || '—';
 
 const EMPTY = {
-  title: '', first_name: '', middle_name: '', last_name: '', date_of_birth: '', phone: '',
+  title: '', first_name: '', middle_name: '', last_name: '', date_of_birth: '', phone: '', phone_country: '',
   street: '', unit: '', city: '', country: '', province: '', postal_code: '',
   accepted_terms: false, confirmed_accurate: false,
 };
 
 const STEP_KEYS = {
-  2: ['title', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'phone'],
+  2: ['title', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'phone', 'phone_country'],
   3: ['street', 'unit', 'city', 'country', 'province', 'postal_code'],
 };
 
@@ -49,6 +50,10 @@ function fromApp(app) {
   Object.keys(EMPTY).forEach((k) => {
     if (app[k] !== null && app[k] !== undefined) d[k] = app[k];
   });
+  // The phone is saved as +234…; show it as its country code plus the local number.
+  const { country, national } = splitPhone(d.phone);
+  d.phone_country = country || d.phone_country || guessPhoneCountry();
+  d.phone = national;
   return d;
 }
 
@@ -246,7 +251,7 @@ function Credentials({ onDone }) {
         text={phase === 'verified' ? undefined : 'First we confirm your email address with a short code.'} />
       <FormAlert>{alert}</FormAlert>
 
-      <TextField label="Email" name="email" type="email" value={form.email} onChange={set} error={errors.email}
+      <TextField label="Email" name="email" maxLength={254} type="email" value={form.email} onChange={set} error={errors.email}
         autoComplete="email" inputMode="email" required disabled={phase !== 'email'} />
       {phase !== 'email' && (
         <button type="button" className="text-btn su-change" onClick={changeEmail}>Use a different email</button>
@@ -348,12 +353,26 @@ function StepFields({ step, data, set, errors }) {
         <StepHeading n={2} title="Enter your personal information" text="Use your legal name exactly as it appears on your ID." />
         <ChoiceGroup legend="Title" name="title" value={data.title} onChange={set} options={OPTIONS.title} error={errors.title} columns={3} />
         <div className="grid2">
-          <TextField label="First name" name="first_name" value={data.first_name} onChange={set} error={errors.first_name} autoComplete="given-name" />
-          <TextField label="Middle name" optional name="middle_name" value={data.middle_name} onChange={set} error={errors.middle_name} autoComplete="additional-name" />
+          <TextField label="First name" name="first_name" maxLength={60} value={data.first_name} onChange={set} error={errors.first_name} autoComplete="given-name" />
+          <TextField label="Middle name" optional name="middle_name" maxLength={60} value={data.middle_name} onChange={set} error={errors.middle_name} autoComplete="additional-name" />
         </div>
-        <TextField label="Last name" name="last_name" value={data.last_name} onChange={set} error={errors.last_name} autoComplete="family-name" />
+        <TextField label="Last name" name="last_name" maxLength={60} value={data.last_name} onChange={set} error={errors.last_name} autoComplete="family-name" />
         <DobField value={data.date_of_birth} onChange={set} error={errors.date_of_birth} />
-        <TextField label="Phone number" name="phone" type="tel" value={data.phone} onChange={set} error={errors.phone} autoComplete="tel" placeholder="+1 416 555 0199" />
+        <div className={`field ${errors.phone ? 'has-error' : ''}`}>
+          <label htmlFor="su-phone">Phone number</label>
+          <div className="phone-field">
+            <select aria-label="Country code" value={data.phone_country} autoComplete="tel-country-code"
+              onChange={(e) => set('phone_country', e.target.value)} className="phone-field__code">
+              <option value="" disabled>Code</option>
+              {PHONE_COUNTRIES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+            </select>
+            <input id="su-phone" type="tel" inputMode="tel" autoComplete="tel-national" maxLength={22}
+              value={data.phone} placeholder={phoneExample(data.phone_country)}
+              onChange={(e) => set('phone', e.target.value.replace(/[^\d\s()+.-]/g, ''))}
+              aria-invalid={errors.phone ? 'true' : undefined} aria-describedby={errors.phone ? 'su-phone-err' : undefined} />
+          </div>
+          {errors.phone && <p id="su-phone-err" className="field__error" role="alert">{errors.phone}</p>}
+        </div>
       </>
     );
   }
@@ -362,10 +381,10 @@ function StepFields({ step, data, set, errors }) {
       <>
         <StepHeading n={3} title="Where do you live?" text="Enter your home address. We cannot accept a P.O. box." />
         <div className="grid2 grid2--wide-first">
-          <TextField label="Street address" name="street" value={data.street} onChange={set} error={errors.street} autoComplete="address-line1" />
-          <TextField label="Unit" optional name="unit" value={data.unit} onChange={set} error={errors.unit} autoComplete="address-line2" />
+          <TextField label="Street address" name="street" maxLength={120} value={data.street} onChange={set} error={errors.street} autoComplete="address-line1" />
+          <TextField label="Unit" optional name="unit" maxLength={20} value={data.unit} onChange={set} error={errors.unit} autoComplete="address-line2" />
         </div>
-        <TextField label="City" name="city" value={data.city} onChange={set} error={errors.city} autoComplete="address-level2" />
+        <TextField label="City" name="city" maxLength={60} value={data.city} onChange={set} error={errors.city} autoComplete="address-level2" />
         <SelectField label="Country" name="country" value={data.country}
           onChange={(k, v) => { set(k, v); set('province', ''); set('postal_code', ''); }}
           error={errors.country} options={COUNTRIES} autoComplete="country" />
@@ -417,7 +436,7 @@ function Review({ data, email, set, errors, goTo }) {
         ))}
       </div>
       <CheckboxField name="accepted_terms" checked={data.accepted_terms} onChange={set} error={errors.accepted_terms}>
-        I have read and accept the <Link to="/legal/terms" target="_blank">account agreement</Link> and the <Link to="/legal/privacy" target="_blank">privacy policy</Link>.
+        I have read and accept the <Link to="/legal/terms" target="_blank" rel="noopener noreferrer">account agreement</Link> and the <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer">privacy policy</Link>.
       </CheckboxField>
       <CheckboxField name="confirmed_accurate" checked={data.confirmed_accurate} onChange={set} error={errors.confirmed_accurate}>
         I confirm that the information I provided is true and complete.

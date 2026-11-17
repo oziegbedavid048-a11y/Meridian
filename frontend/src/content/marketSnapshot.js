@@ -14,12 +14,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 64753.95,
-    "ask": 64793.95,
+    "bid": 64410.66,
+    "ask": 64450.66,
     "spread": 4000.0,
-    "low": 64599.727,
-    "high": 65363.438,
-    "change_pct": -0.83
+    "low": 64363.203,
+    "high": 64828.375,
+    "change_pct": -0.61
   },
   {
     "symbol": "ETHUSD",
@@ -33,12 +33,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 1815.69,
-    "ask": 1818.69,
+    "bid": 1810.85,
+    "ask": 1813.85,
     "spread": 300.0,
-    "low": 1804.9531,
-    "high": 1837.1619,
-    "change_pct": -0.99
+    "low": 1811.6503,
+    "high": 1823.3768,
+    "change_pct": -0.37
   },
   {
     "symbol": "SOLUSD",
@@ -52,12 +52,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 71.36,
-    "ask": 71.66,
+    "bid": 71.45,
+    "ask": 71.75,
     "spread": 30.0,
-    "low": 71.22384,
-    "high": 72.68618,
-    "change_pct": -1.62
+    "low": 71.337234,
+    "high": 71.88637,
+    "change_pct": 0.13
   },
   {
     "symbol": "XRPUSD",
@@ -71,12 +71,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 0.9565,
-    "ask": 0.9585,
+    "bid": 0.9536,
+    "ask": 0.9556,
     "spread": 20.0,
-    "low": 0.9577307,
-    "high": 0.97448176,
-    "change_pct": -1.74
+    "low": 0.9510335,
+    "high": 0.9583507,
+    "change_pct": 0.0
   },
   {
     "symbol": "BNBUSD",
@@ -90,12 +90,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 589.28,
-    "ask": 590.28,
+    "bid": 589.57,
+    "ask": 590.57,
     "spread": 100.0,
-    "low": 589.683,
-    "high": 596.758,
-    "change_pct": -1.05
+    "low": 589.2972,
+    "high": 593.1081,
+    "change_pct": -0.11
   },
   {
     "symbol": "ADAUSD",
@@ -109,12 +109,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 0.15241,
-    "ask": 0.15441,
+    "bid": 0.15181,
+    "ask": 0.15381,
     "spread": 20.0,
-    "low": 0.15169331,
-    "high": 0.15525293,
-    "change_pct": -1.19
+    "low": 0.1518167,
+    "high": 0.1531299,
+    "change_pct": -0.07
   },
   {
     "symbol": "DOGEUSD",
@@ -128,12 +128,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 0.05854,
-    "ask": 0.05894,
+    "bid": 0.0585,
+    "ask": 0.0589,
     "spread": 40.0,
-    "low": 0.058572046,
-    "high": 0.059856378,
-    "change_pct": -1.87
+    "low": 0.058624875,
+    "high": 0.05901349,
+    "change_pct": -0.28
   },
   {
     "symbol": "LTCUSD",
@@ -147,12 +147,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 44.647,
-    "ask": 44.947,
+    "bid": 44.473,
+    "ask": 44.773,
     "spread": 30.0,
-    "low": 44.67753,
-    "high": 45.507263,
-    "change_pct": -1.56
+    "low": 44.35039,
+    "high": 44.757725,
+    "change_pct": 0.42
   },
   {
     "symbol": "EURUSD",
@@ -166,12 +166,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 1.10194,
-    "ask": 1.10206,
+    "bid": 1.10034,
+    "ask": 1.10046,
     "spread": 12.0,
-    "low": 1.1016,
-    "high": 1.1038,
-    "change_pct": -0.07
+    "low": 1.0988,
+    "high": 1.1006,
+    "change_pct": 0.06
   },
   {
     "symbol": "GBPUSD",
@@ -185,12 +185,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 1.32062,
-    "ask": 1.32078,
+    "bid": 1.31842,
+    "ask": 1.31858,
     "spread": 16.0,
-    "low": 1.3203,
-    "high": 1.3224,
-    "change_pct": -0.02
+    "low": 1.3169,
+    "high": 1.3191,
+    "change_pct": -0.04
   },
   {
     "symbol": "USDJPY",
@@ -204,12 +204,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 159.612,
-    "ask": 159.626,
+    "bid": 159.419,
+    "ask": 159.433,
     "spread": 14.0,
-    "low": 159.539,
-    "high": 159.894,
-    "change_pct": -0.04
+    "low": 159.328,
+    "high": 159.612,
+    "change_pct": 0.02
   },
   {
     "symbol": "USDCAD",
@@ -223,12 +223,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 1.42771,
-    "ask": 1.42789,
+    "bid": 1.43091,
+    "ask": 1.43109,
     "spread": 18.0,
-    "low": 1.4259,
-    "high": 1.428,
-    "change_pct": 0.08
+    "low": 1.4291,
+    "high": 1.4316,
+    "change_pct": 0.1
   },
   {
     "symbol": "AUDUSD",
@@ -242,12 +242,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 0.67612,
-    "ask": 0.67628,
+    "bid": 0.67412,
+    "ask": 0.67428,
     "spread": 16.0,
-    "low": 0.6761,
-    "high": 0.6783,
-    "change_pct": -0.18
+    "low": 0.6732,
+    "high": 0.6743,
+    "change_pct": 0.07
   },
   {
     "symbol": "AAPL",
@@ -261,12 +261,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 356.24,
-    "ask": 356.3,
+    "bid": 352.75,
+    "ask": 352.81,
     "spread": 6.0,
-    "low": 355.755,
-    "high": 360.83,
-    "change_pct": 0.39
+    "low": 351.31,
+    "high": 357.1,
+    "change_pct": -0.98
   },
   {
     "symbol": "MSFT",
@@ -280,12 +280,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 523.84,
-    "ask": 523.92,
+    "bid": 517.95,
+    "ask": 518.03,
     "spread": 8.0,
-    "low": 513.82,
-    "high": 526.42,
-    "change_pct": 0.17
+    "low": 516.83,
+    "high": 527.95,
+    "change_pct": -1.12
   },
   {
     "symbol": "NVDA",
@@ -299,12 +299,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 162.81,
-    "ask": 162.89,
+    "bid": 156.1,
+    "ask": 156.18,
     "spread": 8.0,
-    "low": 158.39,
-    "high": 170.0,
-    "change_pct": -2.01
+    "low": 155.01,
+    "high": 163.0,
+    "change_pct": -4.12
   },
   {
     "symbol": "RY",
@@ -318,12 +318,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 288.34,
-    "ask": 288.4,
+    "bid": 285.66,
+    "ask": 285.72,
     "spread": 6.0,
-    "low": 286.43,
-    "high": 290.75,
-    "change_pct": -0.35
+    "low": 284.74,
+    "high": 289.78,
+    "change_pct": -0.93
   },
   {
     "symbol": "SHOP",
@@ -337,12 +337,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 209.69,
-    "ask": 209.79,
+    "bid": 211.38,
+    "ask": 211.48,
     "spread": 10.0,
-    "low": 206.18,
-    "high": 214.365,
-    "change_pct": 0.16
+    "low": 202.5,
+    "high": 214.725,
+    "change_pct": 0.81
   },
   {
     "symbol": "SPY",
@@ -356,12 +356,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 754.34,
-    "ask": 754.4,
+    "bid": 739.92,
+    "ask": 739.98,
     "spread": 6.0,
-    "low": 747.89,
-    "high": 760.12,
-    "change_pct": -0.36
+    "low": 738.07,
+    "high": 749.82,
+    "change_pct": -1.91
   },
   {
     "symbol": "QQQ",
@@ -375,12 +375,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 679.86,
-    "ask": 679.92,
+    "bid": 661.72,
+    "ask": 661.78,
     "spread": 6.0,
-    "low": 671.71,
-    "high": 688.75,
-    "change_pct": -1.2
+    "low": 660.48,
+    "high": 672.14,
+    "change_pct": -2.67
   },
   {
     "symbol": "XIC",
@@ -394,12 +394,12 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 57.74,
-    "ask": 57.8,
+    "bid": 57.09,
+    "ask": 57.15,
     "spread": 6.0,
-    "low": 57.53,
-    "high": 57.99,
-    "change_pct": 0.07
+    "low": 57.005,
+    "high": 57.8,
+    "change_pct": -1.13
   },
   {
     "symbol": "XAUUSD",
@@ -413,11 +413,87 @@ export const MARKET_SNAPSHOT = [
     "min_lot": 0.01,
     "max_lot": 50.0,
     "lot_step": 0.01,
-    "bid": 3875.15,
-    "ask": 3875.45,
+    "bid": 3865.75,
+    "ask": 3866.05,
     "spread": 30.0,
-    "low": 3862.5,
-    "high": 3904.3,
-    "change_pct": -0.28
+    "low": 3845.9,
+    "high": 3875.9,
+    "change_pct": 0.33
+  },
+  {
+    "symbol": "TLT",
+    "name": "US Treasury 20+ Year Bond ETF",
+    "kind": "bond",
+    "digits": 2,
+    "quote_currency": "USD",
+    "contract_size": 1.0,
+    "spread_points": 6,
+    "leverage": 5,
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "bid": 79.35,
+    "ask": 79.41,
+    "spread": 6.0,
+    "low": 79.275,
+    "high": 79.755,
+    "change_pct": 0.0
+  },
+  {
+    "symbol": "IEF",
+    "name": "US Treasury 7-10 Year Bond ETF",
+    "kind": "bond",
+    "digits": 2,
+    "quote_currency": "USD",
+    "contract_size": 1.0,
+    "spread_points": 6,
+    "leverage": 5,
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "bid": 90.21,
+    "ask": 90.27,
+    "spread": 6.0,
+    "low": 90.112,
+    "high": 90.375,
+    "change_pct": 0.22
+  },
+  {
+    "symbol": "BND",
+    "name": "Total Bond Market ETF",
+    "kind": "bond",
+    "digits": 2,
+    "quote_currency": "USD",
+    "contract_size": 1.0,
+    "spread_points": 6,
+    "leverage": 5,
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "bid": 70.59,
+    "ask": 70.65,
+    "spread": 6.0,
+    "low": 70.56,
+    "high": 70.73,
+    "change_pct": 0.09
+  },
+  {
+    "symbol": "ZAG",
+    "name": "Canadian Aggregate Bond ETF",
+    "kind": "bond",
+    "digits": 2,
+    "quote_currency": "CAD",
+    "contract_size": 1.0,
+    "spread_points": 6,
+    "leverage": 5,
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "bid": 13.45,
+    "ask": 13.51,
+    "spread": 6.0,
+    "low": 13.475,
+    "high": 13.5,
+    "change_pct": 0.37
   }
 ];

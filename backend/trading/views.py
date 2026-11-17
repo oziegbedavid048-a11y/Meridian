@@ -2,7 +2,6 @@
 
 import json
 import logging
-import re
 from decimal import Decimal
 
 from django.db import transaction
@@ -15,6 +14,7 @@ from accounts.identity_views import has_approved_identity, state_for
 from config.ratelimit import rate_limit
 
 from . import engine, pricing
+from .addresses import address_problem
 from .models import DepositWallet, FundingRequest, Instrument, Trade, TradingAccount
 
 log = logging.getLogger(__name__)
@@ -488,7 +488,6 @@ def cancel_order_view(request, trade_id):
 MAX_PRACTICE_BALANCE = Decimal('1000000')
 MIN_DEPOSIT = Decimal('10')
 MAX_RECEIPT_REQUEST_BYTES = 12 * 1024 * 1024
-ADDRESS_PATTERN = re.compile(r'^[A-Za-z0-9:_-]{20,128}$')
 
 
 def _funding_json(f):
@@ -596,11 +595,12 @@ def _withdraw(request, acc):
         return _error(problem, 'amount')
     asset = str(data.get('asset') or '').upper()[:12]
     network = str(data.get('network') or '')[:40]
-    if not asset or not any(w.asset == asset for w in DepositWallet.objects.filter(enabled=True)):
+    if not DepositWallet.objects.filter(enabled=True, asset=asset, network=network).exists():
         return _error('Choose the coin to receive.', 'asset')
     address = str(data.get('address') or '').strip()
-    if not ADDRESS_PATTERN.match(address):
-        return _error('Enter a valid wallet address.', 'address')
+    problem = address_problem(asset, network, address)
+    if problem:
+        return _error(problem, 'address')
 
     with transaction.atomic():
         engine.lock_account(acc)

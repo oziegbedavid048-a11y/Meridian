@@ -1,5 +1,6 @@
 // Client-side mirror of backend/accounts/validation.py for instant feedback.
 // The server re-validates everything.
+import { phoneProblem } from './phone.js';
 
 export const passwordRules = [
   { id: 'upper', label: 'At least one uppercase letter', test: (p) => /[A-Z]/.test(p) },
@@ -17,8 +18,9 @@ export function passwordOk(password, email = '') {
 export const emailOk = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
 const NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
+// Letters (any language), numbers and common punctuation; never markup or symbols.
+const ADDRESS_RE = /^[^<>{}[\]\\^`|~$%*=;\u0000-\u001f\u007f]+$/;
 const POSTAL_RE = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$/i;
-const PHONE_RE = /^\+?[\d\s().-]{7,22}$/; // any country; the digit count is checked too
 const INTL_POSTAL_RE = /^[A-Za-z0-9][A-Za-z0-9 -]{1,10}$/;
 
 function ageOn(dob, today = new Date()) {
@@ -41,8 +43,8 @@ export function validateStep(step, d) {
     if (d.first_name && !NAME_RE.test(d.first_name)) e.first_name = 'Enter a valid first name.';
     if (d.middle_name && !NAME_RE.test(d.middle_name)) e.middle_name = 'Enter a valid middle name.';
     if (d.last_name && !NAME_RE.test(d.last_name)) e.last_name = 'Enter a valid last name.';
-    const digits = String(d.phone || '').replace(/\D/g, '').length;
-    if (d.phone && (!PHONE_RE.test(d.phone.trim()) || digits < 7 || digits > 15)) e.phone = 'Enter a valid phone number.';
+    const phone = phoneProblem(d.phone, d.phone_country);
+    if (d.phone && phone) e.phone = phone;
     if (!d.date_of_birth) e.date_of_birth = 'Enter your date of birth.';
     else {
       const dob = new Date(`${d.date_of_birth}T00:00:00`);
@@ -54,6 +56,10 @@ export function validateStep(step, d) {
   if (step === 3) {
     req('street', 'Street address');
     req('city', 'City');
+    if (d.street && !ADDRESS_RE.test(d.street)) e.street = 'Remove special characters from the street address.';
+    if (d.unit && !ADDRESS_RE.test(d.unit)) e.unit = 'Remove special characters from the unit.';
+    if (d.city && !ADDRESS_RE.test(d.city)) e.city = 'Remove special characters from the city.';
+    if (d.country !== 'CA' && d.province && !ADDRESS_RE.test(d.province)) e.province = 'Remove special characters from the region.';
     req('country', 'Country');
     if (d.country === 'CA') {
       req('province', 'Province or territory');

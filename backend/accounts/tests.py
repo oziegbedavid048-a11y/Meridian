@@ -112,7 +112,7 @@ class AuthFlowTests(ApiTestCase):
 class ApplicationFlowTests(ApiTestCase):
     STEPS = {
         2: {'title': 'ms', 'first_name': 'Ana', 'last_name': 'Roy',
-            'phone': '(416) 555-0199', 'date_of_birth': '1990-05-04'},
+            'phone': '(416) 555-0199', 'phone_country': 'CA', 'date_of_birth': '1990-05-04'},
         3: {'street': '1 Bay St', 'city': 'Toronto', 'country': 'CA', 'province': 'ON',
             'postal_code': 'M5J 0E7', 'canadian_resident': True},
     }

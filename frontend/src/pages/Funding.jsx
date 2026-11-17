@@ -9,6 +9,7 @@ import CoinLogo from '../components/CoinLogo.jsx';
 import { api } from '../lib/api.js';
 import { fieldErrors, getFunding, money, requestFunding, useAccountSummary } from '../lib/trading.js';
 import { shrinkImage } from '../lib/images.js';
+import { addressProblem } from '../lib/addresses.js';
 
 /*
  * Deposits and withdrawals, done the way crypto platforms do them:
@@ -40,7 +41,8 @@ function AmountStep({ currency, available, minimum, value, onChange, error, onNe
       <label htmlFor="fx-amount" className="fx-label">Amount</label>
       <div className={`fx-amount ${error ? 'has-error' : ''}`}>
         <input id="fx-amount" type="text" inputMode="decimal" autoComplete="off" placeholder="0.00" value={value}
-          onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'))}
+          maxLength={12}
+          onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2})\d+/, '$1'))}
           aria-invalid={error ? 'true' : undefined} aria-describedby={error ? 'fx-amount-err' : 'fx-amount-note'} autoFocus />
         <span className="fx-amount__ccy">{currency}</span>
       </div>
@@ -186,6 +188,8 @@ function PayStep({ coin, amount, currency, onSent }) {
   const pick = async (file) => {
     if (!file) return;
     setError('');
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { setError('Use a JPEG, PNG or WebP picture of your receipt.'); return; }
+    if (file.size > 15 * 1024 * 1024) { setError('That picture is too large. Use a smaller screenshot.'); return; }
     try {
       const blob = await shrinkImage(file);
       setReceipt((old) => { if (old) URL.revokeObjectURL(old.url); return { blob, url: URL.createObjectURL(blob) }; });
@@ -299,7 +303,8 @@ export function WithdrawPage() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (address.trim().length < 20) { setErrors({ address: 'Enter your full wallet address.' }); return; }
+    const problem = addressProblem(coin.asset, coin.network, address);
+    if (problem) { setErrors({ address: problem }); return; }
     setBusy(true);
     setErrors({});
     try {

@@ -3,14 +3,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, Lock, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { emailOk } from '../lib/validation.js';
+import { safeNext } from '../lib/safety.js';
 import { CheckboxField, FormAlert, PasswordField, TextField, focusFirstError } from '../components/Form.jsx';
 import { Logo } from '../components/ui.jsx';
 import { contact } from '../content/site.js';
 
-/** Only allow redirects to paths inside this site. */
-export function safeNext(next, fallback = '/account') {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : fallback;
-}
+export { safeNext } from '../lib/safety.js';
 
 export default function SignIn() {
   const { signIn, user, loading } = useAuth();
@@ -19,7 +17,9 @@ export default function SignIn() {
   const next = safeNext(params.get('next'));
   const [form, setForm] = useState({ email: '', password: '', remember: true });
   const [errors, setErrors] = useState({});
-  const [alert, setAlert] = useState('');
+  const [alert, setAlert] = useState(
+    params.get('idle') ? 'You were signed out after 30 minutes without activity. Please sign in again.' : '',
+  );
   const [busy, setBusy] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const formRef = useRef(null);
@@ -85,7 +85,7 @@ export default function SignIn() {
           <form ref={formRef} onSubmit={submit} noValidate className="auth__form">
             <TextField
               label="Email"
-              name="email"
+              name="email" maxLength={254}
               type="email"
               value={form.email}
               onChange={set}

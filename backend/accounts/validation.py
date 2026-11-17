@@ -11,6 +11,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
+import phonenumbers
+
 from .countries import COUNTRY_CODES
 
 PROVINCES = {
@@ -22,6 +24,8 @@ POSTAL_RE = re.compile(r'^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPR
 PHONE_RE = re.compile(r'^\+?[\d\s().-]{7,22}$')  # any country; the digit count is checked too
 INTL_POSTAL_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9 -]{1,10}$')
 NAME_RE = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$")
+# Addresses: letters (any language), numbers and common punctuation; never < > { } or control characters.
+ADDRESS_RE = re.compile(r'^[^<>{}\[\]\\^`|~$%*=;\x00-\x1f\x7f]+$')
 
 
 def _clean_str(data, key, max_len=120):
@@ -71,6 +75,23 @@ def validate_registration(data):
     return {'email': email, 'password': password}, errors
 
 
+def clean_phone(raw, country=''):
+    """A phone number that is valid for its country, returned in the +international format.
+
+    `country` is the ISO code chosen next to the number; when given, the number
+    must belong to that country.
+    """
+    try:
+        number = phonenumbers.parse(raw, country if country in COUNTRY_CODES else None)
+    except phonenumbers.NumberParseException:
+        return raw, 'Enter a valid phone number, including the country code.'
+    if not phonenumbers.is_valid_number(number):
+        return raw, 'This phone number is not valid for the country chosen.'
+    if country and phonenumbers.region_code_for_number(number) != country:
+        return raw, 'This phone number does not belong to the country chosen.'
+    return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164), ''
+
+
 def _age_on(dob, today):
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
@@ -105,8 +126,10 @@ def validate_step(step, data, today=None):
         need('last_name', 'Last name', max_len=60, pattern=NAME_RE)
         phone = need('phone', 'Phone number', max_len=22, pattern=PHONE_RE,
                      msg='Enter a valid phone number.')
-        if 'phone' not in errors and not 7 <= len(re.sub(r'\D', '', phone)) <= 15:
-            errors['phone'] = ['Enter a valid phone number.']
+        if 'phone' not in errors:
+            cleaned['phone'], problem = clean_phone(phone, _clean_str(data, 'phone_country', 2).upper())
+            if problem:
+                errors['phone'] = [problem]
         raw_dob = _clean_str(data, 'date_of_birth', 10)
         try:
             dob = date.fromisoformat(raw_dob)
@@ -122,9 +145,11 @@ def validate_step(step, data, today=None):
         cleaned['date_of_birth'] = dob
 
     elif step == 3:
-        need('street', 'Street address')
+        need('street', 'Street address', pattern=ADDRESS_RE, msg='Remove special characters from the street address.')
         cleaned['unit'] = _clean_str(data, 'unit', 20)
-        need('city', 'City', max_len=60)
+        if cleaned['unit'] and not ADDRESS_RE.match(cleaned['unit']):
+            errors['unit'] = ['Remove special characters from the unit.']
+        need('city', 'City', max_len=60, pattern=ADDRESS_RE, msg='Remove special characters from the city.')
         country = need('country', 'Country', COUNTRY_CODES, max_len=2)
         if country == 'CA':
             need('province', 'Province or territory', PROVINCES, max_len=2)
@@ -136,6 +161,8 @@ def validate_step(step, data, today=None):
         else:
             # Not every country has regions or postal codes, so both are optional.
             cleaned['province'] = _clean_str(data, 'province', 60)
+            if cleaned['province'] and not ADDRESS_RE.match(cleaned['province']):
+                errors['province'] = ['Remove special characters from the region.']
             postal = _clean_str(data, 'postal_code', 12).upper()
             if postal and not INTL_POSTAL_RE.match(postal):
                 errors['postal_code'] = ['Enter a valid postal code.']
