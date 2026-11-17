@@ -271,6 +271,7 @@ RATE_LIMITS = {
     'email-code-email': (5, 60 * 60),     # per email address
     'email-verify': (60, 60 * 60),        # per IP address
     'verification': (10, 60 * 60),        # per account
+    'support': (20, 60 * 60),             # new tickets and replies, per account
 }
 
 
@@ -295,6 +296,8 @@ EMAIL_TIMEOUT = 10
 DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_FROM_EMAIL', 'Zentra Direct <no-reply@localhost>')
 # The public address of the website, used for links in emails.
 SITE_URL = os.environ.get('DJANGO_SITE_URL', 'https://zentradirect.com').rstrip('/')
+# Where clients write to support (shown in email footers).
+SUPPORT_EMAIL = os.environ.get('DJANGO_SUPPORT_EMAIL', 'support@zentradirect.com')
 
 # Identity photos. Never served by the website; only the staff review page reads them.
 PRIVATE_MEDIA_ROOT = BASE_DIR / 'private_media'

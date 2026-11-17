@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import identity_views, views
+from . import support_views, identity_views, views
 
 urlpatterns = [
     path('auth/csrf/', views.csrf, name='csrf'),
@@ -14,4 +14,7 @@ urlpatterns = [
     path('application/', views.application, name='application'),
     path('application/submit/', views.submit_application, name='application-submit'),
     path('contact/', views.contact, name='contact'),
+    path('support/tickets/', support_views.tickets, name='support-tickets'),
+    path('support/tickets/<int:ticket_id>/', support_views.ticket_detail, name='support-ticket'),
+    path('support/tickets/<int:ticket_id>/reply/', support_views.ticket_reply, name='support-reply'),
 ]

@@ -12,6 +12,8 @@ import {
   AccountHome, TradeHistoryPage,
 } from './pages/AccountPages.jsx';
 import { DepositPage, WithdrawPage } from './pages/Funding.jsx';
+import { SupportPage } from './pages/Support.jsx';
+import { setChatBubble } from './lib/livechat.js';
 import { LegalRoute, NotFound, PricingPage } from './pages/InfoPages.jsx';
 import {
   AboutPage, AccountsPage, ArticlePage, HelpPage, LearnPage, MarketsPage, PlatformPage, ServicesPage,
@@ -38,6 +40,8 @@ function ScrollManager() {
 }
 
 function SiteLayout() {
+  // Public pages show the live chat bubble.
+  useEffect(() => { setChatBubble(true); }, []);
   return (
     <>
       <a href="#main" className="skip-link">Skip to main content</a>
@@ -89,6 +93,7 @@ export default function App() {
         <Route path="account/deposit" element={<DepositPage />} />
         <Route path="account/withdraw" element={<WithdrawPage />} />
         <Route path="account/verify" element={<VerifyPage />} />
+        <Route path="account/support" element={<SupportPage />} />
         <Route path="account/history" element={<TradeHistoryPage />} />
         <Route path="account/funding-history" element={<Navigate to="/account/deposit" replace />} />
         <Route path="dashboard" element={<Navigate to="/account" replace />} />

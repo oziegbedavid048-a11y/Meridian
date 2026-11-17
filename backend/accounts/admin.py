@@ -1,3 +1,6 @@
+import logging
+
+from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Case, IntegerField, Value, When
@@ -8,7 +11,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 from . import identity
-from .models import Application, ContactMessage, IdentityVerification
+from .models import Application, ContactMessage, IdentityVerification, SupportMessage, SupportTicket
 
 
 @admin.register(Application)
@@ -164,3 +167,88 @@ class IdentityVerificationAdmin(admin.ModelAdmin):
         response['X-Content-Type-Options'] = 'nosniff'
         response['Content-Security-Policy'] = "default-src 'none'; sandbox"
         return response
+
+
+# ---------- support tickets ----------
+
+log = logging.getLogger(__name__)
+
+
+class SupportMessageInline(admin.TabularInline):
+    """The conversation, oldest first. Read only: replies go in the box below."""
+    model = SupportMessage
+    fields = ('created_at', 'author', 'body')
+    readonly_fields = fields
+    extra = 0
+    can_delete = False
+    verbose_name = 'message'
+    verbose_name_plural = 'Conversation'
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class SupportReplyForm(forms.ModelForm):
+    reply = forms.CharField(
+        required=False, max_length=4000, label='Your reply',
+        widget=forms.Textarea(attrs={'rows': 6, 'style': 'width:100%;max-width:640px'}),
+        help_text='Sent to the client by email and shown in their dashboard.')
+
+    class Meta:
+        model = SupportTicket
+        fields = ('status',)
+
+
+@admin.register(SupportTicket)
+class SupportTicketAdmin(admin.ModelAdmin):
+    """Read a client's ticket and reply. Tickets waiting for a reply come first."""
+    form = SupportReplyForm
+    inlines = [SupportMessageInline]
+    list_display = ('reference_label', 'client', 'subject', 'status', 'updated_at')
+    list_filter = ('status',)
+    search_fields = ('subject', 'user__email')
+    readonly_fields = ('reference_label', 'client', 'subject', 'created_at')
+    fieldsets = (
+        (None, {'fields': ('reference_label', 'client', 'subject', 'created_at', 'status')}),
+        ('Reply', {'fields': ('reply',)}),
+    )
+    actions = ('close_selected',)
+
+    def get_queryset(self, request):
+        waiting_first = Case(When(status='open', then=Value(0)), default=Value(1), output_field=IntegerField())
+        return super().get_queryset(request).select_related('user').annotate(
+            _order=waiting_first).order_by('_order', '-updated_at')
+
+    def has_add_permission(self, request):
+        return False  # tickets are opened by clients
+
+    @admin.display(description='Ticket')
+    def reference_label(self, obj):
+        return obj.reference
+
+    @admin.display(description='Client', ordering='user__email')
+    def client(self, obj):
+        return obj.user.email
+
+    def save_model(self, request, obj, form, change):
+        reply = (form.cleaned_data.get('reply') or '').strip()
+        if reply and obj.status == SupportTicket.Status.OPEN:
+            obj.status = SupportTicket.Status.ANSWERED
+        super().save_model(request, obj, form, change)
+        if not reply:
+            return
+        SupportMessage.objects.create(ticket=obj, author=SupportMessage.Author.STAFF,
+                                      staff_user=request.user, body=reply)
+        from .emails import ticket_reply_email
+        try:
+            ticket_reply_email(obj.user.email, obj, reply).send(fail_silently=False)
+            self.message_user(request, f'Reply sent to {obj.user.email}.', messages.SUCCESS)
+        except Exception as exc:
+            log.error('could not email the reply for %s: %s', obj.reference, exc)
+            self.message_user(request, 'Reply saved and shown in the dashboard, but the email could not be sent.',
+                              messages.WARNING)
+
+    @admin.action(description='Close the selected tickets')
+    def close_selected(self, request, queryset):
+        count = queryset.exclude(status=SupportTicket.Status.CLOSED).update(status=SupportTicket.Status.CLOSED)
+        self.message_user(request, f'Closed {count} ticket(s).', messages.SUCCESS)

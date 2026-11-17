@@ -2,10 +2,12 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Link, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine, ArrowLeft, ArrowUpFromLine, CandlestickChart, History, LayoutDashboard,
-  Loader2, LogOut, Menu, X,
+  Headset, LifeBuoy, Loader2, LogOut, Menu, X,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { money } from '../lib/trading.js';
+import SupportPanel from './SupportPanel.jsx';
+import { setChatBubble } from '../lib/livechat.js';
 
 const NAV = [
   ['/account', 'Dashboard', LayoutDashboard],
@@ -48,6 +50,10 @@ export default function AccountShell({ children, wide = false, bare = false }) {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [support, setSupport] = useState(false);
+
+  // In the dashboard the chat bubble stays hidden; Support opens the chat.
+  useEffect(() => { setChatBubble(false); }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -102,6 +108,9 @@ export default function AccountShell({ children, wide = false, bare = false }) {
       {!bare && (
       <header className="app-bar">
         <Link to="/account" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}>Zentra Direct</Link>
+        <button type="button" className="app-bar__support" onClick={() => setSupport(true)} aria-label="Support">
+          <Headset size={18} aria-hidden="true" /><span>Support</span>
+        </button>
         <button type="button" className="app-bar__out" onClick={handleSignOut}>
           <LogOut size={18} aria-hidden="true" /><span>Sign out</span>
         </button>
@@ -122,6 +131,9 @@ export default function AccountShell({ children, wide = false, bare = false }) {
 
       <nav id="account-nav" className={`app-nav ${open ? 'is-open' : ''}`} aria-label="Account">
         {links}
+        <button type="button" className="app-nav__help" onClick={() => { setOpen(false); setSupport(true); }}>
+          <LifeBuoy size={20} aria-hidden="true" /><span>Support</span>
+        </button>
         <Link to="/" className="app-nav__site" onClick={() => setOpen(false)}><ArrowLeft size={16} aria-hidden="true" /> Back to the website</Link>
         <button type="button" className="app-nav__out" onClick={handleSignOut}>
           <LogOut size={18} aria-hidden="true" /> Sign out
@@ -129,6 +141,7 @@ export default function AccountShell({ children, wide = false, bare = false }) {
       </nav>
 
       <main id="main" className="app-main">{children}</main>
+      {support && <SupportPanel onClose={() => setSupport(false)} />}
     </div>
     </AccountMenu.Provider>
   );

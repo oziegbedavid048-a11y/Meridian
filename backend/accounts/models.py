@@ -150,3 +150,49 @@ class IdentityVerification(models.Model):
 def _remove_photos(sender, instance, **kwargs):
     """Deleting a record, or the account it belongs to, deletes its photos too."""
     instance.delete_photos()
+
+
+class SupportTicket(models.Model):
+    """A support conversation started by a client and answered by staff."""
+
+    class Status(models.TextChoices):
+        OPEN = 'open', 'Waiting for our reply'
+        ANSWERED = 'answered', 'Answered'
+        CLOSED = 'closed', 'Closed'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='support_tickets')
+    subject = models.CharField(max_length=120)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.reference}: {self.subject}'
+
+    @property
+    def reference(self):
+        return f'ZD-{self.pk:05d}' if self.pk else 'ZD-new'
+
+
+class SupportMessage(models.Model):
+    """One message in a ticket, from the client or from staff."""
+
+    class Author(models.TextChoices):
+        CLIENT = 'client', 'Client'
+        STAFF = 'staff', 'Support team'
+
+    ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name='messages')
+    author = models.CharField(max_length=6, choices=Author.choices)
+    staff_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name='support_replies')
+    body = models.TextField(max_length=4000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.get_author_display()} on {self.ticket.reference}'
