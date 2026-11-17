@@ -277,8 +277,8 @@ function Wizard({ info, onSubmitted }) {
         {step === 4 && photos.selfie && (
           <div className="vx">
             <span className="vx-badge vx-badge--ok"><ShieldCheck size={44} aria-hidden="true" /></span>
-            <h2>Face captured</h2>
-            <p>Face verification successful.</p>
+            <h2>Verification successful</h2>
+            <p>Finishing up…</p>
             {errors.form || errors.selfie || errors.front || errors.back || errors.full_name ? (
               <>
                 <p className="field__error" role="alert">{errors.form || errors.selfie || errors.front || errors.back || errors.full_name}</p>

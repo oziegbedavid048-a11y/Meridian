@@ -196,7 +196,7 @@ export default function FaceScan({ onCapture, onCancel, onUpload }) {
   const lit = phase === 'capturing' || phase === 'done' ? Math.round(progress * TICKS) : TICKS;
   const message = camera === 'starting' ? 'Starting the camera…'
     : phase === 'capturing' ? 'Verifying…'
-      : phase === 'done' ? 'Face captured' : reason;
+      : phase === 'done' ? 'Verification successful' : reason;
 
   return (
     <div className="fs" role="dialog" aria-modal="true" aria-label="Face check">
