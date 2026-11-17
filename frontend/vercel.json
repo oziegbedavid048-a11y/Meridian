@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://website-24c8.onrender.com/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://meridian-xla7.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
