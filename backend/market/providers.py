@@ -73,7 +73,17 @@ def _coinbase_quote(symbol):
         'name': symbol,
         'currency': 'USD',
         'time': None,
+        'spark': [last],
     }
+
+
+def downsample(values, points=30):
+    """At most `points` evenly spaced values, always keeping the last one."""
+    values = [float(v) for v in values]
+    if len(values) <= points:
+        return values
+    step = (len(values) - 1) / (points - 1)
+    return [values[round(i * step)] for i in range(points)]
 
 
 def _fetch_quote_batch(symbols):
@@ -104,6 +114,7 @@ def _fetch_quote_batch(symbols):
             'name': meta.get('longName') or meta.get('shortName') or item.get('symbol'),
             'currency': meta.get('currency') or '',
             'time': meta.get('regularMarketTime'),
+            'spark': downsample(closes),
         }
     return out
 

@@ -458,7 +458,7 @@
 }
 
 .mt-watch--dash .mt-watch__scroll {
-  max-height: 320px;
+  max-height: min(720px, 75vh);
 }
 
 .mt-watch--dash .mt-table th,
@@ -778,3 +778,39 @@
 
 @keyframes mw-pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .mw-live { animation: none; } }
+
+/* Market Watch rows: symbol with its name below, and a small graph of today's prices. */
+.mt-watch--dash .mt-watch__table th[scope='row'] { text-align: left; }
+.mw-sym { display: flex; align-items: center; font-weight: 600; white-space: nowrap; }
+.mw-sub {
+  display: block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #64748b;
+}
+.mt-watch--dash .mt-watch__table tbody tr + tr th,
+.mt-watch--dash .mt-watch__table tbody tr + tr td { border-top: 1px solid #eef0f2; }
+.mt-watch--dash .mt-table th[scope='row'],
+.mt-watch--dash .mt-table td { padding-top: 9px; padding-bottom: 9px; vertical-align: middle; }
+.mw-graph { width: 96px; text-align: center !important; }
+.mw-spark { display: block; width: 84px; height: 26px; margin: 0 auto; overflow: visible; }
+.mw-spark--empty { display: block; width: 84px; height: 26px; margin: 0 auto; }
+.mw-spark__line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.mw-spark--up .mw-spark__line { stroke: #16a34a; }
+.mw-spark--down .mw-spark__line { stroke: #dc2626; }
+.mw-spark--up .mw-spark__area { fill: rgb(22 163 74 / 0.12); }
+.mw-spark--down .mw-spark__area { fill: rgb(220 38 38 / 0.12); }
+.mw-pick__box--radio { border-radius: 50%; }
+
+@media (max-width: 560px) {
+  .mw-graph { width: 64px; }
+  .mw-spark, .mw-spark--empty { width: 58px; height: 22px; }
+  .mw-sub { max-width: 90px; }
+}
+@media (max-width: 380px) {
+  .mw-sub { display: none; }
+}

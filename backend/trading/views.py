@@ -81,6 +81,8 @@ def _instrument_json(inst, quote=None):
             'low': _num(quote['day_low']) if quote.get('day_low') else None,
             'high': _num(quote['day_high']) if quote.get('day_high') else None,
             'change_pct': round(float((quote['mid'] - prev) / prev * 100), 2) if prev else None,
+            # Today's prices for the small graph, oldest first.
+            'spark': [round(float(v), inst.digits) for v in (quote.get('spark') or [])[-30:]],
         })
     return data
 

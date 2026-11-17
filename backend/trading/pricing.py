@@ -5,6 +5,7 @@ thing the broker adds is the spread configured on each instrument: the feed
 gives a mid price, bid sits half a spread below it and ask half a spread above.
 """
 
+import hashlib
 import time
 import urllib.parse
 from decimal import Decimal
@@ -35,11 +36,12 @@ def _is_simulated(instrument):
     return instrument.price_source == instrument.PriceSource.SIMULATED
 
 
-def _spread_quote(instrument, mid, previous_close=None, day_low=None, day_high=None):
+def _spread_quote(instrument, mid, previous_close=None, day_low=None, day_high=None, spark=None):
     """Wrap a mid price in the broker's bid and ask."""
     mid = Decimal(str(mid))
     half = instrument.half_spread
     return {
+        'spark': list(spark or []),
         'day_low': Decimal(str(day_low)) if day_low else None,
         'day_high': Decimal(str(day_high)) if day_high else None,
         'mid': mid,
@@ -85,6 +87,7 @@ def get_prices(instruments):
                 day[-1],  # yesterday, for the daily change
                 min(day),
                 max(day),
+                spark=day[::-2][-30:],  # oldest first, about 30 points
             )
 
     live = [i for i in instruments if not _is_simulated(i)]
@@ -92,7 +95,8 @@ def get_prices(instruments):
         return out
 
     by_feed = {i.feed_symbol: i for i in live}
-    key = 'trading:mid:' + ','.join(sorted(by_feed))
+    # Hashed so the key stays short however many markets there are.
+    key = 'trading:mid:' + hashlib.sha1(','.join(sorted(by_feed)).encode()).hexdigest()
     mids = cache.get(key)
     if mids is None:
         try:
@@ -104,7 +108,8 @@ def get_prices(instruments):
                 raise
         else:
             mids = {k: {'price': v['price'], 'previous_close': v.get('previous_close'),
-                        'day_low': v.get('day_low'), 'day_high': v.get('day_high')} for k, v in raw.items()}
+                        'day_low': v.get('day_low'), 'day_high': v.get('day_high'),
+                        'spark': v.get('spark') or []} for k, v in raw.items()}
             # A market the feed skipped this time keeps its last good price.
             last = cache.get(key + ':last') or {}
             mids = {**{k: v for k, v in last.items() if k in by_feed}, **mids}
@@ -116,7 +121,8 @@ def get_prices(instruments):
         if not inst:
             continue
         out[inst.symbol] = _spread_quote(inst, data['price'], data.get('previous_close'),
-                                         data.get('day_low'), data.get('day_high'))
+                                         data.get('day_low'), data.get('day_high'),
+                                         spark=data.get('spark'))
     return out
 
 
