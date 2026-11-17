@@ -561,3 +561,5 @@
 .vx-country small { color: var(--muted); }
 
 .vx-when { font-size: 0.8125rem; }
+
+.vx-btn--link { display: inline-grid; place-items: center; text-decoration: none; }

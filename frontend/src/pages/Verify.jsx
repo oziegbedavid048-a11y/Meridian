@@ -13,7 +13,6 @@ import { useAuth } from '../lib/auth.jsx';
 import { COUNTRIES, countryName } from '../content/countries.js';
 
 const STEPS = ['Details', 'Document', 'Photos', 'Face check'];
-const whenFmt = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' });
 
 function Stepper({ step }) {
   return (
@@ -73,7 +72,6 @@ function Wizard({ info, onSubmitted }) {
   const [docId, setDocId] = useState('');
   const [photos, setPhotos] = useState({});
   const [camera, setCamera] = useState(null); // 'front' | 'back' | 'selfie'
-  const [confirmed, setConfirmed] = useState(false);
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const topRef = useRef(null);
@@ -108,11 +106,14 @@ function Wizard({ info, onSubmitted }) {
   };
   const captured = async (blob) => {
     const key = camera;
-    setCamera(null);
+    // The face scan stays on screen until its photo is ready, so nothing flashes in between.
+    if (key !== 'selfie') setCamera(null);
     try {
       setPhoto(key, await shrinkImage(blob));
     } catch (err) {
       setErrors((e) => ({ ...e, [key]: err.message }));
+    } finally {
+      if (key === 'selfie') setCamera(null);
     }
   };
 
@@ -140,10 +141,6 @@ function Wizard({ info, onSubmitted }) {
   };
 
   const submit = async () => {
-    if (!confirmed) {
-      setErrors({ form: 'Tick the box to confirm before you send.' });
-      return;
-    }
     setBusy(true);
     setErrors({});
     const body = new FormData();
@@ -168,6 +165,14 @@ function Wizard({ info, onSubmitted }) {
   };
 
   const uploadFallback = useRef(null);
+  const sentFor = useRef(null);
+  useEffect(() => {
+    const selfie = photos.selfie;
+    if (step !== 4 || !selfie || sentFor.current === selfie) return undefined;
+    sentFor.current = selfie;
+    const timer = setTimeout(submit, 800);
+    return () => clearTimeout(timer);
+  }, [step, photos.selfie]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="vf" ref={topRef}>
@@ -196,12 +201,7 @@ function Wizard({ info, onSubmitted }) {
                 aria-invalid={errors.full_name ? 'true' : undefined} />
               {errors.full_name && <p className="field__error" role="alert">{errors.full_name}</p>}
             </div>
-            {countryLocked ? (
-              <div className="vx-country">
-                <span><small>Country you live in</small><br /><b>{countryName(country)}{provinceLocked ? `, ${place}` : ''}</b></span>
-                <small>From your application</small>
-              </div>
-            ) : (
+            {countryLocked ? null : (
             <div className={`field ${errors.country ? 'has-error' : ''}`}>
               <label htmlFor="vf-country">Country you live in</label>
               <select id="vf-country" value={country} autoComplete="country"
@@ -278,16 +278,13 @@ function Wizard({ info, onSubmitted }) {
           <div className="vx">
             <span className="vx-badge vx-badge--ok"><ShieldCheck size={44} aria-hidden="true" /></span>
             <h2>Face captured</h2>
-            <img className="vx-face" src={photos.selfie.url} alt="Your face photo" />
-            <p>Your face and ID photos are ready. Send them for review to finish.</p>
-            <label className="vf-confirm">
-              <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-              <span>These photos are of me and my {doc?.label || 'document'}, and my details are correct.</span>
-            </label>
-            <button type="button" className="vx-btn" onClick={submit} disabled={busy || !confirmed}>
-              {busy ? <><Loader2 size={18} className="spin" aria-hidden="true" /> Sending…</> : 'Send for review'}
-            </button>
-            <button type="button" className="vx-link" onClick={() => setCamera('selfie')} disabled={busy}>Retake face photo</button>
+            <p>Face verification successful.</p>
+            {errors.form || errors.selfie || errors.front || errors.back || errors.full_name ? (
+              <>
+                <p className="field__error" role="alert">{errors.form || errors.selfie || errors.front || errors.back || errors.full_name}</p>
+                <button type="button" className="vx-btn" onClick={submit} disabled={busy}>Try again</button>
+              </>
+            ) : <Loader2 size={22} className="spin" aria-label="Finishing" />}
           </div>
         )}
 
@@ -297,7 +294,7 @@ function Wizard({ info, onSubmitted }) {
             <button type="button" className="btn btn--primary" onClick={next}>Continue</button>
           </div>
         )}
-        {step === 4 && (
+        {step === 4 && !photos.selfie && (
           <div className="vf-actions">
             <button type="button" className="btn btn--outline" onClick={() => go(3)} disabled={busy}>Back</button>
           </div>
@@ -340,22 +337,13 @@ function Wizard({ info, onSubmitted }) {
   );
 }
 
-function UnderReview({ info }) {
+function UnderReview() {
   return (
     <div className="panel vf-status vx">
       <span className="vx-badge vx-badge--wait"><Clock3 size={42} aria-hidden="true" /></span>
       <h2>Verification in review</h2>
-      <p>
-        Thank you, {info.full_name.split(' ')[0]}. Our team is reviewing your ID and face photos and we will get back
-        to you shortly. You can withdraw as soon as it is approved; this page updates by itself.
-      </p>
-      {info.submitted_at && <p className="vx-when">Sent {whenFmt.format(new Date(info.submitted_at))}</p>}
-      <ol className="vf-timeline">
-        <li className="done"><Check size={16} aria-hidden="true" /> ID and face captured</li>
-        <li className="now"><Loader2 size={16} className="spin" aria-hidden="true" /> Review by our team</li>
-        <li>Withdrawals open</li>
-      </ol>
-      <Link to="/account" className="btn btn--outline">Back to my account</Link>
+      <p>Your identity verification has been received. We will get back to you within a few minutes to a few hours.</p>
+      <Link to="/account" className="vx-btn vx-btn--link">Back to dashboard</Link>
     </div>
   );
 }
@@ -400,7 +388,7 @@ export function VerifyPage() {
       <h1 className="page-title">Verify your identity</h1>
       {error && <p className="ticket__alert" role="alert"><AlertCircle size={16} aria-hidden="true" /> {error}</p>}
       {!info && !error && <p className="muted"><Loader2 size={18} className="spin" aria-hidden="true" /> Loading…</p>}
-      {info?.status === 'pending' && <UnderReview info={info} />}
+      {info?.status === 'pending' && <UnderReview />}
       {info?.status === 'approved' && <Approved />}
       {(info?.status === 'none' || info?.status === 'rejected') && <Wizard info={info} onSubmitted={setInfo} />}
       {info && info.status !== 'approved' && (
