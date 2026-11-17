@@ -6,7 +6,7 @@ import {
 
 export default function Home() {
   useEffect(() => {
-    document.title = 'Zentra Direct | Online investing and practice trading';
+    document.title = 'Meridian Prime Global | Online investing and practice trading';
   }, []);
   return (
     <main id="main">

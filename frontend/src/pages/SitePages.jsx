@@ -18,7 +18,7 @@ import {
 
 function useTitle(title) {
   useEffect(() => {
-    document.title = `${title} | Zentra Direct`;
+    document.title = `${title} | Meridian Prime Global`;
   }, [title]);
 }
 

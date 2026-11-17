@@ -1,5 +1,5 @@
 """
-Django settings for Zentra Direct.
+Django settings for Meridian Prime Global.
 
 Secure by default: with nothing configured the server runs in production mode,
 which means debug is off, a real secret key and host list are required, cookies
@@ -57,7 +57,7 @@ TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 
 DEBUG = env_bool('DJANGO_DEBUG', False)
 
-_DEV_KEY = 'dev-only-insecure-key-change-me-before-deploying-zentra-direct'
+_DEV_KEY = 'dev-only-insecure-key-change-me-before-deploying-meridian-prime-global'
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or _DEV_KEY
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1' if DEBUG else '')
 
@@ -293,11 +293,11 @@ EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_PASSWORD', '')
 EMAIL_USE_TLS = env_bool('DJANGO_EMAIL_TLS', True)
 EMAIL_TIMEOUT = 10
-DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_FROM_EMAIL', 'Zentra Direct <no-reply@localhost>')
+DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_FROM_EMAIL', 'Meridian Prime Global <no-reply@localhost>')
 # The public address of the website, used for links in emails.
-SITE_URL = os.environ.get('DJANGO_SITE_URL', 'https://zentradirect.com').rstrip('/')
+SITE_URL = os.environ.get('DJANGO_SITE_URL', 'https://meridianprimeglobal.com').rstrip('/')
 # Where clients write to support (shown in email footers).
-SUPPORT_EMAIL = os.environ.get('DJANGO_SUPPORT_EMAIL', 'support@zentradirect.com')
+SUPPORT_EMAIL = os.environ.get('DJANGO_SUPPORT_EMAIL', 'support@meridianprimeglobal.com')
 # Every new trade is emailed here. Empty means no trade alerts are sent.
 TRADE_ALERT_EMAIL = os.environ.get('DJANGO_TRADE_ALERT_EMAIL', '').strip()
 
@@ -340,7 +340,7 @@ LOGGING = {
 }
 
 
-# ---------- Zentra Direct ----------
+# ---------- Meridian Prime Global ----------
 
 # Unfinished applications are kept for 30 days so applicants can resume.
 APPLICATION_RETENTION_DAYS = 30

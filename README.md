@@ -1,4 +1,4 @@
-# Zentra Direct
+# Meridian Prime Global
 
 Marketing site, account-opening flow, sign-in and client dashboard for a
 self-directed brokerage.
@@ -356,17 +356,16 @@ Security events (failed sign-ins, rate limits, refused addresses) are written to
 
 ## Brand
 
-The logo is the **Sails** mark (two sails and a hull) with the name beside it, in
-navy and gold. The lettering is drawn shapes made from Public Sans (SIL Open Font
-Licence), so it looks the same everywhere.
+The logo is a simple **Peak** mark (two mountain peaks) with the name
+beside it in Public Sans, in deep teal and mint.
 
 * Artwork for print, social media or documents is in `frontend/public/brand/`:
   `logo.svg` and `mark.svg` for light backgrounds, `logo-on-dark.svg` and
-  `mark-on-dark.svg` for navy or dark ones. `public/favicon.svg` is the tab icon.
+  `mark-on-dark.svg` for teal or dark ones. `public/favicon.svg` is the tab icon.
 * On the website the `Logo` component (`src/components/ui.jsx`) is used on the
   public pages, sign-in, sign-up and the footer. It is deliberately **not** shown
   in the signed-in dashboard.
-* Colours: navy `#14305a`, gold `#b8893b` (soft gold `#d9bb85` on dark).
+* Colours: deep teal `#0f4c5c`, mint `#2fa59a` (soft mint `#8fd6cc` on dark).
 
 ## Editing content
 

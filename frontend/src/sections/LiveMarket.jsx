@@ -196,7 +196,7 @@ export function Insights({ count = 3 }) {
                 </Reveal>
               ))}
         </div>
-        <p className="fine">Headlines from third-party publishers via market data partners. Zentra Direct does not endorse their content.</p>
+        <p className="fine">Headlines from third-party publishers via market data partners. Meridian Prime Global does not endorse their content.</p>
       </div>
     </section>
   );

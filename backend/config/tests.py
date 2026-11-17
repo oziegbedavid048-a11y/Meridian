@@ -455,7 +455,7 @@ class ZohoMailBackendTests(SimpleTestCase):
         return captured, mock.patch('config.zohomail.outbound.post_json', fake_post_json)
 
     @override_settings(ZOHO_MAIL_TOKEN='Zoho-enczapikey abc123', ZOHO_MAIL_HOST='cpaas.zoho.com',
-                       DEFAULT_FROM_EMAIL='Zentra Direct <no-reply@zentradirect.com>',
+                       DEFAULT_FROM_EMAIL='Meridian Prime Global <no-reply@meridianprimeglobal.com>',
                        EMAIL_BACKEND='config.zohomail.ZohoMailBackend')
     def test_sends_the_message_as_json_with_the_token(self):
         from django.core.mail import send_mail
@@ -464,7 +464,7 @@ class ZohoMailBackendTests(SimpleTestCase):
             self.assertEqual(send_mail('Your code', 'Code 123456', None, ['ada@example.org']), 1)
         self.assertEqual(captured['url'], 'https://cpaas.zoho.com/v1.1/email')
         self.assertEqual(captured['auth'], 'Zoho-enczapikey abc123')  # prefix not doubled
-        self.assertEqual(captured['body']['from'], {'address': 'no-reply@zentradirect.com', 'name': 'Zentra Direct'})
+        self.assertEqual(captured['body']['from'], {'address': 'no-reply@meridianprimeglobal.com', 'name': 'Meridian Prime Global'})
         self.assertEqual(captured['body']['to'], [{'email_address': {'address': 'ada@example.org'}}])
         self.assertEqual(captured['body']['subject'], 'Your code')
         self.assertEqual(captured['body']['textbody'], 'Code 123456')
@@ -491,4 +491,4 @@ class ZohoMailBackendTests(SimpleTestCase):
                                        io.BytesIO(b'{"error": "invalid token"}'))
         with mock.patch('config.zohomail.outbound.post_json', side_effect=error):
             with self.assertRaisesMessage(OSError, '401'):
-                ZohoMailBackend().send_messages([EmailMessage('s', 'b', 'a@zentradirect.com', ['x@example.org'])])
+                ZohoMailBackend().send_messages([EmailMessage('s', 'b', 'a@meridianprimeglobal.com', ['x@example.org'])])

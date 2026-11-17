@@ -82,7 +82,7 @@ export default function Header() {
 
       <div className="mainbar">
         <div className="container mainbar__inner">
-          <Link to="/" className="mainbar__logo" aria-label="Zentra Direct home">
+          <Link to="/" className="mainbar__logo" aria-label="Meridian Prime Global home">
             <Logo />
           </Link>
 

@@ -35,7 +35,7 @@ export default function Footer() {
 
         <div className="footer__bottom">
           <div className="footer__brand">
-            <Link to="/" aria-label="Zentra Direct home" className="footer__logo"><Logo light /></Link>
+            <Link to="/" aria-label="Meridian Prime Global home" className="footer__logo"><Logo light /></Link>
             <p className="footer__copy">© {new Date().getFullYear()} {brand.name}. All rights reserved.</p>
             <p className="footer__disclaimer">{footer.disclaimer}</p>
           </div>

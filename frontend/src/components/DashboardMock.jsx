@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Drawn mock-ups of the Zentra Direct platform. All figures are illustrative.
+// Drawn mock-ups of the Meridian Prime Global platform. All figures are illustrative.
 
 const holdings = [
   ['XIC', 'Equity index ETF', '12,480.20', '+1.24%'],
@@ -35,7 +35,7 @@ export function PhoneMock() {
         <div className="pm-status"><span>9:41</span><span className="pm-island" /><span>●●●</span></div>
         <div className="pm-head">
           <span className="pm-back">‹</span>
-          <span><b>Zentra Equity Index ETF</b><small>XIC · TSX</small></span>
+          <span><b>Meridian Equity Index ETF</b><small>XIC · TSX</small></span>
         </div>
         <div className="pm-price">
           <strong>41.82 <small>CAD</small></strong>
@@ -61,7 +61,7 @@ export function DashboardMock() {
   return (
     <div className="mock" aria-hidden="true">
       <div className="mock__top">
-        <span className="mock__brand">Zentra</span>
+        <span className="mock__brand">Meridian</span>
         <span className="mock__tabs"><b>Accounts</b><i>Markets</i><i>Activity</i><i>Research</i></span>
         <span className="mock__trade">Trade</span>
       </div>

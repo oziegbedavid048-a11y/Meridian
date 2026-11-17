@@ -363,7 +363,7 @@ export function VerifyPage() {
   const [info, setInfo] = useState(null);
   const [error, setError] = useState('');
 
-  useEffect(() => { document.title = 'Verify your identity | Zentra Direct'; }, []);
+  useEffect(() => { document.title = 'Verify your identity | Meridian Prime Global'; }, []);
 
   const load = useCallback(async () => {
     try {

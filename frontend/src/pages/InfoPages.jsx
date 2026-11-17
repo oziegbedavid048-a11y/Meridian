@@ -10,7 +10,7 @@ import { LegalPage } from './SitePages.jsx';
 
 export function PricingPage() {
   useEffect(() => {
-    document.title = 'Pricing | Zentra Direct';
+    document.title = 'Pricing | Meridian Prime Global';
   }, []);
   return (
     <main id="main">
@@ -38,7 +38,7 @@ export function LegalRoute() {
 
 export function NotFound() {
   useEffect(() => {
-    document.title = 'Page not found | Zentra Direct';
+    document.title = 'Page not found | Meridian Prime Global';
   }, []);
   return (
     <main id="main">

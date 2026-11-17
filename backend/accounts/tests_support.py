@@ -41,7 +41,7 @@ class SupportApiTests(TestCase):
         self.assertIn(ticket.reference, email.subject)
         self.assertIn('When will my withdrawal arrive', email.body)
         html = email.alternatives[0][0]
-        self.assertIn('support@zentradirect.com', html)  # the footer
+        self.assertIn('support@meridianprimeglobal.com', html)  # the footer
         self.assertNotIn('<img', html)
 
     def test_markup_in_a_message_is_escaped_in_the_email(self):

@@ -27,7 +27,7 @@ export function AccountHome() {
   const [positions, setPositions] = useState([]);
   const [stats, setStats] = useState(null);
 
-  useEffect(() => { document.title = 'My account | Zentra Direct'; }, []);
+  useEffect(() => { document.title = 'My account | Meridian Prime Global'; }, []);
 
   const load = useCallback(async () => {
     try {
@@ -115,7 +115,7 @@ export function TradeHistoryPage() {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => { document.title = 'Trade history | Zentra Direct'; }, []);
+  useEffect(() => { document.title = 'Trade history | Meridian Prime Global'; }, []);
 
   const load = useCallback(async () => {
     try {

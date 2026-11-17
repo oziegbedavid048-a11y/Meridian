@@ -106,7 +106,7 @@ function Landing({ onStart }) {
         </div>
         <div className="choice-card choice-card--accent">
           <span className="icon-tile"><BadgeCheck size={24} aria-hidden="true" /></span>
-          <h2>I'm new to Zentra Direct</h2>
+          <h2>I'm new to Meridian Prime Global</h2>
           <p>Create your profile and get started right away.</p>
           <button type="button" className="btn btn--primary btn--block" onClick={onStart}>Start</button>
         </div>
@@ -286,7 +286,7 @@ function Credentials({ onDone }) {
             <RuleList id="pw-rules" rules={passwordRules} value={form.password} />
           </div>
           <p className="consent">
-            By selecting Continue, I agree that Zentra Direct may email me about my account application. I can withdraw this consent at any time.
+            By selecting Continue, I agree that Meridian Prime Global may email me about my account application. I can withdraw this consent at any time.
           </p>
         </>
       )}
@@ -480,7 +480,7 @@ export default function SignUp() {
   const topRef = useRef(null);
 
   useEffect(() => {
-    document.title = 'Open an account | Zentra Direct';
+    document.title = 'Open an account | Meridian Prime Global';
   }, []);
 
   // Load the saved application once per signed-in user (not on every save).
@@ -631,7 +631,7 @@ export default function SignUp() {
     <main id="main" className="signup">
       <div className="signup__bar">
         <div className="container signup__bar-inner">
-          <Link to="/" aria-label="Zentra Direct home"><Logo /></Link>
+          <Link to="/" aria-label="Meridian Prime Global home"><Logo /></Link>
         </div>
       </div>
 

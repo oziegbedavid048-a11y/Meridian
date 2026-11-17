@@ -107,7 +107,7 @@ export default function AccountShell({ children, wide = false, bare = false }) {
     <div className={`app-shell ${wide ? 'app-shell--wide' : ''} ${bare ? 'app-shell--bare' : ''}`}>
       {!bare && (
       <header className="app-bar">
-        <Link to="/account" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}>Zentra Direct</Link>
+        <Link to="/account" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}>Meridian Prime Global</Link>
         <button type="button" className="app-bar__support" onClick={() => setSupport(true)} aria-label="Support">
           <Headset size={18} aria-hidden="true" /><span>Support</span>
         </button>

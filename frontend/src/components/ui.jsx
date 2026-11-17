@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom';
-import {
-  LOGO_HULL, LOGO_SAIL_A, LOGO_SAIL_B, LOGO_SUB, LOGO_VIEW_BOX, LOGO_WORD,
-} from '../content/logoShapes.js';
+import { LOGO_VIEW_BOX, LOGO_PEAK, LOGO_PEAK_SMALL } from '../content/logoShapes.js';
 import { ArrowRight } from 'lucide-react';
 import { useInView } from '../lib/motion.js';
 import { brand } from '../content/site.js';
@@ -47,20 +45,17 @@ export function CheckList({ items }) {
 }
 
 /**
- * The Zentra Direct logo. `light` is for dark backgrounds (white and soft gold);
- * the default is for light backgrounds (navy and gold). The lettering is drawn
- * shapes, so it looks the same on every device. It is deliberately not used in
+ * The Meridian Prime Global logo. `light` is for dark backgrounds (white and soft mint);
+ * the default is for light backgrounds (teal and mint). It is deliberately not used in
  * the signed-in dashboard.
  */
 export function Logo({ light = false }) {
   return (
     <span className={`logo ${light ? 'logo--light' : ''}`}>
       <svg viewBox={LOGO_VIEW_BOX} className="logo__svg" role="img" aria-label={brand.name}>
-        <polygon points={LOGO_SAIL_A} className="logo__main" />
-        <polygon points={LOGO_SAIL_B} className="logo__accent" />
-        <path d={LOGO_HULL} className="logo__main" />
-        <path d={LOGO_WORD} className="logo__main" />
-        <path d={LOGO_SUB} className="logo__accent" />
+        <path d={LOGO_PEAK} className="logo__main" />
+        <path d={LOGO_PEAK_SMALL} className="logo__accent" />
+        <text x="72" y="45" className="logo__main logo__word">Meridian Prime <tspan className="logo__accent logo__sub">Global</tspan></text>
       </svg>
     </span>
   );

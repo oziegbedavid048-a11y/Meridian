@@ -8,7 +8,7 @@ Settings (environment variables):
                             "Zoho-enczapikey " prefix
     DJANGO_ZOHO_MAIL_HOST   the API host shown on the Agent's page
                             (default cpaas.zoho.com; ZeptoMail is api.zeptomail.com)
-    DJANGO_FROM_EMAIL       e.g. Zentra Direct <no-reply@zentradirect.com>; the
+    DJANGO_FROM_EMAIL       e.g. Meridian Prime Global <no-reply@meridianprimeglobal.com>; the
                             domain must be verified in Zoho
 """
 

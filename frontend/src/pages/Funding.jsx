@@ -176,7 +176,7 @@ export function DepositPage() {
   const currency = account?.currency || info?.currency || 'USD';
   const minimum = info?.min_deposit ?? 10;
 
-  useEffect(() => { document.title = 'Deposit | Zentra Direct'; }, []);
+  useEffect(() => { document.title = 'Deposit | Meridian Prime Global'; }, []);
   useEffect(() => { getFundingForm().then(setInfo).catch(() => {}); }, []);
 
   const toCoins = () => {
@@ -338,7 +338,7 @@ export function WithdrawPage() {
   const available = account?.free_margin ?? null;
   const identity = info?.identity;
 
-  useEffect(() => { document.title = 'Withdraw | Zentra Direct'; }, []);
+  useEffect(() => { document.title = 'Withdraw | Meridian Prime Global'; }, []);
   useEffect(() => { getFundingForm().then(setInfo).catch(() => {}); }, []);
 
   const coins = useMemo(() => (info?.payout_assets || []).map((c) => ({ ...c, key: `${c.asset}-${c.network}` })), [info]);

@@ -663,7 +663,7 @@ class VerificationEmailContentTests(TestCase):
         self.assertEqual(seconds, 600)
         self.assertEqual(len(mail.outbox), 1)
         message = mail.outbox[0]
-        self.assertEqual(message.subject, 'Your Zentra Direct verification code')
+        self.assertEqual(message.subject, 'Your Meridian Prime Global verification code')
         self.assertEqual(message.to, ['ada@example.org'])
         self.assertIn(code, message.body)
         self.assertIn('expires in 10 minutes', message.body)

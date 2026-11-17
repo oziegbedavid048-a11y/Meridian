@@ -11,15 +11,15 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape, linebreaks
 
-BRAND = 'Zentra Direct'
+BRAND = 'Meridian Prime Global'
 FONT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 INK = '#1f2933'
-NAVY = '#14305a'
+NAVY = '#0f4c5c'
 MUTED = '#7b8794'
 
 
 def _site_url():
-    return (getattr(settings, 'SITE_URL', '') or 'https://zentradirect.com').rstrip('/')
+    return (getattr(settings, 'SITE_URL', '') or 'https://meridianprimeglobal.com').rstrip('/')
 
 
 def _host():
@@ -27,7 +27,7 @@ def _host():
 
 
 def _support_email():
-    return getattr(settings, 'SUPPORT_EMAIL', '') or 'support@zentradirect.com'
+    return getattr(settings, 'SUPPORT_EMAIL', '') or 'support@meridianprimeglobal.com'
 
 
 def _footer_text():

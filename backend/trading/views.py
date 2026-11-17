@@ -290,9 +290,9 @@ def statement(request):
     summary = _history_summary(trades, acc.currency)
     stamp = timezone.now().strftime('%Y%m%d-%H%M')
     response = HttpResponse(content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = f'attachment; filename="zentra-direct-statement-{stamp}.csv"'
+    response['Content-Disposition'] = f'attachment; filename="meridian-prime-global-statement-{stamp}.csv"'
     out = csv.writer(response)
-    out.writerow(['Zentra Direct: practice account statement'])
+    out.writerow(['Meridian Prime Global: practice account statement'])
     out.writerow(['Account', _safe_cell(acc.user.email)])
     out.writerow(['Created', timezone.now().strftime('%Y-%m-%d %H:%M')])
     period = f"{filters.get('from', 'start')} to {filters.get('to', 'today')}"

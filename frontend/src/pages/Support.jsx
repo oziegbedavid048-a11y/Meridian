@@ -112,7 +112,7 @@ function Conversation({ id, onBack, onChanged }) {
           <ol className="sp-thread">
             {ticket.messages.map((m) => (
               <li key={m.id} className={`sp-msg sp-msg--${m.author}`}>
-                <span className="sp-msg__who">{m.author === 'staff' ? 'Zentra Direct Support' : 'You'} · {whenFmt.format(new Date(m.created_at))}</span>
+                <span className="sp-msg__who">{m.author === 'staff' ? 'Meridian Prime Global Support' : 'You'} · {whenFmt.format(new Date(m.created_at))}</span>
                 <p>{m.body}</p>
               </li>
             ))}
@@ -140,7 +140,7 @@ export function SupportPage() {
   const [data, setData] = useState(null);
   const [openId, setOpenId] = useState(null);
 
-  useEffect(() => { document.title = 'Support | Zentra Direct'; }, []);
+  useEffect(() => { document.title = 'Support | Meridian Prime Global'; }, []);
   const load = useCallback(async () => {
     try {
       setData(await api('/support/tickets/'));

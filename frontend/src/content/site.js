@@ -11,15 +11,15 @@ const img = (id, w = 900) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=72`;
 
 export const brand = {
-  name: 'Zentra Direct',
-  short: 'Zentra Direct',
+  name: 'Meridian Prime Global',
+  short: 'Meridian Prime Global',
   tagline: 'Investing, made clear.',
 };
 
 export const contact = {
   phone: '+1 657-678-1390',
   phoneHref: 'tel:+16576781390',
-  email: 'support@zentradirect.com',
+  email: 'support@meridianprimeglobal.com',
   hours: 'Monday to Friday, 8 a.m. to 8 p.m. ET',
 };
 
@@ -165,7 +165,7 @@ export const visuals = {
 };
 
 export const why = {
-  title: 'Why investors choose Zentra Direct',
+  title: 'Why investors choose Meridian Prime Global',
   columns: [
     {
       icon: 'chat',
@@ -471,5 +471,5 @@ export const footer = {
     ['Fraud awareness', '/legal/fraud'],
   ],
   disclaimer:
-    'Zentra Direct currently offers practice accounts for learning: balances are virtual money and orders are not sent to an exchange. Registration details will be published before any real-money account is offered. Investing involves risk, including the possible loss of the money you invest. Past performance does not guarantee future results. Zentra Direct provides an order-execution-only service and does not give investment advice or recommendations.',
+    'Meridian Prime Global currently offers practice accounts for learning: balances are virtual money and orders are not sent to an exchange. Registration details will be published before any real-money account is offered. Investing involves risk, including the possible loss of the money you invest. Past performance does not guarantee future results. Meridian Prime Global provides an order-execution-only service and does not give investment advice or recommendations.',
 };

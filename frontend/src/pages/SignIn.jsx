@@ -86,7 +86,7 @@ export default function SignIn() {
   }, [loading, user, navigate, next]);
 
   useEffect(() => {
-    document.title = 'Sign in | Zentra Direct';
+    document.title = 'Sign in | Meridian Prime Global';
   }, []);
 
   const set = (k, v) => {
@@ -177,7 +177,7 @@ export default function SignIn() {
           <>
           <h2>Sign in</h2>
           <p className="auth__sub">
-            New to Zentra Direct? <Link to="/sign-up">Open an account</Link>
+            New to Meridian Prime Global? <Link to="/sign-up">Open an account</Link>
           </p>
           <FormAlert>{alert}</FormAlert>
           <form ref={formRef} onSubmit={submit} noValidate className="auth__form">

@@ -33,7 +33,7 @@ ALLOWED_HOSTS = frozenset({
     'api.exchange.coinbase.com',
 })
 MAX_BYTES = 5 * 1024 * 1024
-USER_AGENT = 'Mozilla/5.0 (compatible; ZentraDirect/1.0)'
+USER_AGENT = 'Mozilla/5.0 (compatible; MeridianPrimeGlobal/1.0)'
 
 
 class OutboundBlocked(Exception):

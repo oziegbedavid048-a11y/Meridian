@@ -1,18 +1,18 @@
 /* ---------- Design tokens ----------
    Layout and visual language follow a traditional Canadian direct-brokerage
    site: white and warm-sand surfaces, thin borders, light headings in the
-   brand colour, pill buttons. Brand colour: deep navy. */
+   brand colour, pill buttons. Brand colour: deep teal, mint accent. */
 :root {
-  --brand: #14305a; /* navy: 13.1:1 with white */
-  --brand-600: #234a80; /* links: 8.9:1 on white */
-  --brand-700: #0e2343;
-  --brand-800: #0a1a33;
-  --gold: #b8893b; /* accent, decorative and large text only (3.1:1 on white) */
-  --gold-700: #8c6526; /* gold text on light surfaces: 5.2:1 */
-  --gold-300: #d9bb85;
-  --sea-100: #e9edf4; /* light navy tint for hovers */
+  --brand: #0f4c5c; /* deep teal: 9.6:1 with white */
+  --brand-600: #16657a; /* links: 6.6:1 on white */
+  --brand-700: #0b3a47;
+  --brand-800: #082c36;
+  --gold: #2fa59a; /* mint accent, decorative and large text only (3:1 on white) */
+  --gold-700: #1d6f68; /* accent text on light surfaces: 6:1 */
+  --gold-300: #8fd6cc;
+  --sea-100: #e6f1f2; /* light teal tint for hovers */
 
-  --black: #0b1a30; /* top bar and footer: navy-black */
+  --black: #072a33; /* top bar and footer: teal-black */
   --ink: #2b2b2b;
   --text: #444444;
   --muted: #6b6b6b;
