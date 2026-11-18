@@ -10,7 +10,7 @@ import AccountShell, { useAccountSupport } from '../components/AccountShell.jsx'
 import { BrandMark } from '../components/ui.jsx';
 import {
   IconChart, IconCrosshair, IconHistory, IconIndicators, IconMarketWatch, IconNewOrder, IconNews, IconObjects,
-  IconMessages, IconQuotes, IconSymbols, IconTrade,
+  IconQuotes, IconSymbols, IconTrade,
 } from '../components/TradeIcons.jsx';
 import { useAuth } from '../lib/auth.jsx';
 import Tour from '../components/Tour.jsx';
@@ -1339,16 +1339,6 @@ function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onI
   );
 }
 
-/** The last bottom tab, as in MT5: messages, here support and live chat. */
-function MessagesTab() {
-  const openSupport = useAccountSupport();
-  return (
-    <button type="button" aria-label="Messages and support" title="Messages and support" data-tour="support" onClick={openSupport}>
-      <IconMessages size={28} />
-    </button>
-  );
-}
-
 /* ---------- Page ---------- */
 export default function Terminal() {
   const [params] = useSearchParams();
@@ -1668,7 +1658,6 @@ export default function Terminal() {
             <Icon size={28} />
           </button>
         ))}
-        <MessagesTab />
       </nav>
 
       {pickedInst && (

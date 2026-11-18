@@ -21,7 +21,6 @@ const STEPS = [
   { id: 'tab-news', title: 'News', text: 'Market headlines and the economic calendar. Tap a headline to read the story.' },
   { id: 'deposit', screen: 'trade', title: 'Deposit', text: 'Add funds to your account. You will find it at the top of the Trade screen, next to your balance.' },
   { id: 'withdraw', screen: 'history', title: 'Withdraw', text: 'Take money out of your account. You will find it at the top of the History screen.' },
-  { id: 'support', title: 'Messages and support', text: 'Questions? Chat with us live or open a support ticket at any time.' },
 ];
 
 const storageKey = (who) => `mpg-tour-done:${who}`;
