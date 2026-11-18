@@ -13,7 +13,7 @@ const img = (id, w = 900) =>
 export const brand = {
   name: 'Meridian Prime Global',
   short: 'Meridian Prime Global',
-  tagline: 'Investing, made clear.',
+  tagline: 'Global markets. Professional brokerage.',
 };
 
 export const contact = {

@@ -6,7 +6,7 @@ import {
 
 export default function Home() {
   useEffect(() => {
-    document.title = 'Meridian Prime Global | Online investing and practice trading';
+    document.title = 'Meridian Prime Global | Global markets. Professional brokerage.';
   }, []);
   return (
     <main id="main">

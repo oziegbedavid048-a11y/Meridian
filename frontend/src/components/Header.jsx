@@ -62,7 +62,7 @@ export default function Header() {
     <header className="site-header" ref={headerRef}>
       <div className="topbar">
         <div className="container topbar__inner">
-          <span className="topbar__note">Self-directed investing</span>
+          <span className="topbar__note">Multi-asset online brokerage</span>
           <nav aria-label="Utility" className="topbar__links">
             <Link to="/help" className="topbar__link"><CircleHelp size={15} aria-hidden="true" /> Help</Link>
             <button type="button" className="topbar__link" title="Version française bientôt disponible" aria-label="Français (coming soon)">
