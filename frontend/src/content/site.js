@@ -332,8 +332,6 @@ export const pricing = {
         ['ETFs (online)', 'Free'],
         ['Mutual funds', 'Free'],
         ['GICs', 'Free'],
-        ['Options', '$0.95 per contract, $6.95 minimum'],
-        ['Trades placed by phone with an agent', '$45 per trade'],
       ],
     },
     {
