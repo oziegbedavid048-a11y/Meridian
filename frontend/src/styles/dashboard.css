@@ -56,7 +56,7 @@
 @media (max-width: 700px) {
   .tx-bar { padding: 4px 16px 4px 10px; gap: 2px; }
   .tx-bar__brand { display: none; }
-  .tx-bar .cx-icon--watch { order: -1; }
+  .tx-bar .cx-icon--support { order: -1; }
   .tx-bar__title { margin: 0 0 0 4px; padding-left: 0; border-left: 0; font-size: 1.125rem; }
   .tx-bar--chart .tx-bar__title { display: none; }
   .tx-bar--chart { justify-content: flex-end; }

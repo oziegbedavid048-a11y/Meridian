@@ -1157,7 +1157,6 @@ function CloseBySheet({ trade, positions, onClose, onDone }) {
 const RING = 104; // radius of the ring of timeframes, in pixels
 
 function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
-  const openSupport = useAccountSupport();
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -1192,8 +1191,8 @@ function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
           </button>
         ))}
         <div className="cx-center">
-          <button type="button" aria-label="Support" title="Support" onClick={() => { onClose(); openSupport(); }}>
-            <Headset size={22} aria-hidden="true" />
+          <button type="button" aria-label="Market watch" title="Market watch" onClick={() => onTool('watch')}>
+            <IconMarketWatch size={22} />
           </button>
           <button type="button" aria-label="New order" title="New order" onClick={() => onTool('order')}>
             <FilePlus2 size={22} aria-hidden="true" />
@@ -1303,7 +1302,8 @@ function ObjectsPage({ symbol, timeframe, drawings, digits, onPick, onRemove, on
 const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', history: 'History', watch: 'Market watch', news: 'News' };
 
 /** The trade screen's own top bar, in place of the dashboard header. */
-function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade, onPairs, onWatch }) {
+function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade, onPairs }) {
+  const openSupport = useAccountSupport();
   return (
     <header className={`tx-bar tx-bar--${screen}`} data-tour="welcome">
       <span className="tx-bar__brand"><BrandMark />Meridian Prime Global</span>
@@ -1331,9 +1331,9 @@ function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onI
           </button>
         </>
       )}
-      <button type="button" className={`cx-icon cx-icon--watch ${screen === 'watch' ? 'is-on' : ''}`}
-        aria-label="Market watch" title="Market watch" aria-pressed={screen === 'watch'} onClick={onWatch} data-tour="watch">
-        <IconMarketWatch size={24} />
+      <button type="button" className="cx-icon cx-icon--support" aria-label="Support" title="Support"
+        onClick={openSupport} data-tour="support">
+        <Headset size={24} aria-hidden="true" />
       </button>
     </header>
   );
@@ -1553,7 +1553,7 @@ export default function Terminal() {
     <AccountShell wide bare>
       {<TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
         onCrosshair={() => setCrosshair((v) => !v)} onIndicators={() => setShowSettings(true)}
-        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} onPairs={() => setPairsOpen(true)} onWatch={() => setPane((p) => (p === 'watch' ? 'chart' : 'watch'))} />}
+        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} onPairs={() => setPairsOpen(true)} />}
       {feedError && (
         <p className="feed-error" role="status">
           <AlertCircle size={16} aria-hidden="true" /> Prices are not updating right now. Trading is paused until the feed returns.
@@ -1683,6 +1683,7 @@ export default function Terminal() {
           onTool={(which) => {
             setRing(null);
             if (which === 'shapes') setShapesOpen(true);
+            if (which === 'watch') setPane('watch');
             if (which === 'crosshair') setCrosshair((v) => !v);
             if (which === 'indicators') setShowSettings(true);
             if (which === 'order') openOrder();
