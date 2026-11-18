@@ -17,8 +17,6 @@ export const brand = {
 };
 
 export const contact = {
-  phone: '+1 657-678-1390',
-  phoneHref: 'tel:+16576781390',
   email: 'support@meridianprimeglobal.com',
   hours: 'Monday to Friday, 8 a.m. to 8 p.m. ET',
 };
@@ -173,7 +171,7 @@ export const why = {
       items: [
         'A Canadian team that knows your accounts',
         'Help in English and French',
-        'Phone, email and chat support',
+        'Email and live chat support',
         'A help centre open around the clock',
       ],
     },
@@ -257,7 +255,7 @@ export const active = {
   text: 'Trade often? Our active trader program rewards you as your volume grows.',
   points: [
     'Rebates that rise with your monthly volume',
-    'Priority phone line',
+    'Priority support',
     'Invitations to live market sessions',
   ],
   cta: { label: 'Learn about the program', href: '/services#active' },

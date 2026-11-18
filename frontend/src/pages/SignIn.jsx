@@ -201,8 +201,7 @@ export default function SignIn() {
             </div>
             {showHelp && (
               <p className="auth__help">
-                To reset your password, call us at <a href={contact.phoneHref}>{contact.phone}</a>
-                {contact.email && <> or email <a href={`mailto:${contact.email}`}>{contact.email}</a></>}. We will verify your identity first.
+                To reset your password, email <a href={`mailto:${contact.email}`}>{contact.email}</a> or use live chat. We will verify your identity first.
               </p>
             )}
             <button type="submit" className="btn btn--primary btn--block" disabled={busy}>

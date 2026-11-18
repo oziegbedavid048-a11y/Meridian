@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronDown, CircleHelp, Globe, Lock, Mail, Menu, Phone, X } from 'lucide-react';
+import { ArrowRight, ChevronDown, CircleHelp, Globe, Lock, Mail, Menu, X } from 'lucide-react';
 import { nav, contact } from '../content/site.js';
 import { useAuth } from '../lib/auth.jsx';
 import { Logo, SmartLink } from './ui.jsx';
@@ -180,7 +180,6 @@ export default function Header() {
               <Link to="/sign-in" className="btn btn--outline btn--block">Sign in</Link>
             </>
           )}
-          <a href={contact.phoneHref} className="drawer__phone"><Phone size={16} aria-hidden="true" /> {contact.phone}</a>
           <a href={`mailto:${contact.email}`} className="drawer__phone"><Mail size={16} aria-hidden="true" /> {contact.email}</a>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, Plus } from 'lucide-react';
+import { Mail, Plus } from 'lucide-react';
 import {
   hero, promos, why, steps, accounts, active, markets, platforms,
   tools, learn, demo, faq, finalCta, contact, visuals,
@@ -382,10 +382,6 @@ export function Contact() {
       <div className="container">
         <RuleHeading id="contact-title" title="Do you have any questions?" intro={`Our client services team is ready to help, ${contact.hours}.`} />
         <div className="grid2">
-          <a href={contact.phoneHref} className="box contact-card">
-            <Phone size={28} strokeWidth={1.5} aria-hidden="true" />
-            <span><small>Call us</small><b>{contact.phone}</b></span>
-          </a>
           {contact.email && (
             <a href={`mailto:${contact.email}`} className="box contact-card">
               <Mail size={28} strokeWidth={1.5} aria-hidden="true" />

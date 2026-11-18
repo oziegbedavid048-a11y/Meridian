@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Linkedin, Mail, Phone, Youtube } from 'lucide-react';
+import { Linkedin, Mail, Youtube } from 'lucide-react';
 import { footer, contact, brand } from '../content/site.js';
 import { Logo, SmartLink } from './ui.jsx';
 
@@ -21,7 +21,6 @@ export default function Footer() {
           <div className="footer__col">
             <p className="footer__heading">{brand.tagline}</p>
             <ul>
-              <li><a href={contact.phoneHref}><Phone size={14} aria-hidden="true" /> {contact.phone}</a></li>
               {contact.email && <li><a href={`mailto:${contact.email}`}><Mail size={14} aria-hidden="true" /> {contact.email}</a></li>}
             </ul>
           </div>

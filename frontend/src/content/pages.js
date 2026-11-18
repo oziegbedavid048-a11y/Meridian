@@ -100,7 +100,7 @@ export const helpPage = {
       {
         title: 'Your account',
         items: [
-          ['How do I reset my password?', 'Call us or email us. We will verify your identity first, then help you set a new password.'],
+          ['How do I reset my password?', 'Email us or use live chat. We will verify your identity first, then help you set a new password.'],
           ['Can I open more than one account?', 'Yes. Once your first account is approved, you can open other account types from your dashboard.'],
           ['How do I close my account?', 'Contact us. We will confirm your identity and walk you through transferring or withdrawing your investments.'],
         ],
