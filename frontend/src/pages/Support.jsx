@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, ArrowLeft, ChevronRight, Loader2, Send } from 'lucide-react';
+import { SkeletonNews, SkeletonRows } from '../components/Skeleton.jsx';
 import AccountShell from '../components/AccountShell.jsx';
 import { api } from '../lib/api.js';
 import { fieldErrors, usePoll } from '../lib/trading.js';
@@ -103,7 +104,7 @@ function Conversation({ id, onBack, onChanged }) {
   return (
     <div className="sp-card">
       <button type="button" className="sp-back" onClick={onBack}><ArrowLeft size={18} aria-hidden="true" /> All tickets</button>
-      {!ticket ? <p className="sp-muted"><Loader2 size={16} className="spin" aria-hidden="true" /> Loading…</p> : (
+      {!ticket ? <SkeletonNews items={3} label="Loading the conversation" /> : (
         <>
           <div className="sp-conv-head">
             <div><h2>{ticket.subject}</h2><small className="sp-muted">{ticket.reference}</small></div>
@@ -162,7 +163,7 @@ export function SupportPage() {
             <NewTicket email={data?.email || user?.email} onOpened={(t) => { load(); setOpenId(t.id); }} />
             <section className="sp-list" aria-labelledby="sp-tickets">
               <h2 id="sp-tickets">Your tickets</h2>
-              {!data ? <p className="sp-muted">Loading…</p> : !tickets.length ? (
+              {!data ? <SkeletonRows rows={3} right={1} label="Loading your tickets" /> : !tickets.length ? (
                 <p className="sp-muted">You have no tickets yet.</p>
               ) : (
                 <ul className="sp-card sp-tickets">

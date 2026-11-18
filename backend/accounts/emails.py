@@ -207,6 +207,32 @@ def sign_in_code_email(to, code, minutes):
     return _send(to, subject, text, _layout(body))
 
 
+def password_reset_code_email(to, code, minutes):
+    """The 6-digit code that lets someone choose a new password."""
+    subject = f'Reset your {BRAND} password'
+    text = (
+        'Hello,\n\n'
+        f'Use the code below to choose a new password for your {BRAND} account.\n\n'
+        f'    {code}\n\n'
+        f'This code expires in {minutes} minutes. Do not share it with anyone. '
+        f'{BRAND} will never ask you for this code.\n\n'
+        'If you did not ask to reset your password, you can ignore this email: your password has not changed.\n\n'
+        f'Regards,\n{BRAND}\n\n'
+        '--\n'
+        + _footer_text()
+    )
+    body = (
+        _p('Hello,')
+        + _p(f'Use the code below to choose a new password for your {BRAND} account.')
+        + f'<p style="margin:8px 0 24px;font-size:32px;line-height:1.2;font-weight:700;letter-spacing:6px;color:{NAVY};">{escape(code)}</p>'
+        + _p(f'This code expires in {minutes} minutes. Do not share it with anyone. '
+             f'{BRAND} will never ask you for this code.')
+        + _p('If you did not ask to reset your password, you can ignore this email: your password has not changed.')
+        + _p(f'Regards,<br>{BRAND}')
+    )
+    return _send(to, subject, text, _layout(body))
+
+
 # ---------- identity verification ----------
 
 def verification_approved_email(to, name):

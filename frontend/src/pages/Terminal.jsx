@@ -10,6 +10,7 @@ import AccountShell, { useAccountSupport } from '../components/AccountShell.jsx'
 import { BrandMark } from '../components/ui.jsx';
 import { useAuth } from '../lib/auth.jsx';
 import Tour from '../components/Tour.jsx';
+import { SkeletonFigures, SkeletonNews, SkeletonRows } from '../components/Skeleton.jsx';
 import CandleChart from '../components/CandleChart.jsx';
 import LiveMarket from '../components/LiveMarket.jsx';
 import { API_ROOT, api } from '../lib/api.js';
@@ -437,7 +438,7 @@ function Quotes({ instruments, ticks, selected, advanced, clock, onPick }) {
         </div>
       )}
       <ul className="mx-list mx-body">
-        {!instruments.length && <li className="mx-empty-row">Loading symbols…</li>}
+        {!instruments.length && <li><SkeletonRows rows={8} label="Loading prices" /></li>}
         {instruments.length > 0 && !rows.length && <li className="mx-empty-row">No symbol matches.</li>}
         {rows.map((i) => {
           const dir = ticks[i.symbol];
@@ -748,6 +749,7 @@ function TradeScreen({ positions, account, onChanged, onSelect, onNew }) {
         </p>
       )}
       <div className="mx-body">
+        {!account ? <><SkeletonFigures lines={4} label="Loading your account" /><SkeletonRows rows={3} /></> : <>
         <dl className="mx-figures">
           <div><dt>Balance:</dt><dd>{plain(account?.balance)}</dd></div>
           <div><dt>Equity:</dt><dd>{plain(account?.equity)}</dd></div>
@@ -766,6 +768,7 @@ function TradeScreen({ positions, account, onChanged, onSelect, onNew }) {
             <ul className="mx-list">{pending.map((p) => row(p, false))}</ul>
           </>
         )}
+        </>}
       </div>
       {editing && <ModifyDialog trade={editing} onClose={() => setEditing(null)} onSaved={onChanged} />}
       {closing && <CloseSheet trade={liveClosing || closing} onClose={() => setClosing(null)} onDone={finished}
@@ -882,7 +885,7 @@ function HistoryScreen({ account, refreshKey }) {
           <div><dt>Balance:</dt><dd>{plain(account?.balance)}</dd></div>
         </dl>
         {error && <p className="mx-formerr" role="alert"><AlertCircle size={15} aria-hidden="true" /> {error}</p>}
-        {!history && !error && <p className="mx-empty-row">Loading history…</p>}
+        {!history && !error && <><SkeletonFigures lines={4} label="Loading history" /><SkeletonRows rows={5} /></>}
         {history && !history.history.length && (
           <div className="mx-blank">
             <Inbox size={56} aria-hidden="true" />
@@ -957,7 +960,7 @@ function Headlines() {
   usePoll(load, 120000);
   return (
     <>
-      {!items && <p className="mx-empty-row">Loading news…</p>}
+      {!items && <SkeletonNews />}
       {items && !items.length && (
         <div className="mx-blank"><Newspaper size={72} aria-hidden="true" /><p>No news</p></div>
       )}
@@ -1012,7 +1015,7 @@ function Calendar() {
       {failed && !data && (
         <div className="mx-blank"><CalendarDays size={64} aria-hidden="true" /><p>The calendar is unavailable right now</p></div>
       )}
-      {!data && !failed && <p className="mx-empty-row">Loading the calendar…</p>}
+      {!data && !failed && <SkeletonRows rows={6} right={1} label="Loading the calendar" />}
       {data && !days.length && (
         <div className="mx-blank"><CalendarDays size={64} aria-hidden="true" /><p>No events match</p></div>
       )}
@@ -1083,7 +1086,7 @@ function DepthSheet({ symbol, onClose }) {
     <Sheet title={`Market depth: ${symbol}`} onClose={onClose}>
       <div className="mx-closebody">
         {error && <p className="mx-formerr" role="alert"><AlertCircle size={15} aria-hidden="true" /> {error}</p>}
-        {!data && !error && <p className="mx-empty-row">Loading…</p>}
+        {!data && !error && <SkeletonRows rows={6} label="Loading market depth" />}
         {data && (
           <>
             <div className="mx-depth__head"><span>Price</span><span>Size (lots)</span></div>

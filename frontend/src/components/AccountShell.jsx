@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Headset, Loader2,
+  ArrowLeft, Headset,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { money } from '../lib/trading.js';
 import SupportPanel from './SupportPanel.jsx';
 import { setChatBubble } from '../lib/livechat.js';
 import { BrandMark } from './ui.jsx';
+import { SkeletonPage } from './Skeleton.jsx';
 
 
 export function SummaryBar({ account }) {
@@ -74,7 +75,7 @@ export default function AccountShell({ children, wide = false, bare = false }) {
     };
   }, [user, signOut, navigate]);
 
-  if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" aria-label="Loading" /></div>;
+  if (loading) return <SkeletonPage />;
   if (!user) return <Navigate to="/sign-in?next=/account/terminal" replace />;
 
 
