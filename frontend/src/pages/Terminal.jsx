@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle, ArrowLeft, ArrowUpDown, CandlestickChart, ChevronDown, ChevronRight, CircleDollarSign, Crosshair,
   FilePlus2, Inbox, Loader2, Minus, BarChart3, CalendarDays, Download, Eraser, Filter, LineChart, ListX,
-  MoveUpRight, Newspaper, Activity, Wallet, Banknote, Headset, Plus, Rows3, Search, Settings2, Shapes, SquareFunction, Trash2, TrendingUp, X,
+  MoveUpRight, Move, Newspaper, Activity, Wallet, Banknote, Headset, Plus, Rows3, Search, Settings2, Shapes, SquareFunction, Trash2, TrendingUp, X,
 } from 'lucide-react';
 import AccountShell, { useAccountSupport } from '../components/AccountShell.jsx';
 import { BrandMark } from '../components/ui.jsx';
@@ -1300,27 +1300,28 @@ function ObjectsPage({ symbol, timeframe, drawings, digits, onPick, onRemove, on
 const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', history: 'History', watch: 'Market watch', news: 'News' };
 
 /** The trade screen's own top bar, in place of the dashboard header. */
-function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade }) {
+function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade, onPairs }) {
   const openSupport = useAccountSupport();
   return (
-    <header className="tx-bar">
-      <span className="tx-bar__brand" data-tour="brand"><BrandMark />Meridian Prime Global</span>
+    <header className={`tx-bar tx-bar--${screen}`} data-tour="welcome">
+      <span className="tx-bar__brand"><BrandMark />Meridian Prime Global</span>
       <h1 className="tx-bar__title">{SCREEN_TITLES[screen]}</h1>
       <span className="cx-bar__gap" aria-hidden="true" />
       {screen === 'chart' && (
         <>
           <button type="button" className={`cx-icon ${crosshair ? 'is-on' : ''}`} aria-pressed={crosshair}
             aria-label="Crosshair" title="Crosshair" onClick={onCrosshair}>
-            <Crosshair size={22} aria-hidden="true" />
+            <Move size={22} aria-hidden="true" />
           </button>
-          <button type="button" className="cx-icon" aria-label="Indicators" title="Indicators" onClick={onIndicators}>
-            <SquareFunction size={22} aria-hidden="true" />
+          <button type="button" className="cx-icon cx-icon--f" aria-label="Indicators" title="Indicators" onClick={onIndicators}>
+            <span aria-hidden="true">f</span>
           </button>
           <button type="button" className={`cx-icon ${tool !== 'none' ? 'is-on' : ''}`} aria-label="Objects"
             title="Objects" onClick={onObjects}>
             <Shapes size={22} aria-hidden="true" />
           </button>
-          <button type="button" className="cx-icon" aria-label="Trade" title="Trade" disabled={!canTrade} onClick={onTrade}>
+          <button type="button" className="cx-icon" aria-label="Change pair" title="Change pair" disabled={!canTrade}
+            onClick={onPairs} aria-haspopup="listbox" data-tour="pairs">
             <CircleDollarSign size={22} aria-hidden="true" />
           </button>
           <button type="button" className="cx-icon" aria-label="New order" title="New order" disabled={!canTrade} onClick={onTrade}>
@@ -1549,7 +1550,7 @@ export default function Terminal() {
     <AccountShell wide bare>
       {<TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
         onCrosshair={() => setCrosshair((v) => !v)} onIndicators={() => setShowSettings(true)}
-        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} />}
+        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} onPairs={() => setPairsOpen(true)} />}
       {feedError && (
         <p className="feed-error" role="status">
           <AlertCircle size={16} aria-hidden="true" /> Prices are not updating right now. Trading is paused until the feed returns.

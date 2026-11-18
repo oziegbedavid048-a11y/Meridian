@@ -11,8 +11,9 @@ import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
  */
 
 const STEPS = [
-  { id: 'brand', title: 'Welcome to Meridian Prime Global', text: 'This is your trading dashboard. Here is a quick look at what each button does.' },
+  { id: 'welcome', title: 'Welcome to Meridian Prime Global', text: 'This is your trading dashboard. Here is a quick look at what each button does.' },
   { id: 'tab-chart', title: 'Chart', text: 'The live price chart. Tap the market name at the top of the chart to switch markets.' },
+  { id: 'pairs', screen: 'chart', title: 'Change pair', text: 'Switch the chart to another market: crypto, forex, shares, indices and more.' },
   { id: 'tab-quotes', title: 'Quotes', text: 'Live buy and sell prices for every market. Tap one to trade it or open its chart.' },
   { id: 'tab-trade', title: 'Trade', text: 'Your balance, open positions and pending orders. Open, change or close trades here.' },
   { id: 'tab-history', title: 'History', text: 'Every trade you have closed, with the result. You can filter it and download a statement.' },
