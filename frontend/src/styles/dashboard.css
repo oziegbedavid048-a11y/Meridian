@@ -54,13 +54,14 @@
 /* Phones: no logo or name. The chart's tools sit along the top, as in MT5,
    with Support on the left; other screens show their name there. */
 @media (max-width: 700px) {
-  .tx-bar { padding: 4px 6px; }
+  .tx-bar { padding: 4px 16px 4px 10px; gap: 2px; }
   .tx-bar__brand { display: none; }
   .tx-bar .cx-icon--watch { order: -1; }
   .tx-bar__title { margin: 0 0 0 4px; padding-left: 0; border-left: 0; font-size: 1.125rem; }
   .tx-bar--chart .tx-bar__title { display: none; }
   .tx-bar--chart { justify-content: flex-end; }
-  .tx-bar .cx-icon { width: 46px; height: 46px; }
+  .tx-bar .cx-icon { width: 40px; height: 40px; }
+  .tx-bar .cx-icon svg { width: 21px; height: 21px; }
   /* The pair list opens just under the top bar, on the right. */
   .cx-pairs { top: 72px; right: 8px; }
 }
@@ -139,56 +140,4 @@
   background: var(--sea-100);
   color: var(--brand-700);
   font-weight: 500;
-}
-
-/* ---------- Skeleton loading ---------- */
-.skel {
-  display: block;
-  flex: none;
-  background: linear-gradient(90deg, #e9edee 0%, #f5f7f7 50%, #e9edee 100%);
-  background-size: 200% 100%;
-  animation: skel-shine 1.3s ease-in-out infinite;
-}
-@keyframes skel-shine { from { background-position: 100% 0; } to { background-position: -100% 0; } }
-@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
-.skel-list { display: flex; flex-direction: column; }
-.skel-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-height: 58px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--mx-line, #e5e5e5);
-}
-.skel-row__left { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
-.skel-figures { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; }
-.skel-figure { display: flex; justify-content: space-between; gap: 16px; }
-.skel-news { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--mx-line, #e5e5e5); }
-.skel-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  width: 100%;
-  padding: 24px 16px 16px;
-  box-sizing: border-box;
-}
-.skel-chart__bar { flex: 1; border-radius: 3px; }
-.chart__loading--skel { inset: 0; display: block; padding: 0; background: var(--white); }
-.mt-empty .skel-list { text-align: left; }
-.skel-page { min-height: 100dvh; background: var(--shell-bg, #f3f2ee); padding: 8px; }
-.skel-page__bar {
-  display: flex;
-  align-items: center;
-  min-height: 56px;
-  padding: 0 12px;
-  border-radius: 12px;
-  background: var(--white);
-}
-.skel-page__body {
-  display: grid;
-  gap: 12px;
-  margin-top: 12px;
-  padding: 12px 0;
-  border-radius: 12px;
-  background: var(--white);
 }

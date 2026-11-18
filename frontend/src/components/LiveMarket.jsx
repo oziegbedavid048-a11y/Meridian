@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SkeletonRows } from './Skeleton.jsx';
 import { Link } from 'react-router-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { KIND_LABELS, getInstruments, price, startingInstruments, usePoll } from '../lib/trading.js';
@@ -132,7 +131,7 @@ export default function LiveMarket() {
           {/* No visible header row; the columns are still named for screen readers. */}
           <caption className="sr-only">Symbol, today's graph, bid, ask and change for each market</caption>
           {!rows.length && (
-            <tbody><tr><td colSpan={7} className="mt-empty">{failed ? 'Prices are unavailable right now.' : <SkeletonRows rows={8} label="Loading prices" />}</td></tr></tbody>
+            <tbody><tr><td colSpan={7} className="mt-empty">{failed ? 'Prices are unavailable right now.' : 'Loading prices…'}</td></tr></tbody>
           )}
           {rows.length > 0 && (
             <tbody>

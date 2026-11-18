@@ -4,7 +4,6 @@ import {
   AlertCircle, ArrowRight, Camera, Check, CircleCheckBig, Clock3, IdCard, Loader2, RotateCcw,
   ShieldCheck, Upload,
 } from 'lucide-react';
-import { SkeletonFigures } from '../components/Skeleton.jsx';
 import AccountShell from '../components/AccountShell.jsx';
 import CameraCapture from '../components/CameraCapture.jsx';
 import { api } from '../lib/api.js';
@@ -335,7 +334,7 @@ export function VerifyPage() {
     <AccountShell>
       <h1 className="page-title">Verify your identity</h1>
       {error && <p className="ticket__alert" role="alert"><AlertCircle size={16} aria-hidden="true" /> {error}</p>}
-      {!info && !error && <SkeletonFigures lines={5} label="Loading your verification" />}
+      {!info && !error && <p className="muted"><Loader2 size={18} className="spin" aria-hidden="true" /> Loading…</p>}
       {info?.status === 'pending' && <UnderReview />}
       {info?.status === 'approved' && <Approved />}
       {(info?.status === 'none' || info?.status === 'rejected') && <Wizard info={info} onSubmitted={setInfo} />}

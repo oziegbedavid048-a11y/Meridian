@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { SkeletonChart } from './Skeleton.jsx';
 import { bollinger, ema, macd, rsi, sma } from '../lib/indicators.js';
 
 /**
@@ -432,7 +431,7 @@ export default function CandleChart({
 
   return (
     <div className={`chart ${tool !== 'none' ? 'chart--drawing' : ''}`} ref={wrapRef}>
-      {loading && <div className="chart__loading chart__loading--skel"><SkeletonChart height="100%" /></div>}
+      {loading && <div className="chart__loading" role="status">Loading chart…</div>}
       {!loading && !shown.length && <div className="chart__loading" role="status">No chart data for this instrument.</div>}
 
       <svg

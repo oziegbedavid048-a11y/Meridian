@@ -92,9 +92,7 @@ export function LivePrices({ group, title }) {
           </thead>
           <tbody>
             {!data
-              ? Array.from({ length: 6 }, (_, i) => (
-                <tr key={i} className="skeleton-row"><th scope="row"><span /></th><td><span /></td><td><span /></td></tr>
-              ))
+              ? <tr><td colSpan={3} className="muted">Loading prices…</td></tr>
               : rows.map((r) => {
                 const up = r.change >= 0;
                 return (
@@ -177,7 +175,7 @@ export function Insights({ count = 3 }) {
               </article>
             ))
             : !news
-              ? Array.from({ length: count }, (_, i) => <div key={i} className="photo-card skeleton-card" aria-hidden="true"><div className="photo-card__img" /><div className="photo-card__body"><span /><span /></div></div>)
+              ? <p className="muted">Loading news…</p>
               : items.map((n, i) => (
                 <Reveal as="article" key={n.link} delay={i * 60} className="photo-card photo-card--link">
                   <div className="photo-card__img">

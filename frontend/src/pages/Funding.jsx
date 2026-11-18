@@ -4,7 +4,6 @@ import QRCode from 'qrcode';
 import {
   AlertCircle, ArrowLeft, Check, ChevronRight, Clock3, Copy, ImageUp, Loader2, ShieldAlert, X,
 } from 'lucide-react';
-import { SkeletonRows } from '../components/Skeleton.jsx';
 import AccountShell from '../components/AccountShell.jsx';
 import CoinLogo from '../components/CoinLogo.jsx';
 import { api } from '../lib/api.js';
@@ -131,7 +130,7 @@ function FundingHistory({ kind, refreshKey }) {
     <section className="fx-history" aria-labelledby={`fx-h-${kind}`}>
       <h2 id={`fx-h-${kind}`}>{title}</h2>
       {rows === null ? (
-        <SkeletonRows rows={3} label={`Loading ${title.toLowerCase()}`} />
+        <p className="fx-note">Loading…</p>
       ) : !rows.length ? (
         <p className="fx-note">{kind === 'deposit' ? 'No deposits yet.' : 'No withdrawals yet.'}</p>
       ) : (
