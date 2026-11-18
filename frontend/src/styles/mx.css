@@ -504,7 +504,7 @@
   bottom: 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   height: calc(var(--mx-tabs-h) + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid var(--mx-line);
@@ -659,7 +659,7 @@
   }
 
   .mx-tabs {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
   }
 
   .mx-scrim {
@@ -1049,3 +1049,7 @@ a.mx-icon { text-decoration: none; }
 @media (max-width: 420px) {
   .mx-row2 { grid-template-columns: 1fr; }
 }
+
+/* Market watch inside the terminal: the list fills the screen width. */
+.mx-watch { padding: 12px; }
+.mx-watch > * { max-width: none; margin: 0; }

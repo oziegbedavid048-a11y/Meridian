@@ -4,10 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle, ArrowLeft, Menu, ArrowUpDown, CandlestickChart, ChevronDown, ChevronRight, CircleDollarSign, Crosshair,
   FilePlus2, Inbox, Loader2, Minus, BarChart3, CalendarDays, Download, Eraser, Filter, LineChart, ListX,
-  MoveUpRight, Newspaper, Plus, Rows3, Search, Settings2, Shapes, SquareFunction, Trash2, TrendingUp, X,
+  MoveUpRight, Newspaper, Activity, Plus, Rows3, Search, Settings2, Shapes, SquareFunction, Trash2, TrendingUp, X,
 } from 'lucide-react';
 import AccountShell, { useAccountMenu } from '../components/AccountShell.jsx';
 import CandleChart from '../components/CandleChart.jsx';
+import LiveMarket from '../components/LiveMarket.jsx';
 import { API_ROOT, api } from '../lib/api.js';
 import {
   cancelOrder, closeAll, closeBy, closePosition, fieldErrors, getCandles, getInstruments, startingInstruments,
@@ -15,8 +16,8 @@ import {
 } from '../lib/trading.js';
 
 /*
- * Trading terminal laid out the way mobile trading apps are: five screens
- * (Quotes, Chart, Trade, History, News) switched from a tab bar that stays
+ * Trading terminal laid out the way mobile trading apps are: six screens
+ * (Quotes, Chart, Trade, History, Market watch, News) switched from a tab bar that stays
  * fixed at the bottom of the window. On a wide screen the quotes list stays
  * open beside the current screen.
  */
@@ -36,6 +37,7 @@ const TABS = [
   ['chart', 'Chart', CandlestickChart],
   ['trade', 'Trade', TrendingUp],
   ['history', 'History', Inbox],
+  ['watch', 'Market watch', Activity],
   ['news', 'News', Newspaper],
 ];
 const SETTINGS_KEY = 'hd-terminal-settings-v2';
@@ -1283,7 +1285,7 @@ function ObjectsPage({ symbol, timeframe, drawings, digits, onPick, onRemove, on
   );
 }
 
-const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', history: 'History', news: 'News' };
+const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', history: 'History', watch: 'Market watch', news: 'News' };
 
 /** The trade screen's own top bar, in place of the dashboard header. */
 function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade }) {
@@ -1334,6 +1336,11 @@ export default function Terminal() {
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(null);
   const [pane, setPane] = useState('chart');
+  // "Trade" in the market watch links here with ?symbol=: open that market's chart.
+  const linkedSymbol = (params.get('symbol') || '').toUpperCase();
+  useEffect(() => {
+    if (linkedSymbol) { setSymbol(linkedSymbol); setPane('chart'); }
+  }, [linkedSymbol]);
   const [picked, setPicked] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState(loadSettings);
@@ -1611,6 +1618,12 @@ export default function Terminal() {
             onSelect={showChart} onNew={() => openOrder()} />
         )}
         {screen === 'history' && <HistoryScreen account={account} refreshKey={`${syncKey}-${positionsKey}`} />}
+        {screen === 'watch' && (
+          <section className="mx-screen" aria-label="Market watch">
+            <header className="mx-head"><h2>Market watch</h2></header>
+            <div className="mx-body mx-watch"><LiveMarket /></div>
+          </section>
+        )}
         {screen === 'news' && <NewsScreen />}
       </div>
 

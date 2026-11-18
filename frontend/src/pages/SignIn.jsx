@@ -14,7 +14,7 @@ export default function SignIn() {
   const { signIn, verifySignIn, resendSignIn, user, loading } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const next = safeNext(params.get('next'));
+  const next = safeNext(params.get('next'), '/account/terminal');
   const [form, setForm] = useState({ email: '', password: '', remember: true });
   const [errors, setErrors] = useState({});
   const [alert, setAlert] = useState(
