@@ -3,7 +3,7 @@
 // Public pages show the chat bubble; the dashboard keeps it hidden and opens
 // the chat from the Support panel, so it never covers the trading screens.
 
-const TAWK_SRC = 'https://embed.tawk.to/6afbd8810a80e03cc7c213c7/1k7jsbfbv';
+const TAWK_SRC = 'https://embed.tawk.to/6afd1c65aba2d83cc2da1d17/1k7mbdrtf';
 
 let loading = false;
 let loaded = false;
