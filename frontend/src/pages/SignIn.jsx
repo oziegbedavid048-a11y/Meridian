@@ -18,7 +18,7 @@ export default function SignIn() {
   const [form, setForm] = useState({ email: '', password: '', remember: true });
   const [errors, setErrors] = useState({});
   const [alert, setAlert] = useState(
-    params.get('idle') ? 'You were signed out after 30 minutes without activity. Please sign in again.' : '',
+    params.get('idle') ? 'You were signed out after 15 minutes without activity. Please sign in again.' : '',
   );
   const [busy, setBusy] = useState(false);
   const [showHelp, setShowHelp] = useState(false);

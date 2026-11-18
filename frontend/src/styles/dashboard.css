@@ -1,0 +1,124 @@
+/* Dashboard overrides: loaded last so they win over the older layout files. */
+
+/* ---------- No side menu: the trade screen is the dashboard ---------- */
+.app-shell,
+.app-shell--wide {
+  --nav-w: 0px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'bar' 'main';
+}
+.app-shell--bare {
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: 'main';
+}
+
+/* The Peak mark beside the name in the dashboard headers. */
+.brand-mark {
+  flex: none;
+  width: 30px;
+  height: 22px;
+}
+.app-bar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--white);
+}
+.app-bar__back { flex: none; opacity: 0.8; }
+
+/* ---------- Trade screen top bar ---------- */
+.tx-bar { gap: 4px; padding: 4px 8px 4px 12px; }
+.tx-bar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 700;
+  color: var(--brand);
+  white-space: nowrap;
+}
+.tx-bar__title {
+  margin: 0 0 0 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--mx-line);
+  font-size: 1rem;
+  white-space: nowrap;
+}
+/* On phones the bar keeps the logo, name, Support and Sign out; chart tools stay in the chart's ring menu. */
+@media (max-width: 700px) {
+  .tx-bar__title { display: none; }
+  .tx-bar .cx-icon[aria-label="Crosshair"],
+  .tx-bar .cx-icon[aria-label="Indicators"],
+  .tx-bar .cx-icon[aria-label="Objects"],
+  .tx-bar .cx-icon[aria-label="Trade"],
+  .tx-bar .cx-icon[aria-label="New order"] { display: none; }
+}
+@media (max-width: 360px) {
+  .tx-bar__brand { font-size: 0.875rem; }
+}
+
+/* Bottom tabs: one equal column per tab, however many there are. */
+.mx-tabs,
+.app-shell--bare .mx-tabs {
+  left: 0;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+.mx-tabs button:first-child { display: flex; }
+
+/* Deposit and Withdraw: same round icon as the others, in the brand colour. */
+.mx-icon--money { color: var(--brand); text-decoration: none; }
+
+/* ---------- Spacing: no section touches the bar or the section above it ---------- */
+.app-shell--bare .app-main { padding: 12px; }
+.app-shell--bare .mx { gap: 12px; }
+.app-shell--bare .mx-screen.mx-chart { border: 1px solid var(--mx-line); border-radius: 12px; }
+@media (max-width: 1000px) {
+  .app-shell--bare .app-main { padding: 8px; }
+  .app-shell--bare .mx { gap: 8px; }
+}
+
+/* ---------- One-time tour ---------- */
+.tour { position: fixed; inset: 0; z-index: 1000; }
+.tour__block { position: absolute; inset: 0; }
+.tour__hole {
+  position: fixed;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgb(5 20 26 / 0.66);
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  pointer-events: none;
+  transition: top 0.25s var(--ease), left 0.25s var(--ease), width 0.25s var(--ease), height 0.25s var(--ease);
+}
+.tour__card {
+  position: fixed;
+  padding: 18px 18px 14px;
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.25);
+}
+.tour__count { margin: 0 0 4px; font-size: 0.8125rem; color: var(--muted); }
+.tour__title { margin: 0 0 6px; font-size: 1.125rem; font-weight: 700; color: var(--brand); }
+.tour__text { margin: 0 0 14px; font-size: 0.9375rem; line-height: 1.5; }
+.tour__acts { display: flex; align-items: center; gap: 8px; }
+.tour__gap { flex: 1; }
+.tour__acts button {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--pill);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tour__skip { border: 0; background: none; color: var(--muted); padding: 0 4px !important; }
+.tour__skip:hover { color: var(--ink); }
+.tour__back { border: 1px solid var(--line); background: var(--white); color: var(--ink); }
+.tour__next { border: 0; background: var(--brand); color: var(--white); }
+.tour__next:hover { background: var(--brand-700); }
+@media (prefers-reduced-motion: reduce) { .tour__hole { transition: none; } }
+
+/* Clear space between the top bar and the screen below it. */
+.app-shell--bare .tx-bar + * ,
+.app-shell--bare .mx { margin-top: 12px; }

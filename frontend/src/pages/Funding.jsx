@@ -430,7 +430,7 @@ export function WithdrawPage() {
 function VerifyNotice({ identity }) {
   const status = identity?.status || 'none';
   const text = {
-    none: 'Before your first withdrawal we need to verify your identity. It takes about three minutes: your name, a photo of your ID and a quick face check.',
+    none: 'Before your first withdrawal we need to verify your identity. It takes about two minutes: your name and a photo of your ID.',
     pending: 'Your identity check is under review. You can withdraw as soon as it is approved. Please check back shortly.',
     rejected: `We could not approve your identity check.${identity?.rejection_reason ? ` Reason: ${identity.rejection_reason}` : ''} Please send new photos to try again.`,
   }[status] || '';

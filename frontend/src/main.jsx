@@ -13,6 +13,7 @@ import './styles/mx.css';
 import './styles/trade.css';
 import './styles/funding.css';
 import './styles/support.css';
+import './styles/dashboard.css';
 import './styles/verify.css';
 import './styles/mock.css';
 

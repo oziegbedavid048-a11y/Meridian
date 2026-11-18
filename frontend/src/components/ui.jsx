@@ -61,6 +61,16 @@ export function Logo({ light = false }) {
   );
 }
 
+/** The Peak mark on its own, for small headers beside the name. */
+export function BrandMark({ light = false }) {
+  return (
+    <svg viewBox="10 17 52 38" className={`brand-mark ${light ? 'logo--light' : ''}`} aria-hidden="true" focusable="false">
+      <path d={LOGO_PEAK} className="logo__main" />
+      <path d={LOGO_PEAK_SMALL} className="logo__accent" />
+    </svg>
+  );
+}
+
 /** A heading block that opens with a thin rule, as used across the site. */
 export function RuleHeading({ id, title, intro, as: H = 'h2' }) {
   return (

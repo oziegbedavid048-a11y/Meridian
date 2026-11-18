@@ -1,22 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Link, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
-  ArrowDownToLine, ArrowLeft, ArrowUpFromLine, CandlestickChart, History, LayoutDashboard,
-  Headset, LifeBuoy, Loader2, LogOut, Menu, X,
+  ArrowLeft, Headset, Loader2,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { money } from '../lib/trading.js';
 import SupportPanel from './SupportPanel.jsx';
 import { setChatBubble } from '../lib/livechat.js';
+import { BrandMark } from './ui.jsx';
 
-const NAV = [
-  ['/account', 'Dashboard', LayoutDashboard],
-  ['/account/terminal', 'Trade', CandlestickChart],
-  ['/account/deposit', 'Deposit', ArrowDownToLine],
-  ['/account/withdraw', 'Withdraw', ArrowUpFromLine],
-  ['/account/history', 'Trade history', History],
-];
-// Verify identity is not in the menu: it is offered on the Withdraw page, when it is needed.
 
 export function SummaryBar({ account }) {
   const c = account?.currency || 'USD';
@@ -40,25 +32,20 @@ export function SummaryBar({ account }) {
   );
 }
 
-/** Lets a page with its own top bar (the trade screen) open the account menu. */
-const AccountMenu = createContext(() => {});
-const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+/** Lets the trade screen's top bar open the support panel. */
+const AccountSupport = createContext(() => {});
+export const useAccountSupport = () => useContext(AccountSupport);
+const IDLE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes without a tap, click, key or scroll
 const IDLE_KEY = 'last-activity';
-export const useAccountMenu = () => useContext(AccountMenu);
 
 export default function AccountShell({ children, wide = false, bare = false }) {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
   const [support, setSupport] = useState(false);
 
   // In the dashboard the chat bubble stays hidden; Support opens the chat.
   useEffect(() => { setChatBubble(false); }, []);
 
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
 
   // Sign out after a while without any activity, as trading platforms do.
   // Activity in any open tab counts, so a second tab does not sign the first one out.
@@ -90,59 +77,24 @@ export default function AccountShell({ children, wide = false, bare = false }) {
   if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" aria-label="Loading" /></div>;
   if (!user) return <Navigate to="/sign-in?next=/account/terminal" replace />;
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
-  const links = NAV.map(([to, label, Icon]) => (
-    <NavLink key={to} to={to} end={to === '/account'} onClick={() => setOpen(false)}>
-      <Icon size={20} aria-hidden="true" />
-      <span>{label}</span>
-    </NavLink>
-  ));
 
   return (
-    <AccountMenu.Provider value={() => setOpen(true)}>
+    <AccountSupport.Provider value={() => setSupport(true)}>
     <div className={`app-shell ${wide ? 'app-shell--wide' : ''} ${bare ? 'app-shell--bare' : ''}`}>
       {!bare && (
       <header className="app-bar">
-        <Link to="/account/terminal" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}>Meridian Prime Global</Link>
+        <Link to="/account/terminal" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}><ArrowLeft size={18} aria-hidden="true" className="app-bar__back" /><BrandMark light />Meridian Prime Global</Link>
         <button type="button" className="app-bar__support" onClick={() => setSupport(true)} aria-label="Support">
           <Headset size={18} aria-hidden="true" /><span>Support</span>
-        </button>
-        <button type="button" className="app-bar__out" onClick={handleSignOut}>
-          <LogOut size={18} aria-hidden="true" /><span>Sign out</span>
-        </button>
-        <button
-          type="button"
-          className="app-bar__burger"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-          aria-controls="account-nav"
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
         </button>
       </header>
       )}
 
-      <div className={`app-scrim ${open ? 'is-open' : ''}`} onClick={() => setOpen(false)} aria-hidden="true" />
-
-      <nav id="account-nav" className={`app-nav ${open ? 'is-open' : ''}`} aria-label="Account">
-        {links}
-        <button type="button" className="app-nav__help" onClick={() => { setOpen(false); setSupport(true); }}>
-          <LifeBuoy size={20} aria-hidden="true" /><span>Support</span>
-        </button>
-        <Link to="/" className="app-nav__site" onClick={() => setOpen(false)}><ArrowLeft size={16} aria-hidden="true" /> Back to the website</Link>
-        <button type="button" className="app-nav__out" onClick={handleSignOut}>
-          <LogOut size={18} aria-hidden="true" /> Sign out
-        </button>
-      </nav>
 
       <main id="main" className="app-main">{children}</main>
       {support && <SupportPanel onClose={() => setSupport(false)} />}
     </div>
-    </AccountMenu.Provider>
+    </AccountSupport.Provider>
   );
 }

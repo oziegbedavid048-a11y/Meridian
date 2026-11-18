@@ -222,7 +222,7 @@ class IdentityBase(TestCase):
 
     def submit(self, client=None, **overrides):
         data = {'full_name': 'Ada Lovelace', 'country': 'CA', 'province': 'ON', 'document_type': 'drivers_licence',
-                'front': upload('f.jpg'), 'back': upload('b.jpg'), 'selfie': upload('s.jpg')}
+                'front': upload('f.jpg'), 'back': upload('b.jpg')}
         data.update(overrides)
         data = {k: v for k, v in data.items() if v is not None}
         return (client or self.client).post('/api/verification/', data)
@@ -262,7 +262,8 @@ class IdentitySubmitTests(IdentityBase):
         self.assertFalse(body['can_withdraw'])
         record = IdentityVerification.objects.get()
         self.assertEqual((record.full_name, record.province, record.document_type), ('Ada Lovelace', 'ON', 'drivers_licence'))
-        self.assertTrue(record.front_image and record.back_image and record.selfie_image)
+        self.assertTrue(record.front_image and record.back_image)
+        self.assertFalse(record.selfie_image)  # no face photo: the ID card alone
 
     def test_the_reply_and_status_never_contain_photo_locations(self):
         self.submit()
@@ -275,8 +276,8 @@ class IdentitySubmitTests(IdentityBase):
     def test_photos_are_stored_privately_under_random_names(self):
         self.submit()
         record = IdentityVerification.objects.get()
-        names = {record.front_image.name, record.back_image.name, record.selfie_image.name}
-        self.assertEqual(len(names), 3)
+        names = {record.front_image.name, record.back_image.name}
+        self.assertEqual(len(names), 2)
         for name in names:
             self.assertRegex(name, r'^identity/\d+/[0-9a-f]{32}\.jpg$')
         with self.assertRaises(ValueError):
@@ -377,13 +378,13 @@ class IdentitySubmitTests(IdentityBase):
         self.assertEqual(res.status_code, 201)
         self.assertFalse(IdentityVerification.objects.get().back_image)
 
-    def test_the_face_photo_is_required(self):
-        res = self.submit(selfie=None)
-        self.assertEqual(res.status_code, 400)
-        self.assertIn('selfie', res.json()['errors'])
+    def test_no_face_photo_is_needed(self):
+        res = self.submit()
+        self.assertEqual(res.status_code, 201)
+        self.assertFalse(IdentityVerification.objects.get().selfie_image)
 
     def test_nothing_is_saved_when_any_part_is_wrong(self):
-        self.submit(selfie=upload(data=b'not an image'))
+        self.submit(back=upload(data=b'not an image'))
         self.assertFalse(IdentityVerification.objects.exists())
 
     def test_a_pending_check_cannot_be_resubmitted(self):
@@ -398,7 +399,7 @@ class IdentitySubmitTests(IdentityBase):
     def test_a_rejected_check_can_be_redone_and_the_old_photos_are_deleted(self):
         self.submit()
         record = IdentityVerification.objects.get()
-        old = [record.front_image.name, record.selfie_image.name]
+        old = [record.front_image.name, record.back_image.name]
         storage = record.front_image.storage
         IdentityVerification.objects.update(status='rejected', rejection_reason='Blurry back photo.')
         state = self.client.get('/api/verification/').json()
@@ -429,7 +430,7 @@ class IdentitySubmitTests(IdentityBase):
     def test_deleting_the_account_deletes_the_photos(self):
         self.submit()
         record = IdentityVerification.objects.get()
-        storage, names = record.front_image.storage, [record.front_image.name, record.selfie_image.name]
+        storage, names = record.front_image.storage, [record.front_image.name, record.back_image.name]
         self.user.delete()
         self.assertFalse(IdentityVerification.objects.exists())
         for name in names:
@@ -550,7 +551,7 @@ class StaffReviewTests(IdentityBase):
         self.assertContains(res, "Ontario driver&#x27;s licence")
         self.assertContains(res, 'Front of the document')
         self.assertContains(res, 'Back of the document')
-        self.assertContains(res, 'Face photo')
+        self.assertNotContains(res, 'Face photo')  # new checks have no face photo
         self.assertContains(res, 'Approve')
 
     def test_approving_unlocks_withdrawals_and_records_who_and_when(self):
@@ -583,7 +584,7 @@ class StaffReviewTests(IdentityBase):
         self.assertEqual(IdentityVerification.objects.filter(status='approved').count(), 2)
 
     def test_staff_can_see_the_photos_as_clean_images_that_are_never_cached(self):
-        for which in ('front', 'back', 'selfie'):
+        for which in ('front', 'back'):
             res = self.admin.get(self.photo_url(which))
             self.assertEqual(res.status_code, 200)
             self.assertEqual(res['Content-Type'], 'image/jpeg')
@@ -634,7 +635,7 @@ class PurgeTests(IdentityBase):
     def test_old_decided_photos_are_deleted_but_the_decision_stays(self):
         self.submit()
         record = IdentityVerification.objects.get()
-        storage, names = record.front_image.storage, [record.front_image.name, record.selfie_image.name]
+        storage, names = record.front_image.storage, [record.front_image.name, record.back_image.name]
         IdentityVerification.objects.update(status='approved', reviewed_at=timezone.now() - timedelta(days=40))
         call_command('purge_identity_photos', '--days', '30', stdout=io.StringIO())
         record.refresh_from_db()

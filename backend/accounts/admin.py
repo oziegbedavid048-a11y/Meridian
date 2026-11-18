@@ -137,7 +137,8 @@ class IdentityVerificationAdmin(admin.ModelAdmin):
         photos = [('front', 'Front of the document', bool(record.front_image))]
         if record.back_image:
             photos.append(('back', 'Back of the document', True))
-        photos.append(('selfie', 'Face photo', bool(record.selfie_image)))
+        if record.selfie_image:  # only older submissions have one
+            photos.append(('selfie', 'Face photo', True))
         context = {
             **self.admin_site.each_context(request),
             'opts': self.model._meta,

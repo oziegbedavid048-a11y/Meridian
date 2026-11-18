@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { safeUrl } from '../lib/safety.js';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
-  AlertCircle, ArrowLeft, Menu, ArrowUpDown, CandlestickChart, ChevronDown, ChevronRight, CircleDollarSign, Crosshair,
+  AlertCircle, ArrowLeft, ArrowUpDown, CandlestickChart, ChevronDown, ChevronRight, CircleDollarSign, Crosshair,
   FilePlus2, Inbox, Loader2, Minus, BarChart3, CalendarDays, Download, Eraser, Filter, LineChart, ListX,
-  MoveUpRight, Newspaper, Activity, Plus, Rows3, Search, Settings2, Shapes, SquareFunction, Trash2, TrendingUp, X,
+  MoveUpRight, Newspaper, Activity, Wallet, Banknote, Headset, Plus, Rows3, Search, Settings2, Shapes, SquareFunction, Trash2, TrendingUp, X,
 } from 'lucide-react';
-import AccountShell, { useAccountMenu } from '../components/AccountShell.jsx';
+import AccountShell, { useAccountSupport } from '../components/AccountShell.jsx';
+import { BrandMark } from '../components/ui.jsx';
+import { useAuth } from '../lib/auth.jsx';
+import Tour from '../components/Tour.jsx';
 import CandleChart from '../components/CandleChart.jsx';
 import LiveMarket from '../components/LiveMarket.jsx';
 import { API_ROOT, api } from '../lib/api.js';
@@ -734,6 +737,9 @@ function TradeScreen({ positions, account, onChanged, onSelect, onNew }) {
         <button type="button" className="mx-icon" onClick={onNew} aria-label="New order">
           <FilePlus2 size={22} aria-hidden="true" />
         </button>
+        <Link className="mx-icon mx-icon--money" to="/account/deposit" aria-label="Deposit" title="Deposit" data-tour="deposit">
+          <Wallet size={22} aria-hidden="true" />
+        </Link>
       </header>
       {notice && (
         <p className={`mx-status ${noticeBad ? 'is-bad' : 'is-ok'}`} role="status">
@@ -855,6 +861,9 @@ function HistoryScreen({ account, refreshKey }) {
           aria-label={active ? `Filter history, ${active} filter${active === 1 ? '' : 's'} on` : 'Filter history'}>
           <Filter size={22} aria-hidden="true" />
         </button>
+        <Link className="mx-icon mx-icon--money" to="/account/withdraw" aria-label="Withdraw" title="Withdraw" data-tour="withdraw">
+          <Banknote size={22} aria-hidden="true" />
+        </Link>
       </header>
       <div className="mx-body">
         {active > 0 && (
@@ -1142,7 +1151,7 @@ function CloseBySheet({ trade, positions, onClose, onDone }) {
 const RING = 104; // radius of the ring of timeframes, in pixels
 
 function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
-  const openMenu = useAccountMenu();
+  const openSupport = useAccountSupport();
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -1177,8 +1186,8 @@ function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
           </button>
         ))}
         <div className="cx-center">
-          <button type="button" aria-label="Menu" title="Menu" onClick={() => { onClose(); openMenu(); }}>
-            <Menu size={22} aria-hidden="true" />
+          <button type="button" aria-label="Support" title="Support" onClick={() => { onClose(); openSupport(); }}>
+            <Headset size={22} aria-hidden="true" />
           </button>
           <button type="button" aria-label="New order" title="New order" onClick={() => onTool('order')}>
             <FilePlus2 size={22} aria-hidden="true" />
@@ -1289,9 +1298,11 @@ const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', histor
 
 /** The trade screen's own top bar, in place of the dashboard header. */
 function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade }) {
+  const openSupport = useAccountSupport();
   return (
     <header className="tx-bar">
-      {screen !== 'chart' && <h1 className="tx-bar__title">{SCREEN_TITLES[screen]}</h1>}
+      <span className="tx-bar__brand" data-tour="brand"><BrandMark />Meridian Prime Global</span>
+      <h1 className="tx-bar__title">{SCREEN_TITLES[screen]}</h1>
       <span className="cx-bar__gap" aria-hidden="true" />
       {screen === 'chart' && (
         <>
@@ -1314,6 +1325,9 @@ function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onI
           </button>
         </>
       )}
+      <button type="button" className="cx-icon" aria-label="Support" title="Support" onClick={openSupport} data-tour="support">
+        <Headset size={22} aria-hidden="true" />
+      </button>
     </header>
   );
 }
@@ -1336,6 +1350,7 @@ export default function Terminal() {
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(null);
   const [pane, setPane] = useState('chart');
+  const { user } = useAuth();
   // "Trade" in the market watch links here with ?symbol=: open that market's chart.
   const linkedSymbol = (params.get('symbol') || '').toUpperCase();
   useEffect(() => {
@@ -1525,11 +1540,11 @@ export default function Terminal() {
   // One screen at a time on every size, so the chart has the whole window.
   const screen = pane;
   const panes = (settings.ind.rsi ? 1 : 0) + (settings.ind.macd ? 1 : 0); // indicator panes under the price
-  const chartHeight = Math.max(220, h - 74 - panes * 102 - (account?.margin_call ? 70 : 0));
+  const chartHeight = Math.max(220, h - 74 - 57 - panes * 102 - (account?.margin_call ? 70 : 0));
 
   return (
     <AccountShell wide bare>
-      {screen !== 'chart' && <TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
+      {<TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
         onCrosshair={() => setCrosshair((v) => !v)} onIndicators={() => setShowSettings(true)}
         onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} />}
       {feedError && (
@@ -1627,10 +1642,11 @@ export default function Terminal() {
         {screen === 'news' && <NewsScreen />}
       </div>
 
+      {user && <Tour who={user.email} onScreen={setPane} />}
       <nav className="mx-tabs" aria-label="Terminal sections">
         {TABS.map(([id, label, Icon]) => (
           <button key={id} type="button" className={pane === id ? 'is-active' : ''}
-            aria-current={pane === id ? 'page' : undefined} aria-label={label} title={label}
+            aria-current={pane === id ? 'page' : undefined} aria-label={label} title={label} data-tour={`tab-${id}`}
             onClick={() => setPane(id)}>
             <Icon size={26} aria-hidden="true" />
           </button>

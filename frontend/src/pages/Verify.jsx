@@ -2,17 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle, ArrowRight, Camera, Check, CircleCheckBig, Clock3, IdCard, Loader2, RotateCcw,
-  ScanFace, ShieldCheck, Upload,
+  ShieldCheck, Upload,
 } from 'lucide-react';
 import AccountShell from '../components/AccountShell.jsx';
 import CameraCapture from '../components/CameraCapture.jsx';
-import FaceScan from '../components/FaceScan.jsx';
 import { api } from '../lib/api.js';
 import { shrinkImage } from '../lib/images.js';
 import { useAuth } from '../lib/auth.jsx';
 import { COUNTRIES, countryName } from '../content/countries.js';
 
-const STEPS = ['Details', 'Document', 'Photos', 'Face check'];
+const STEPS = ['Details', 'Document', 'Photos'];
 
 function Stepper({ step }) {
   return (
@@ -38,7 +37,7 @@ function PhotoSlot({ label, hint, photo, error, onTake, onPick, shape = 'card' }
       <p className="vf-slot__label">{label}</p>
       <div className={`vf-slot__box vf-slot__box--${shape}`}>
         {photo ? <img src={photo.url} alt={`${label}, ready to send`} /> : (
-          <span className="vf-slot__empty">{shape === 'face' ? <ScanFace size={34} aria-hidden="true" /> : <IdCard size={34} aria-hidden="true" />}</span>
+          <span className="vf-slot__empty"><IdCard size={34} aria-hidden="true" /></span>
         )}
       </div>
       {hint && !photo && <p className="vf-slot__hint">{hint}</p>}
@@ -71,7 +70,7 @@ function Wizard({ info, onSubmitted }) {
   const provinceLocked = countryLocked && fromSignUp === 'CA' && info.provinces.some((p) => p.code === app?.province);
   const [docId, setDocId] = useState('');
   const [photos, setPhotos] = useState({});
-  const [camera, setCamera] = useState(null); // 'front' | 'back' | 'selfie'
+  const [camera, setCamera] = useState(null); // 'front' | 'back'
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const topRef = useRef(null);
@@ -106,14 +105,12 @@ function Wizard({ info, onSubmitted }) {
   };
   const captured = async (blob) => {
     const key = camera;
-    // The face scan stays on screen until its photo is ready, so nothing flashes in between.
-    if (key !== 'selfie') setCamera(null);
+    setCamera(null);
     try {
       setPhoto(key, await shrinkImage(blob));
     } catch (err) {
       setErrors((e) => ({ ...e, [key]: err.message }));
     } finally {
-      if (key === 'selfie') setCamera(null);
     }
   };
 
@@ -135,9 +132,10 @@ function Wizard({ info, onSubmitted }) {
       if (!photos.front) errs.front = needsBack ? 'Add a photo of the front.' : 'Add a photo of the page with your picture.';
       if (needsBack && !photos.back) errs.back = 'Add a photo of the back.';
     }
-    if (step === 4 && !photos.selfie) errs.selfie = 'Complete the face check to continue.';
     setErrors(errs);
-    if (!Object.keys(errs).length) go(step + 1);
+    if (Object.keys(errs).length) return;
+    if (step === 3) submit(); // the ID photos are the last step
+    else go(step + 1);
   };
 
   const submit = async () => {
@@ -150,14 +148,13 @@ function Wizard({ info, onSubmitted }) {
     body.append('document_type', docId);
     body.append('front', photos.front.blob, 'front.jpg');
     if (needsBack) body.append('back', photos.back.blob, 'back.jpg');
-    body.append('selfie', photos.selfie.blob, 'selfie.jpg');
     try {
       onSubmitted(await api('/verification/', { method: 'POST', body }));
     } catch (err) {
       const out = {};
       Object.entries(err.errors || {}).forEach(([k, v]) => { if (Array.isArray(v)) out[k] = v[0]; });
       setErrors(Object.keys(out).length ? out : { form: err.message });
-      const target = out.full_name || out.country || out.province ? 1 : out.document_type ? 2 : out.front || out.back ? 3 : out.selfie ? 4 : step;
+      const target = out.full_name || out.country || out.province ? 1 : out.document_type ? 2 : out.front || out.back ? 3 : step;
       if (target !== step) setStep(target);
     } finally {
       setBusy(false);
@@ -165,14 +162,6 @@ function Wizard({ info, onSubmitted }) {
   };
 
   const uploadFallback = useRef(null);
-  const sentFor = useRef(null);
-  useEffect(() => {
-    const selfie = photos.selfie;
-    if (step !== 4 || !selfie || sentFor.current === selfie) return undefined;
-    sentFor.current = selfie;
-    const timer = setTimeout(submit, 800);
-    return () => clearTimeout(timer);
-  }, [step, photos.selfie]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="vf" ref={topRef}>
@@ -264,61 +253,19 @@ function Wizard({ info, onSubmitted }) {
           </>
         )}
 
-        {step === 4 && !photos.selfie && (
-          <div className="vx">
-            <span className="vx-badge vx-badge--scan"><ScanFace size={44} aria-hidden="true" /></span>
-            <h2>Verify your face</h2>
-            <p>We will take a quick photo of your face to match it with your ID. Find good light and look straight at the camera.</p>
-            {errors.selfie && <p className="field__error" role="alert">{errors.selfie}</p>}
-            <button type="button" className="vx-btn" onClick={() => setCamera('selfie')}>Let&apos;s verify</button>
-          </div>
-        )}
 
-        {step === 4 && photos.selfie && (
-          <div className="vx">
-            <span className="vx-badge vx-badge--ok"><ShieldCheck size={44} aria-hidden="true" /></span>
-            <h2>Verification successful</h2>
-            <p>Finishing up…</p>
-            {errors.form || errors.selfie || errors.front || errors.back || errors.full_name ? (
-              <>
-                <p className="field__error" role="alert">{errors.form || errors.selfie || errors.front || errors.back || errors.full_name}</p>
-                <button type="button" className="vx-btn" onClick={submit} disabled={busy}>Try again</button>
-              </>
-            ) : <Loader2 size={22} className="spin" aria-label="Finishing" />}
-          </div>
-        )}
-
-        {step < 4 && (
-          <div className="vf-actions">
-            {step > 1 && <button type="button" className="btn btn--outline" onClick={() => go(step - 1)} disabled={busy}>Back</button>}
-            <button type="button" className="btn btn--primary" onClick={next}>Continue</button>
-          </div>
-        )}
-        {step === 4 && !photos.selfie && (
-          <div className="vf-actions">
-            <button type="button" className="btn btn--outline" onClick={() => go(3)} disabled={busy}>Back</button>
-          </div>
-        )}
+        {errors.form && <p className="field__error" role="alert">{errors.form}</p>}
+        <div className="vf-actions">
+          {step > 1 && <button type="button" className="btn btn--outline" onClick={() => go(step - 1)} disabled={busy}>Back</button>}
+          <button type="button" className="btn btn--primary" onClick={next} disabled={busy}>
+            {step === 3 ? (busy ? 'Sending…' : 'Submit') : 'Continue'}
+          </button>
+        </div>
       </div>
 
-      {camera === 'selfie' && (
-        <FaceScan
-          onCapture={captured}
-          onCancel={() => setCamera(null)}
-          onUpload={() => {
-            setCamera(null);
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/jpeg,image/png,image/webp';
-            input.onchange = () => { const f = input.files?.[0]; if (f) pick('selfie', f); };
-            uploadFallback.current = input;
-            input.click();
-          }}
-        />
-      )}
-      {camera && camera !== 'selfie' && (
+      {camera && (
         <CameraCapture
-          mode={camera === 'selfie' ? 'face' : 'document'}
+          mode="document"
           onCapture={captured}
           onCancel={() => setCamera(null)}
           onUpload={() => {

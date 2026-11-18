@@ -98,7 +98,7 @@ def _submit(request):
         errors['document_type'] = ['Choose one of the documents on the list.']
 
     photos = {}
-    wanted = ['front'] + (['back'] if document and document['sides'] == 2 else []) + ['selfie']
+    wanted = ['front'] + (['back'] if document and document['sides'] == 2 else [])
     if document or not place_ok:
         for field in wanted:
             try:
@@ -123,7 +123,7 @@ def _submit(request):
         record.reviewed_by = None
         record.front_image = photos['front']
         record.back_image = photos.get('back') or ''
-        record.selfie_image = photos['selfie']
+        record.selfie_image = ''  # no face photo any more: the ID card alone
         record.save()
         for old in old_files:  # a resubmission replaces the earlier photos
             old.storage.delete(old.name)

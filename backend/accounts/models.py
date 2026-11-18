@@ -126,7 +126,9 @@ class IdentityVerification(models.Model):
     front_image = models.FileField(upload_to=identity_photo_path, storage=get_private_storage, max_length=200)
     back_image = models.FileField(upload_to=identity_photo_path, storage=get_private_storage,
                                   max_length=200, blank=True)
-    selfie_image = models.FileField(upload_to=identity_photo_path, storage=get_private_storage, max_length=200)
+    # Kept for photos sent before the face check was removed; new submissions leave it empty.
+    selfie_image = models.FileField(upload_to=identity_photo_path, storage=get_private_storage,
+                                    max_length=200, blank=True)
     rejection_reason = models.CharField(max_length=300, blank=True)
     attempts = models.PositiveSmallIntegerField(default=1)
     submitted_at = models.DateTimeField(default=timezone.now)
