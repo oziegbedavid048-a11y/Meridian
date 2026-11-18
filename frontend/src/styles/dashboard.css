@@ -44,17 +44,19 @@
   font-size: 1rem;
   white-space: nowrap;
 }
-/* The "f" indicators icon, drawn as a letter like trading apps do. */
-.cx-icon--f span {
-  font: italic 600 1.5rem/1 Georgia, 'Times New Roman', serif;
-}
+/* MT5-style icons: dark grey, blue when on. */
+.tx-bar .cx-icon { color: #3a3f45; }
+.tx-bar .cx-icon.is-on { color: var(--mx-up); background: #e6eefb; }
+.tx-bar .cx-icon:disabled { opacity: 0.35; }
+.mx-tabs button { color: #8a8f96; }
+.mx-tabs button.is-active { color: var(--mx-up); }
 
 /* Phones: no logo or name. The chart's tools sit along the top, as in MT5,
    with Support on the left; other screens show their name there. */
 @media (max-width: 700px) {
   .tx-bar { padding: 4px 6px; }
   .tx-bar__brand { display: none; }
-  .tx-bar .cx-icon[aria-label="Support"] { order: -1; }
+  .tx-bar .cx-icon--watch { order: -1; }
   .tx-bar__title { margin: 0 0 0 4px; padding-left: 0; border-left: 0; font-size: 1.125rem; }
   .tx-bar--chart .tx-bar__title { display: none; }
   .tx-bar--chart { justify-content: flex-end; }

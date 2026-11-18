@@ -40,8 +40,14 @@ export function loadLiveChat() {
       openLiveChat();
     }
   };
-  // In the dashboard the bubble goes away again when the chat is minimised.
+  // In the dashboard the bubble goes away again when the chat is minimised,
+  // and stays away when a greeting or new message would pop it up.
   tawk.onChatMinimized = () => applyBubble();
+  tawk.onUnreadCountChanged = () => applyBubble();
+  tawk.onChatMessageAgent = () => applyBubble();
+  tawk.onChatMessageSystem = () => applyBubble();
+  // Tawk can show the bubble by itself (for example a timed greeting), so check now and then.
+  window.setInterval(() => { if (!bubbleWanted) applyBubble(); }, 1500);
   const script = document.createElement('script');
   script.async = true;
   script.src = TAWK_SRC;

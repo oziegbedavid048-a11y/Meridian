@@ -17,11 +17,11 @@ const STEPS = [
   { id: 'tab-quotes', title: 'Quotes', text: 'Live buy and sell prices for every market. Tap one to trade it or open its chart.' },
   { id: 'tab-trade', title: 'Trade', text: 'Your balance, open positions and pending orders. Open, change or close trades here.' },
   { id: 'tab-history', title: 'History', text: 'Every trade you have closed, with the result. You can filter it and download a statement.' },
-  { id: 'tab-watch', title: 'Market watch', text: 'All markets in one list with today\'s graph, so you can spot what is moving.' },
+  { id: 'watch', title: 'Market watch', text: 'All markets in one list with today\'s graph, at the top of the screen. Tap it again to go back to the chart.' },
   { id: 'tab-news', title: 'News', text: 'Market headlines and the economic calendar. Tap a headline to read the story.' },
   { id: 'deposit', screen: 'trade', title: 'Deposit', text: 'Add funds to your account. You will find it at the top of the Trade screen, next to your balance.' },
   { id: 'withdraw', screen: 'history', title: 'Withdraw', text: 'Take money out of your account. You will find it at the top of the History screen.' },
-  { id: 'support', title: 'Support', text: 'Questions? Chat with us or open a support ticket at any time.' },
+  { id: 'support', title: 'Messages and support', text: 'Questions? Chat with us live or open a support ticket at any time.' },
 ];
 
 const storageKey = (who) => `mpg-tour-done:${who}`;

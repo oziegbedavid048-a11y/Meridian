@@ -8,6 +8,10 @@ import {
 } from 'lucide-react';
 import AccountShell, { useAccountSupport } from '../components/AccountShell.jsx';
 import { BrandMark } from '../components/ui.jsx';
+import {
+  IconChart, IconCrosshair, IconHistory, IconIndicators, IconMarketWatch, IconNewOrder, IconNews, IconObjects,
+  IconMessages, IconQuotes, IconSymbols, IconTrade,
+} from '../components/TradeIcons.jsx';
 import { useAuth } from '../lib/auth.jsx';
 import Tour from '../components/Tour.jsx';
 import { SkeletonFigures, SkeletonNews, SkeletonRows } from '../components/Skeleton.jsx';
@@ -36,13 +40,13 @@ const TYPE_LABEL = {
   market: null, buy_limit: 'buy limit', sell_limit: 'sell limit', buy_stop: 'buy stop', sell_stop: 'sell stop',
   buy_stop_limit: 'buy stop limit', sell_stop_limit: 'sell stop limit',
 };
+// Market watch is opened from the top bar, so the bottom bar matches MT5's.
 const TABS = [
-  ['quotes', 'Quotes', ArrowUpDown],
-  ['chart', 'Chart', CandlestickChart],
-  ['trade', 'Trade', TrendingUp],
-  ['history', 'History', Inbox],
-  ['watch', 'Market watch', Activity],
-  ['news', 'News', Newspaper],
+  ['quotes', 'Quotes', IconQuotes],
+  ['chart', 'Chart', IconChart],
+  ['trade', 'Trade', IconTrade],
+  ['history', 'History', IconHistory],
+  ['news', 'News', IconNews],
 ];
 const SETTINGS_KEY = 'hd-terminal-settings-v2';
 const DEFAULT_SETTINGS = {
@@ -1181,11 +1185,11 @@ function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
             </button>
           );
         })}
-        {[[135, 'shapes', 'Objects', Shapes], [105, 'crosshair', 'Crosshair', Crosshair],
-          [75, 'indicators', 'Indicators', SquareFunction]].map(([deg, id, label, Icon]) => (
+        {[[135, 'shapes', 'Objects', IconObjects], [105, 'crosshair', 'Crosshair', IconCrosshair],
+          [75, 'indicators', 'Indicators', IconIndicators]].map(([deg, id, label, Icon]) => (
           <button key={id} type="button" className="cx-tool" style={{ transform: onRing(deg) }}
             aria-label={label} title={label} onClick={() => onTool(id)}>
-            <Icon size={22} aria-hidden="true" />
+            <Icon size={22} />
           </button>
         ))}
         <div className="cx-center">
@@ -1300,8 +1304,7 @@ function ObjectsPage({ symbol, timeframe, drawings, digits, onPick, onRemove, on
 const SCREEN_TITLES = { quotes: 'Quotes', chart: 'Chart', trade: 'Trade', history: 'History', watch: 'Market watch', news: 'News' };
 
 /** The trade screen's own top bar, in place of the dashboard header. */
-function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade, onPairs }) {
-  const openSupport = useAccountSupport();
+function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onIndicators, onObjects, onTrade, onPairs, onWatch }) {
   return (
     <header className={`tx-bar tx-bar--${screen}`} data-tour="welcome">
       <span className="tx-bar__brand"><BrandMark />Meridian Prime Global</span>
@@ -1311,28 +1314,39 @@ function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onI
         <>
           <button type="button" className={`cx-icon ${crosshair ? 'is-on' : ''}`} aria-pressed={crosshair}
             aria-label="Crosshair" title="Crosshair" onClick={onCrosshair}>
-            <Move size={22} aria-hidden="true" />
+            <IconCrosshair size={24} />
           </button>
-          <button type="button" className="cx-icon cx-icon--f" aria-label="Indicators" title="Indicators" onClick={onIndicators}>
-            <span aria-hidden="true">f</span>
+          <button type="button" className="cx-icon" aria-label="Indicators" title="Indicators" onClick={onIndicators}>
+            <IconIndicators size={24} />
           </button>
           <button type="button" className={`cx-icon ${tool !== 'none' ? 'is-on' : ''}`} aria-label="Objects"
             title="Objects" onClick={onObjects}>
-            <Shapes size={22} aria-hidden="true" />
+            <IconObjects size={24} />
           </button>
           <button type="button" className="cx-icon" aria-label="Change pair" title="Change pair" disabled={!canTrade}
             onClick={onPairs} aria-haspopup="listbox" data-tour="pairs">
-            <CircleDollarSign size={22} aria-hidden="true" />
+            <IconSymbols size={24} />
           </button>
           <button type="button" className="cx-icon" aria-label="New order" title="New order" disabled={!canTrade} onClick={onTrade}>
-            <FilePlus2 size={22} aria-hidden="true" />
+            <IconNewOrder size={24} />
           </button>
         </>
       )}
-      <button type="button" className="cx-icon" aria-label="Support" title="Support" onClick={openSupport} data-tour="support">
-        <Headset size={22} aria-hidden="true" />
+      <button type="button" className={`cx-icon cx-icon--watch ${screen === 'watch' ? 'is-on' : ''}`}
+        aria-label="Market watch" title="Market watch" aria-pressed={screen === 'watch'} onClick={onWatch} data-tour="watch">
+        <IconMarketWatch size={24} />
       </button>
     </header>
+  );
+}
+
+/** The last bottom tab, as in MT5: messages, here support and live chat. */
+function MessagesTab() {
+  const openSupport = useAccountSupport();
+  return (
+    <button type="button" aria-label="Messages and support" title="Messages and support" data-tour="support" onClick={openSupport}>
+      <IconMessages size={28} />
+    </button>
   );
 }
 
@@ -1550,7 +1564,7 @@ export default function Terminal() {
     <AccountShell wide bare>
       {<TerminalBar screen={screen} wide={wide} crosshair={crosshair} tool={tool} canTrade={instruments.length > 0}
         onCrosshair={() => setCrosshair((v) => !v)} onIndicators={() => setShowSettings(true)}
-        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} onPairs={() => setPairsOpen(true)} />}
+        onObjects={() => setShapesOpen(true)} onTrade={() => openOrder()} onPairs={() => setPairsOpen(true)} onWatch={() => setPane((p) => (p === 'watch' ? 'chart' : 'watch'))} />}
       {feedError && (
         <p className="feed-error" role="status">
           <AlertCircle size={16} aria-hidden="true" /> Prices are not updating right now. Trading is paused until the feed returns.
@@ -1652,9 +1666,10 @@ export default function Terminal() {
           <button key={id} type="button" className={pane === id ? 'is-active' : ''}
             aria-current={pane === id ? 'page' : undefined} aria-label={label} title={label} data-tour={`tab-${id}`}
             onClick={() => setPane(id)}>
-            <Icon size={26} aria-hidden="true" />
+            <Icon size={28} />
           </button>
         ))}
+        <MessagesTab />
       </nav>
 
       {pickedInst && (
