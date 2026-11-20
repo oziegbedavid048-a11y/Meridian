@@ -333,6 +333,16 @@ export const pricing = {
       ],
     },
     {
+      id: 'funding',
+      label: 'Deposits and withdrawals',
+      rows: [
+        ['Deposits', 'Free'],
+        ['Withdrawals', 'A tiered platform fee applies, scaled to the size of the withdrawal'],
+        ['How the fee is shown', 'Calculated automatically and itemised in your withdrawal summary before you confirm'],
+        ['Before your first withdrawal', 'Identity verification is required to keep your account secure'],
+      ],
+    },
+    {
       id: 'accounts',
       label: 'Account fees',
       rows: [
@@ -363,7 +373,7 @@ export const pricing = {
       ],
     },
   ],
-  footnote: 'Fees shown are a sample schedule and will be confirmed before any real-money account is offered. Practice accounts are free.',
+  footnote: 'Every fee is disclosed before you confirm a transaction. The platform fee on withdrawals is deducted from the amount withdrawn, and the exact figure is always shown in your withdrawal summary.',
 };
 
 export const learn = {

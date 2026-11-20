@@ -413,10 +413,10 @@ class DepositWalletAdmin(admin.ModelAdmin):
 @admin.register(FundingRequest)
 class FundingRequestAdmin(admin.ModelAdmin):
     """Deposits wait here until approved; then the balance goes up. Rejected withdrawals are refunded."""
-    list_display = ('pk', 'client', 'kind', 'amount', 'coin', 'status', 'receipt_link', 'created_at')
+    list_display = ('pk', 'client', 'kind', 'amount', 'platform_fee', 'pay_out', 'coin', 'status', 'receipt_link', 'created_at')
     list_filter = ('status', 'kind', 'asset')
     search_fields = ('account__user__email', 'wallet_address')
-    readonly_fields = ('account', 'kind', 'amount', 'asset', 'network', 'wallet_address', 'receipt_link',
+    readonly_fields = ('account', 'kind', 'amount', 'platform_fee', 'pay_out', 'asset', 'network', 'wallet_address', 'receipt_link',
                        'balance_after', 'status', 'made_by', 'created_at', 'reviewed_at')
     fields = readonly_fields + ('note',)
     actions = ('approve_selected', 'reject_selected')
@@ -433,6 +433,16 @@ class FundingRequestAdmin(admin.ModelAdmin):
     @admin.display(description='Client', ordering='account__user__email')
     def client(self, obj):
         return obj.account.user.email
+
+    @admin.display(description='Platform fee')
+    def platform_fee(self, obj):
+        if obj.kind != 'withdrawal':
+            return '—'
+        return f'{obj.fee_amount} ({obj.fee_percent.normalize():f}%)'
+
+    @admin.display(description='Pay out to client')
+    def pay_out(self, obj):
+        return obj.payout_amount if obj.kind == 'withdrawal' else '—'
 
     @admin.display(description='Coin')
     def coin(self, obj):

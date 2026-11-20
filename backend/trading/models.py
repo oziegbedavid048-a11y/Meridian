@@ -263,6 +263,9 @@ class FundingRequest(models.Model):
     network = models.CharField(max_length=40, blank=True)
     # Deposits: our address the client paid to. Withdrawals: the client's address to pay out to.
     wallet_address = models.CharField(max_length=128, blank=True)
+    # Withdrawals: the platform fee taken from the amount (see fees.py), and what the client receives.
+    fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    fee_amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     receipt = models.FileField(upload_to=receipt_path, storage=get_private_storage, max_length=200, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.COMPLETED)
     note = models.CharField(max_length=200, blank=True)
@@ -271,6 +274,11 @@ class FundingRequest(models.Model):
                                 on_delete=models.SET_NULL, related_name='funding_changes')
     created_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def payout_amount(self):
+        """What reaches the client: the amount less the platform fee."""
+        return self.amount - (self.fee_amount or 0)
 
     class Meta:
         ordering = ['-created_at']

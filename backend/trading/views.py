@@ -17,6 +17,7 @@ from config.ratelimit import rate_limit
 
 from . import engine, pricing
 from .addresses import address_problem
+from .fees import withdrawal_fee
 from .models import DepositWallet, FundingRequest, Instrument, Trade, TradingAccount
 
 log = logging.getLogger(__name__)
@@ -506,6 +507,7 @@ def _funding_json(f):
     return {
         'id': f.pk, 'kind': f.kind, 'amount': _num(f.amount), 'status': f.status,
         'balance_after': _num(f.balance_after), 'note': f.note,
+        'fee_percent': _num(f.fee_percent), 'fee_amount': _num(f.fee_amount), 'payout_amount': _num(f.payout_amount),
         'asset': f.asset, 'network': f.network, 'wallet_address': f.wallet_address,
         'has_receipt': bool(f.receipt),
         'created_at': f.created_at.isoformat(),
@@ -629,10 +631,11 @@ def _withdraw(request, acc):
         # Held now, so the same money cannot be traded or withdrawn twice; a rejection puts it back.
         acc.balance = engine.money(acc.balance - amount)
         acc.save(update_fields=['balance'])
+        fee_percent, fee_amount, _ = withdrawal_fee(amount)
         req = FundingRequest.objects.create(
             account=acc, kind=FundingRequest.Kind.WITHDRAWAL, amount=amount, balance_after=acc.balance,
             status=FundingRequest.Status.PENDING, method='crypto', asset=asset, network=network,
-            wallet_address=address,
+            wallet_address=address, fee_percent=fee_percent, fee_amount=fee_amount,
         )
     log.info('withdrawal %s of %s %s sent for review', req.pk, amount, acc.currency)
     return JsonResponse({'request': _funding_json(req), 'account': engine.account_summary(acc)}, status=201)

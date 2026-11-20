@@ -12,6 +12,7 @@ import {
 } from '../lib/trading.js';
 import { shrinkImage } from '../lib/images.js';
 import { addressProblem } from '../lib/addresses.js';
+import { withdrawalFee } from '../lib/fees.js';
 
 /*
  * Deposits and withdrawals, done the way crypto platforms do them:
@@ -144,6 +145,9 @@ function FundingHistory({ kind, refreshKey }) {
               </span>
               <span className="fx-hist__side">
                 <b>{kind === 'withdrawal' ? '\u2212' : '+'}{money(r.amount, currency)}</b>
+                {kind === 'withdrawal' && Number(r.fee_amount) > 0 && (
+                  <small className="fx-hist__fee">Fee {money(r.fee_amount, currency)} · You receive {money(r.payout_amount, currency)}</small>
+                )}
                 <span className={`fx-status fx-status--${r.status}`}>{STATUS_TEXT[r.status] || r.status}</span>
               </span>
             </li>
@@ -385,7 +389,8 @@ export function WithdrawPage() {
 
         {step === 2 && (
           <>
-            <p className="fx-summary">Withdrawing <b>{money(amount, currency)}</b>. Choose the coin you want to receive.</p>
+            <WithdrawSummary amount={amount} currency={currency} />
+            <p className="fx-summary">Choose the coin you want to receive.</p>
             <CoinList coins={coins} onPick={(c) => { setCoin(c); setStep(3); }}
               empty="Crypto withdrawals are not available right now. Please try again later." />
           </>
@@ -396,8 +401,9 @@ export function WithdrawPage() {
             <div className="fx-pay__coin">
               <CoinBadge asset={coin.asset} size={36} />
               <span><b>{coin.name}</b><small>{coin.network} network</small></span>
-              <span className="fx-pay__amount">{money(amount, currency)}</span>
+              <span className="fx-pay__amount">{money(withdrawalFee(amount).receive, currency)}</span>
             </div>
+            <WithdrawSummary amount={amount} currency={currency} />
             <label className="fx-label" htmlFor="fx-to">Your {coin.name} wallet address</label>
             <textarea id="fx-to" className={`fx-input ${errors.address ? 'has-error' : ''}`} rows={2} spellCheck="false"
               autoComplete="off" value={address} onChange={(e) => setAddress(e.target.value.replace(/\s/g, ''))}
@@ -423,6 +429,18 @@ export function WithdrawPage() {
         <FundingHistory kind="withdrawal" refreshKey={step === 4 ? 'sent' : ''} />
       </div>
     </AccountShell>
+  );
+}
+
+/** The withdrawal summary: amount, the platform fee for its size, and what reaches the client. */
+function WithdrawSummary({ amount, currency }) {
+  const { percent, fee, receive } = withdrawalFee(amount);
+  return (
+    <dl className="fx-fees" aria-label="Withdrawal summary">
+      <div><dt>Withdrawal amount</dt><dd>{money(amount, currency)}</dd></div>
+      <div><dt>Platform fee ({percent}%)</dt><dd>{fee > 0 ? `−${money(fee, currency)}` : money(0, currency)}</dd></div>
+      <div className="fx-fees__total"><dt>You receive</dt><dd>{money(receive, currency)}</dd></div>
+    </dl>
   );
 }
 
