@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Headset, Loader2,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { money } from '../lib/trading.js';
@@ -86,10 +86,7 @@ export default function AccountShell({ children, wide = false, bare = false }) {
       {!bare && (
       <header className="app-bar">
         <DashboardMenu light onSupport={() => setSupport(true)} />
-        <Link to="/account/terminal" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}><ArrowLeft size={18} aria-hidden="true" className="app-bar__back" /><BrandMark light />Meridian Prime Global</Link>
-        <button type="button" className="app-bar__support" onClick={() => setSupport(true)} aria-label="Support">
-          <Headset size={18} aria-hidden="true" /><span>Support</span>
-        </button>
+        <Link to="/account/terminal" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}><BrandMark light />Meridian Prime Global</Link>
       </header>
       )}
 

@@ -20,7 +20,7 @@ const STEPS = [
   { id: 'tab-news', title: 'News', text: 'Market headlines and the economic calendar. Tap a headline to read the story.' },
   { id: 'deposit', screen: 'trade', title: 'Deposit', text: 'Add funds to your account. You will find it at the top of the Trade screen, next to your balance.' },
   { id: 'withdraw', screen: 'history', title: 'Withdraw', text: 'Take money out of your account. You will find it at the top of the History screen.' },
-  { id: 'support', screen: 'chart', title: 'Support', text: 'Questions? Chat with us live or open a support ticket at any time. Tip: tap the chart for timeframes, tools and the Market watch list.' },
+  { id: 'menu', screen: 'chart', title: 'Menu', text: 'Open the menu for Overview, Portfolio, Deposit, Withdraw, Profile and Support. Tip: tap the chart for timeframes, tools and the Market watch list.' },
 ];
 
 const storageKey = (who) => `mpg-tour-done:${who}`;

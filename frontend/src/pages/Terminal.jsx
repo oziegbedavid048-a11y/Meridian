@@ -1333,10 +1333,6 @@ function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onI
           </button>
         </>
       )}
-      <button type="button" className="cx-icon cx-icon--support" aria-label="Support" title="Support"
-        onClick={openSupport} data-tour="support">
-        <Headset size={24} aria-hidden="true" />
-      </button>
     </header>
   );
 }
