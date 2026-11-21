@@ -88,12 +88,6 @@ export function OverviewPage() {
             <h1>Trading Overview</h1>
             <p>Your portfolio, markets, and performance at a glance.</p>
           </div>
-          <label className="ov-account">
-            <span>Account:</span>
-            <select defaultValue="practice" aria-label="Account">
-              <option value="practice">Practice account</option>
-            </select>
-          </label>
         </header>
 
         <section className="ov-stats" aria-label="Account summary">
