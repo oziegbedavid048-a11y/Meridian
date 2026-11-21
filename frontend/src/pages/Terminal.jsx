@@ -14,6 +14,7 @@ import {
 } from '../components/TradeIcons.jsx';
 import { useAuth } from '../lib/auth.jsx';
 import Tour from '../components/Tour.jsx';
+import DashboardMenu from '../components/DashboardMenu.jsx';
 import CandleChart from '../components/CandleChart.jsx';
 import LiveMarket from '../components/LiveMarket.jsx';
 import { API_ROOT, api } from '../lib/api.js';
@@ -1306,6 +1307,7 @@ function TerminalBar({ screen, wide, crosshair, tool, canTrade, onCrosshair, onI
   const openSupport = useAccountSupport();
   return (
     <header className={`tx-bar tx-bar--${screen}`} data-tour="welcome">
+      <DashboardMenu onSupport={openSupport} />
       <span className="tx-bar__brand"><BrandMark />Meridian Prime Global</span>
       <h1 className="tx-bar__title">{SCREEN_TITLES[screen]}</h1>
       <span className="cx-bar__gap" aria-hidden="true" />

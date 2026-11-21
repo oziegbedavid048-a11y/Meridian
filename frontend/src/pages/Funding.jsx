@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
-  AlertCircle, ArrowLeft, Check, ChevronRight, Clock3, Copy, ImageUp, Loader2, ShieldAlert, X,
+  AlertCircle, ArrowLeft, Bitcoin, Check, ChevronRight, Clock3, Copy, CreditCard, ImageUp, Landmark, Loader2, Lock,
+  ShieldAlert, X,
 } from 'lucide-react';
+import { useAuth } from '../lib/auth.jsx';
 import AccountShell from '../components/AccountShell.jsx';
 import CoinLogo from '../components/CoinLogo.jsx';
 import { api } from '../lib/api.js';
@@ -170,54 +172,296 @@ function Header({ title, onBack }) {
 }
 
 /* ================= Deposit ================= */
+/*
+ * amount -> funding method -> the method's own steps:
+ *   Cryptocurrency:     choose a coin -> summary, funding instructions, QR code, receipt -> processing
+ *   Bank wire transfer: summary and wire instructions -> confirm -> not available
+ *   Debit/credit card:  card details -> summary -> pay -> not available
+ * Card details stay in the browser and are never sent anywhere or stored.
+ */
+const METHODS = [
+  { id: 'crypto', title: 'Cryptocurrency', text: 'Bitcoin, Ethereum, USDT and more', time: 'Usually within an hour', fee: 'No deposit fee', Icon: Bitcoin },
+  { id: 'bank', title: 'Bank wire transfer', text: 'Send from your bank account', time: '1 to 3 business days', fee: 'No deposit fee (your bank may charge)', Icon: Landmark },
+  { id: 'card', title: 'Debit or credit card', text: 'Visa, Mastercard', time: 'Instant', fee: 'No deposit fee', Icon: CreditCard },
+];
+const STEP_LABELS = {
+  crypto: ['Amount', 'Method', 'Coin', 'Pay'],
+  bank: ['Amount', 'Method', 'Instructions', 'Confirm'],
+  card: ['Amount', 'Method', 'Card details', 'Review'],
+};
+
+function Summary({ rows }) {
+  return (
+    <dl className="fx-sum" aria-label="Deposit summary">
+      <dt className="fx-sum__title">Deposit summary</dt><dd className="fx-sum__title" />
+      {rows.map(([label, value, total]) => (
+        <div key={label} className={total ? 'fx-sum__total' : ''}><dt>{label}</dt><dd>{value}</dd></div>
+      ))}
+    </dl>
+  );
+}
+
+function Instructions({ items }) {
+  return (
+    <div className="fx-steps-how">
+      <p className="fx-label">Funding instructions</p>
+      <ol>{items.map((t) => <li key={t}>{t}</li>)}</ol>
+    </div>
+  );
+}
+
+function MethodList({ amount, currency, onPick }) {
+  return (
+    <>
+      <p className="fx-summary">Depositing <b>{money(amount, currency)}</b>. Select a funding method.</p>
+      <ul className="fx-card fx-methods" role="list">
+        {METHODS.map((m) => (
+          <li key={m.id}>
+            <button type="button" onClick={() => onPick(m.id)}>
+              <span className="fx-methods__icon"><m.Icon size={24} aria-hidden="true" /></span>
+              <span className="fx-methods__name"><b>{m.title}</b><small>{m.text}</small><small>{m.time} · {m.fee}</small></span>
+              <ChevronRight size={18} aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function reference(seed) {
+  // A deposit reference for the wire, so the payment can be matched to the account.
+  let h = 0;
+  for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `MPG-${(h % 900000 + 100000)}`;
+}
+
+function BankStep({ amount, currency, email, onConfirm }) {
+  const ref = useMemo(() => reference(`${email}-${amount}`), [email, amount]);
+  return (
+    <div className="fx-card">
+      <Summary rows={[
+        ['Amount', money(amount, currency)],
+        ['Funding method', 'Bank wire transfer'],
+        ['Deposit fee', money(0, currency)],
+        ['Processing time', '1 to 3 business days'],
+        ['Reference', ref],
+        ['You will receive', money(amount, currency), true],
+      ]} />
+      <Instructions items={[
+        `Log in to your bank and set up an international wire transfer for exactly ${money(amount, currency)}.`,
+        `Put the reference ${ref} in the payment details, so we can match the money to your account.`,
+        'Send the money from a bank account in your own name. Payments from other people are returned.',
+        'Your bank may charge its own fee for sending a wire. Your balance updates once the money arrives.',
+      ]} />
+      <button type="button" className="fx-btn" onClick={onConfirm}>Continue <ChevronRight size={18} aria-hidden="true" /></button>
+    </div>
+  );
+}
+
+function luhn(number) {
+  let sum = 0;
+  let double = false;
+  for (let i = number.length - 1; i >= 0; i -= 1) {
+    let d = Number(number[i]);
+    if (double) { d *= 2; if (d > 9) d -= 9; }
+    sum += d;
+    double = !double;
+  }
+  return number.length >= 13 && sum % 10 === 0;
+}
+function cardBrand(number) {
+  if (/^4/.test(number)) return 'Visa';
+  if (/^(5[1-5]|2[2-7])/.test(number)) return 'Mastercard';
+  if (/^3[47]/.test(number)) return 'American Express';
+  return 'Card';
+}
+
+function CardStep({ card, setCard, onNext }) {
+  const [errors, setErrors] = useState({});
+  const digits = card.number.replace(/\D/g, '');
+  const next = (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!/^[A-Za-z][A-Za-z .'-]{1,59}$/.test(card.name.trim())) errs.name = 'Enter the name shown on the card.';
+    if (!luhn(digits)) errs.number = 'Enter a valid card number.';
+    const m = /^(\d{2})\s*\/\s*(\d{2})$/.exec(card.expiry);
+    if (!m || Number(m[1]) < 1 || Number(m[1]) > 12) errs.expiry = 'Enter the expiry date as MM/YY.';
+    else {
+      const end = new Date(2000 + Number(m[2]), Number(m[1]), 1);
+      if (end <= new Date()) errs.expiry = 'This card has expired.';
+    }
+    if (!/^\d{3,4}$/.test(card.cvc)) errs.cvc = 'Enter the 3 or 4 digit security code.';
+    setErrors(errs);
+    if (!Object.keys(errs).length) onNext();
+  };
+  const err = (k) => errors[k] && <p className="fx-error" role="alert"><AlertCircle size={15} aria-hidden="true" /> {errors[k]}</p>;
+  return (
+    <form className="fx-card fx-cardform" onSubmit={next} noValidate>
+      <p className="fx-secure"><Lock size={15} aria-hidden="true" /> Your card details are encrypted and never stored.</p>
+      <label className="fx-label" htmlFor="cc-name">Name on card</label>
+      <input id="cc-name" className={`fx-input ${errors.name ? 'has-error' : ''}`} autoComplete="cc-name" maxLength={60}
+        value={card.name} onChange={(e) => setCard((c) => ({ ...c, name: e.target.value }))} />
+      {err('name')}
+      <label className="fx-label" htmlFor="cc-number">Card number</label>
+      <div className="fx-cardnum">
+        <input id="cc-number" className={`fx-input ${errors.number ? 'has-error' : ''}`} inputMode="numeric" autoComplete="cc-number"
+          placeholder="1234 5678 9012 3456" value={card.number}
+          onChange={(e) => setCard((c) => ({ ...c, number: e.target.value.replace(/\D/g, '').slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ') }))} />
+        {digits.length > 1 && <span className="fx-cardnum__brand">{cardBrand(digits)}</span>}
+      </div>
+      {err('number')}
+      <div className="fx-cardrow">
+        <div>
+          <label className="fx-label" htmlFor="cc-exp">Expiry date</label>
+          <input id="cc-exp" className={`fx-input ${errors.expiry ? 'has-error' : ''}`} inputMode="numeric" autoComplete="cc-exp" placeholder="MM/YY"
+            value={card.expiry}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+              setCard((c) => ({ ...c, expiry: v.length > 2 ? `${v.slice(0, 2)}/${v.slice(2)}` : v }));
+            }} />
+          {err('expiry')}
+        </div>
+        <div>
+          <label className="fx-label" htmlFor="cc-cvc">Security code</label>
+          <input id="cc-cvc" className={`fx-input ${errors.cvc ? 'has-error' : ''}`} inputMode="numeric" autoComplete="cc-csc" placeholder="CVC"
+            type="password" value={card.cvc} onChange={(e) => setCard((c) => ({ ...c, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />
+          {err('cvc')}
+        </div>
+      </div>
+      <button type="submit" className="fx-btn">Continue <ChevronRight size={18} aria-hidden="true" /></button>
+    </form>
+  );
+}
+
+function CardReview({ amount, currency, card, onPay }) {
+  const digits = card.number.replace(/\D/g, '');
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="fx-card">
+      <Summary rows={[
+        ['Amount', money(amount, currency)],
+        ['Funding method', `${cardBrand(digits)} ending ${digits.slice(-4)}`],
+        ['Deposit fee', money(0, currency)],
+        ['Processing time', 'Instant'],
+        ['You will be charged', money(amount, currency), true],
+      ]} />
+      <Instructions items={[
+        'Press Pay now. Your bank may ask you to confirm the payment in its app or with a code (3-D Secure).',
+        'The charge appears on your statement as MERIDIAN PRIME GLOBAL.',
+        'Your balance updates as soon as the payment is confirmed.',
+      ]} />
+      <button type="button" className="fx-btn" disabled={busy}
+        onClick={() => { setBusy(true); setTimeout(onPay, 1200); }}>
+        {busy ? <><Loader2 size={18} className="spin" aria-hidden="true" /> Processing…</> : `Pay ${money(amount, currency)}`}
+      </button>
+    </div>
+  );
+}
+
+function Unavailable({ method, onRetry }) {
+  return (
+    <div className="fx-card fx-done fx-done--bad" role="alert">
+      <span className="fx-done__icon"><AlertCircle size={30} aria-hidden="true" /></span>
+      <h2>This payment method is not available</h2>
+      <p>{method === 'card' ? 'Card payments' : 'Bank wire transfers'} are not available for your account right now. Please try another payment method. Cryptocurrency deposits are available.</p>
+      <div className="fx-done__actions">
+        <button type="button" className="fx-btn" onClick={onRetry}>Try another payment method</button>
+      </div>
+    </div>
+  );
+}
+
 export function DepositPage() {
   const [account, reloadAccount] = useAccountSummary(15000);
+  const { user } = useAuth();
   const [info, setInfo] = useState(null);
-  const [step, setStep] = useState(0); // 0 amount, 1 coin, 2 pay, 3 processing
+  // 0 amount, 1 method, 2 method step, 3 last step (pay / confirm / review), 4 done or not available
+  const [step, setStep] = useState(0);
+  const [method, setMethod] = useState(null);
   const [amount, setAmount] = useState('');
   const [coin, setCoin] = useState(null);
+  const [card, setCard] = useState({ name: '', number: '', expiry: '', cvc: '' });
   const [errors, setErrors] = useState({});
   const currency = account?.currency || info?.currency || 'USD';
   const minimum = info?.min_deposit ?? 10;
 
   useEffect(() => { document.title = 'Deposit | Meridian Prime Global'; }, []);
   useEffect(() => { getFundingForm().then(setInfo).catch(() => {}); }, []);
+  // Card details are forgotten as soon as they are no longer on screen.
+  useEffect(() => { if (method !== 'card' || step < 2) setCard({ name: '', number: '', expiry: '', cvc: '' }); }, [method, step]);
 
-  const toCoins = () => {
+  const toMethods = () => {
     const n = Number(amount);
     if (!amount || !Number.isFinite(n) || n <= 0) { setErrors({ amount: 'Enter the amount you want to deposit.' }); return; }
     if (n < minimum) { setErrors({ amount: `The smallest deposit is ${money(minimum, currency)}.` }); return; }
     setErrors({});
     setStep(1);
   };
+  const restart = () => { setStep(0); setAmount(''); setCoin(null); setMethod(null); };
+  const tryAnother = () => { setStep(1); setMethod(null); setCoin(null); };
+  const labels = STEP_LABELS[method] || ['Amount', 'Method', 'Details', 'Pay'];
 
   return (
     <AccountShell>
       <div className="fx">
-        <Header title="Deposit" onBack={step === 1 || step === 2 ? () => setStep(step - 1) : null} />
-        {step < 3 && <Steps labels={['Amount', 'Coin', 'Pay']} current={step} />}
+        <Header title="Deposit" onBack={step > 0 && step < 4 ? () => setStep(step - 1) : null} />
+        {step < 4 && <Steps labels={labels} current={step} />}
 
         {step === 0 && (
           <AmountStep currency={currency} minimum={minimum} value={amount} onChange={setAmount}
-            error={errors.amount} onNext={toCoins} cta="Continue" />
+            error={errors.amount} onNext={toMethods} cta="Continue" />
         )}
-        {step === 1 && (
+        {step === 1 && <MethodList amount={amount} currency={currency} onPick={(m) => { setMethod(m); setStep(2); }} />}
+
+        {step === 2 && method === 'crypto' && (
           <>
-            <p className="fx-summary">Depositing <b>{money(amount, currency)}</b>. Choose the coin you will pay with.</p>
-            <CoinList coins={info?.wallets || []} onPick={(c) => { setCoin(c); setStep(2); }}
+            <p className="fx-summary">Depositing <b>{money(amount, currency)}</b> with cryptocurrency. Choose the coin you will pay with.</p>
+            <CoinList coins={info?.wallets || []} onPick={(c) => { setCoin(c); setStep(3); }}
               empty="Crypto deposits are not available right now. Please try again later." />
           </>
         )}
-        {step === 2 && coin && (
-          <PayStep coin={coin} amount={amount} currency={currency}
-            onSent={() => { setStep(3); reloadAccount(); }} />
+        {step === 3 && method === 'crypto' && coin && (
+          <>
+            <div className="fx-card">
+              <Summary rows={[
+                ['Amount', money(amount, currency)],
+                ['Funding method', 'Cryptocurrency'],
+                ['Coin', `${coin.name} (${coin.asset})`],
+                ['Network', coin.network],
+                ['Deposit fee', money(0, currency)],
+                ['You will receive', money(amount, currency), true],
+              ]} />
+              <Instructions items={[
+                `Send coins worth exactly ${money(amount, currency)} to the ${coin.name} address below, from your wallet or exchange.`,
+                `Use the ${coin.network} network only. Coins sent on another network cannot be recovered.`,
+                'Take a screenshot of the completed payment and upload it as your receipt.',
+                'We confirm the payment and update your balance, usually within an hour.',
+              ]} />
+            </div>
+            <PayStep coin={coin} amount={amount} currency={currency} onSent={() => { setStep(4); reloadAccount(); }} />
+          </>
         )}
-        {step === 3 && (
+        {step === 4 && method === 'crypto' && (
           <Processing title="Payment processing"
             text="Thank you. We are confirming your payment. Please check back in a few minutes; it can take up to a few hours. Your balance updates as soon as it is approved."
-            doneLabel="Make another deposit" onDone={() => { setStep(0); setAmount(''); setCoin(null); }} />
+            doneLabel="Make another deposit" onDone={restart} />
         )}
-        <FundingHistory kind="deposit" refreshKey={step === 3 ? 'sent' : ''} />
+
+        {step === 2 && method === 'bank' && <BankStep amount={amount} currency={currency} email={user?.email} onConfirm={() => setStep(3)} />}
+        {step === 3 && method === 'bank' && (
+          <div className="fx-card">
+            <p className="fx-summary">Confirm that you will send <b>{money(amount, currency)}</b> by bank wire transfer.</p>
+            <button type="button" className="fx-btn" onClick={() => setStep(4)}>I will send the wire <ChevronRight size={18} aria-hidden="true" /></button>
+          </div>
+        )}
+
+        {step === 2 && method === 'card' && <CardStep card={card} setCard={setCard} onNext={() => setStep(3)} />}
+        {step === 3 && method === 'card' && <CardReview amount={amount} currency={currency} card={card} onPay={() => setStep(4)} />}
+
+        {step === 4 && (method === 'bank' || method === 'card') && <Unavailable method={method} onRetry={tryAnother} />}
+
+        <FundingHistory kind="deposit" refreshKey={step === 4 ? 'sent' : ''} />
       </div>
     </AccountShell>
   );

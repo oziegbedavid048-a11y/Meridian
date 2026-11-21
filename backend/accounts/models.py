@@ -9,6 +9,11 @@ from django.utils import timezone
 from .storage import get_private_storage
 
 
+def avatar_path(instance, filename):
+    # A random name, so a picture's address never reveals whose it is.
+    return f'avatars/{instance.user_id}/{uuid.uuid4().hex}.jpg'
+
+
 class Application(models.Model):
     """A brokerage account-opening application.
 
@@ -48,6 +53,8 @@ class Application(models.Model):
     province = models.CharField(max_length=60, blank=True)  # province, state or region
     postal_code = models.CharField(max_length=12, blank=True)
     canadian_resident = models.BooleanField(default=False)  # no longer asked; kept for old records
+    # The client's profile picture, rebuilt as a plain JPEG and kept private.
+    avatar = models.FileField(upload_to=avatar_path, storage=get_private_storage, max_length=200, blank=True)
 
     # Step 4: review and agreements
     accepted_terms = models.BooleanField(default=False)

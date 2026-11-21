@@ -9,6 +9,7 @@ import SignUp from './pages/SignUp.jsx';
 import Terminal from './pages/Terminal.jsx';
 import { VerifyPage } from './pages/Verify.jsx';
 import { DepositPage, WithdrawPage } from './pages/Funding.jsx';
+import { OverviewPage, PortfolioPage, ProfilePage } from './pages/AccountArea.jsx';
 import { SupportPage } from './pages/Support.jsx';
 import { setChatBubble } from './lib/livechat.js';
 import { LegalRoute, NotFound, PricingPage } from './pages/InfoPages.jsx';
@@ -87,6 +88,9 @@ export default function App() {
         {/* Signed-in client area */}
         <Route path="account" element={<Navigate to="/account/terminal" replace />} />
         <Route path="account/terminal" element={<Terminal />} />
+        <Route path="account/overview" element={<OverviewPage />} />
+        <Route path="account/portfolio" element={<PortfolioPage />} />
+        <Route path="account/profile" element={<ProfilePage />} />
         <Route path="account/deposit" element={<DepositPage />} />
         <Route path="account/withdraw" element={<WithdrawPage />} />
         <Route path="account/verify" element={<VerifyPage />} />

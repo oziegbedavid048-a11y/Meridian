@@ -94,7 +94,7 @@ class PhotoProblem(Exception):
     pass
 
 
-def clean_photo(uploaded):
+def clean_photo(uploaded, min_size=(300, 200)):
     """Check a photo really is a photo, then rebuild it as a plain JPEG.
 
     Re-encoding strips everything hidden in the file (location data, camera
@@ -114,7 +114,7 @@ def clean_photo(uploaded):
             raise PhotoProblem('Use a JPEG, PNG or WebP photo.')
         if image.width * image.height > MAX_PIXELS:
             raise PhotoProblem('This photo is too large. Take it again or choose a smaller one.')
-        if image.width < 300 or image.height < 200:
+        if image.width < min_size[0] or image.height < min_size[1]:
             raise PhotoProblem('This photo is too small to read. Take it again, closer.')
         image = image.convert('RGB')
     except PhotoProblem:

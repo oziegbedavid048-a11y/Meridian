@@ -454,3 +454,35 @@
 .fx-fees__total dt { color: var(--ink); font-weight: 600; }
 .fx-fees__total dd { color: var(--brand); font-size: 1.0625rem; }
 .fx-hist__fee { display: block; color: var(--muted); font-size: 0.75rem; }
+
+/* ---------- Funding methods, summary and instructions ---------- */
+.fx-methods { margin: 0; padding: 0; list-style: none; }
+.fx-methods li + li { border-top: 1px solid var(--line); }
+.fx-methods button {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px 18px;
+  border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.fx-methods button:hover { background: var(--sea-100); }
+.fx-methods__icon {
+  display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 12px;
+  background: var(--sea-100); color: var(--brand);
+}
+.fx-methods__name { display: flex; flex: 1; flex-direction: column; gap: 2px; }
+.fx-methods__name b { font-size: 1rem; }
+.fx-methods__name small { color: var(--muted); font-size: 0.8125rem; }
+.fx-sum { margin: 0 0 18px; padding: 4px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fbfafa; }
+.fx-sum > div { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-top: 1px solid var(--line-soft); font-variant-numeric: tabular-nums; }
+.fx-sum dt { color: var(--muted); }
+.fx-sum dd { margin: 0; font-weight: 600; color: var(--ink); text-align: right; }
+.fx-sum .fx-sum__title { display: block; margin: 0; padding: 10px 0 6px; font-weight: 700; color: var(--brand); }
+dd.fx-sum__title { display: none; }
+.fx-sum__total dt { color: var(--ink); font-weight: 700; }
+.fx-sum__total dd { color: var(--brand); font-size: 1.0625rem; }
+.fx-steps-how { margin: 0 0 18px; }
+.fx-steps-how ol { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); line-height: 1.5; }
+.fx-secure { display: flex; align-items: center; gap: 6px; margin: 0 0 14px; color: #1e7e4a; font-size: 0.875rem; font-weight: 600; }
+.fx-cardform .fx-input { width: 100%; }
+.fx-cardnum { position: relative; }
+.fx-cardnum__brand { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.8125rem; font-weight: 700; }
+.fx-cardrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fx-done--bad .fx-done__icon { background: #fbe9e7; color: #b3261e; }
