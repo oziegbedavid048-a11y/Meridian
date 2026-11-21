@@ -2,9 +2,9 @@
 // summary shows it before the request is sent. The server saves its own figure.
 // The fee is a percentage of the whole withdrawal and comes out of the amount.
 
-// [from this amount, fee in percent]. Below the first step there is no fee.
+// [from this amount, fee in percent]. Every withdrawal pays at least the first step.
 export const WITHDRAWAL_FEE_STEPS = [
-  [1000, 5],
+  [0, 5],
   [10000, 10],
   [50000, 15],
 ];

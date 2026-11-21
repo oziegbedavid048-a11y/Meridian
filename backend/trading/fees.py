@@ -8,9 +8,9 @@ before the request is sent; the server's figure is the one that is saved.
 
 from decimal import ROUND_HALF_UP, Decimal
 
-# (from this amount, the fee in percent). Below the first step there is no fee.
+# (from this amount, the fee in percent). Every withdrawal pays at least the first step.
 WITHDRAWAL_FEE_STEPS = (
-    (Decimal('1000'), Decimal('5')),
+    (Decimal('0'), Decimal('5')),
     (Decimal('10000'), Decimal('10')),
     (Decimal('50000'), Decimal('15')),
 )

@@ -501,14 +501,14 @@ class WithdrawalGateTests(IdentityBase):
         self.account.balance = Decimal('100000')
         self.account.save(update_fields=['balance'])
         for amount, percent, fee, receive in [
-            ('999.99', 0, 0, 999.99), ('1000.00', 5, 50, 950), ('9999.00', 5, 499.95, 9499.05),
+            ('100.00', 5, 5, 95), ('999.99', 5, 50, 949.99), ('1000.00', 5, 50, 950), ('9999.00', 5, 499.95, 9499.05),
             ('10000.00', 10, 1000, 9000), ('50000.00', 15, 7500, 42500),
         ]:
             body = self.withdraw(amount).json()['request']
             self.assertEqual((body['fee_percent'], body['fee_amount'], body['payout_amount']), (percent, fee, receive), amount)
         self.account.refresh_from_db()
         # The whole amount is held from the balance; the fee comes out of what is paid.
-        self.assertEqual(self.account.balance, Decimal('100000') - Decimal('71998.99'))
+        self.assertEqual(self.account.balance, Decimal('100000') - Decimal('72098.99'))
 
     def test_a_withdrawal_needs_a_real_looking_address_and_a_rejection_refunds_it(self):
         from trading import engine
