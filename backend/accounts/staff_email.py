@@ -91,7 +91,11 @@ class _Cleaner(HTMLParser):
         if tag in DROP_WITH_CONTENT:
             self.skip = max(0, self.skip - 1)
             return
-        if self.skip or tag not in ALLOWED_TAGS or tag in VOID_TAGS or tag not in self.stack:
+        if self.skip:
+            return
+        if tag in ('p', 'h1', 'h2', 'h3', 'h4', 'blockquote', 'ul', 'ol', 'table'):
+            self.text.append('\n')
+        if tag not in ALLOWED_TAGS or tag in VOID_TAGS or tag not in self.stack:
             return
         while self.stack:  # close anything left open inside it
             top = self.stack.pop()
