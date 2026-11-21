@@ -2,7 +2,7 @@
 html, body.gm-page { margin: 0; height: 100%; background: #fff; }
 *, *::before, *::after { box-sizing: border-box; }
 .gm {
-  --gm-accent: #722f37;
+  --gm-accent: #6d1a36;
   --gm-accent-dark: #561f27;
   --gm-ink: #202124;
   --gm-muted: #5f6368;

@@ -46,7 +46,7 @@
 }
 
 .cx-icon:hover { background: var(--sand); }
-.cx-icon.is-on { background: #e6eefb; color: var(--mx-up); }
+.cx-icon.is-on { background: #f7ecf0; color: var(--mx-up); }
 .cx-icon:disabled { opacity: 0.4; cursor: default; }
 
 @media (max-width: 400px) {
@@ -137,7 +137,7 @@
 }
 
 .cx-tf:hover { background: rgb(255 255 255 / 0.12); }
-.cx-tf.is-on { color: #8ab4ff; }
+.cx-tf.is-on { color: #dca3b6; }
 
 .cx-tool {
   position: absolute;
@@ -200,7 +200,7 @@
 .cx-pairs button b { font-size: 1rem; font-weight: 600; }
 .cx-pairs button span { font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .cx-pairs button:hover { background: var(--sand); }
-.cx-pairs button.is-on { background: #e6eefb; color: var(--mx-up); }
+.cx-pairs button.is-on { background: #f7ecf0; color: var(--mx-up); }
 
 /* ---------- Extra drawing types ---------- */
 .chart__arrowhead { fill: #7c3aed; }
@@ -564,7 +564,7 @@
   cursor: pointer;
 }
 
-.ob-tools button:hover { background: #e6eefb; }
+.ob-tools button:hover { background: #f7ecf0; }
 
 .ob-tools--named {
   flex-direction: column;

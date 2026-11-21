@@ -46,7 +46,7 @@
 }
 /* MT5-style icons: dark grey, blue when on. */
 .tx-bar .cx-icon { color: #3a3f45; }
-.tx-bar .cx-icon.is-on { color: var(--mx-up); background: #e6eefb; }
+.tx-bar .cx-icon.is-on { color: var(--mx-up); background: #f7ecf0; }
 .tx-bar .cx-icon:disabled { opacity: 0.35; }
 .mx-tabs button { color: #8a8f96; }
 .mx-tabs button.is-active { color: var(--mx-up); }
@@ -141,3 +141,20 @@
   color: var(--brand-700);
   font-weight: 500;
 }
+
+/* ---------- Brand look: wine and dark grey, Cinzel headings ---------- */
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; letter-spacing: 0.01em; }
+/* The trading dashboard keeps the plain text font for its compact titles. */
+.app-shell h1, .app-shell h2, .app-shell h3, .app-shell h4,
+.auth h2, .auth h1 { font-family: var(--font); font-weight: 600; letter-spacing: 0; }
+/* Logo: wine peak, dark grey peak; the name in dark grey with "Global" in wine. */
+.logo__accent { fill: var(--gold); }
+.logo__word { fill: var(--gold); font-family: var(--font); font-weight: 400; }
+.logo__sub { fill: var(--brand); font-weight: 400; }
+.logo--light .logo__word { fill: var(--white); }
+.logo--light .logo__sub { fill: var(--gold-300); }
+/* Top bar: dark grey with a grey Sign in pill. Header button: dark grey. */
+.topbar__signin { background: #8e8e93; color: var(--white); }
+.topbar__signin:hover { background: #a3a3a8; }
+.mainbar__cta.btn--primary { background: #2f2f31; border-color: #2f2f31; color: var(--white); }
+.mainbar__cta.btn--primary:hover { background: #1f1f21; border-color: #1f1f21; }

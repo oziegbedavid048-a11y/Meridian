@@ -45,8 +45,8 @@ export function CheckList({ items }) {
 }
 
 /**
- * The Meridian Prime Global logo. `light` is for dark backgrounds (white and soft mint);
- * the default is for light backgrounds (teal and mint). It is deliberately not used in
+ * The Meridian Prime Global logo. `light` is for dark backgrounds (white and light grey);
+ * the default is for light backgrounds (wine and dark grey). It is deliberately not used in
  * the signed-in dashboard.
  */
 export function Logo({ light = false }) {

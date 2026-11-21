@@ -40,8 +40,8 @@ SAFE_LINK = re.compile(r'^(https?:|mailto:|tel:)', re.I)
 TAG_STYLE = {
     'p': 'margin:0 0 16px;font-size:15px;line-height:1.6;',
     'div': 'font-size:15px;line-height:1.6;',
-    'a': 'color:#0f4c5c;',
-    'blockquote': 'margin:0 0 16px;padding:8px 14px;border-left:3px solid #0f4c5c;color:#444;',
+    'a': 'color:#6d1a36;',
+    'blockquote': 'margin:0 0 16px;padding:8px 14px;border-left:3px solid #6d1a36;color:#444;',
     'ul': 'margin:0 0 16px;padding-left:22px;', 'ol': 'margin:0 0 16px;padding-left:22px;',
     'li': 'margin:0 0 6px;font-size:15px;line-height:1.6;',
     'pre': 'white-space:pre-wrap;font-family:Consolas,monospace;font-size:13px;',

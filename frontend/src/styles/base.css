@@ -1,18 +1,18 @@
 /* ---------- Design tokens ----------
    Layout and visual language follow a traditional Canadian direct-brokerage
    site: white and warm-sand surfaces, thin borders, light headings in the
-   brand colour, pill buttons. Brand colour: deep teal, mint accent. */
+   brand colour, pill buttons. Brand colour: wine, with dark grey. */
 :root {
-  --brand: #0f4c5c; /* deep teal: 9.6:1 with white */
-  --brand-600: #16657a; /* links: 6.6:1 on white */
-  --brand-700: #0b3a47;
-  --brand-800: #082c36;
-  --gold: #2fa59a; /* mint accent, decorative and large text only (3:1 on white) */
-  --gold-700: #1d6f68; /* accent text on light surfaces: 6:1 */
-  --gold-300: #8fd6cc;
-  --sea-100: #e6f1f2; /* light teal tint for hovers */
+  --brand: #6d1a36; /* wine: 9.6:1 with white */
+  --brand-600: #7d2442; /* links: 7.4:1 on white */
+  --brand-700: #561429;
+  --brand-800: #40101f;
+  --gold: #3a3a3d; /* dark grey accent: 11:1 on white */
+  --gold-700: #2b2b2e; /* dark grey text */
+  --gold-300: #c9c9cd;
+  --sea-100: #f7ecf0; /* light wine tint for hovers */
 
-  --black: #072a33; /* top bar and footer: teal-black */
+  --black: #3b3b3d; /* top bar and footer: dark grey */
   --ink: #2b2b2b;
   --text: #444444;
   --muted: #6b6b6b;
@@ -23,7 +23,8 @@
   --up: #276b43; /* 6.4:1 on white, 5.6:1 on its own flash tint */
   --down: #b3261e;
 
-  --font: 'Public Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font: 'Lato', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
 
   --radius: 8px;
   --pill: 999px;

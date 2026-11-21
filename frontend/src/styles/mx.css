@@ -6,7 +6,7 @@
 
 :root {
   --mx-line: #dcdcd6;
-  --mx-up: #1e4fa3;
+  --mx-up: #6d1a36;
   --mx-down: #c0271d;
   --mx-tabs-h: 60px;
 }
@@ -161,7 +161,7 @@
 
 .mx-quote:hover,
 .mx-quote.is-selected {
-  background: #f4f7fc;
+  background: #faf5f6;
 }
 
 .mx-quote__id,
@@ -366,7 +366,7 @@
 
 .mx-deal:hover,
 .mx-list > li.is-open > .mx-deal {
-  background: #f4f7fc;
+  background: #faf5f6;
 }
 
 .mx-deal__main {
@@ -409,7 +409,7 @@
 
 .mx-deal__more {
   padding: 4px 16px 14px;
-  background: #f4f7fc;
+  background: #faf5f6;
 }
 
 .mx-deal__more dl {
@@ -493,7 +493,7 @@
 }
 
 .mx-news:hover {
-  background: #f4f7fc;
+  background: #faf5f6;
 }
 
 /* ---------- Bottom tab bar: fixed to the window ---------- */
@@ -889,7 +889,7 @@
 }
 
 .mx-tools button:hover { background: var(--sea-100); color: var(--ink); }
-.mx-tools button.is-on { background: #e6eefb; color: var(--mx-up); }
+.mx-tools button.is-on { background: #f7ecf0; color: var(--mx-up); }
 .mx-tools button:disabled { opacity: 0.35; cursor: default; }
 .mx-tools__gap { flex: 1; min-width: 8px; }
 
@@ -937,7 +937,7 @@
 .mx-btn--solid { background: var(--brand); color: #fff; }
 .mx-btn--solid:hover { background: var(--brand-700); }
 
-.mx-icon.is-on { background: #e6eefb; color: var(--mx-up); }
+.mx-icon.is-on { background: #f7ecf0; color: var(--mx-up); }
 a.mx-icon { text-decoration: none; }
 
 .mx-filterbar {
@@ -946,7 +946,7 @@ a.mx-icon { text-decoration: none; }
   justify-content: space-between;
   gap: 8px;
   padding: 8px 16px;
-  background: #e6eefb;
+  background: #f7ecf0;
   font-size: 0.875rem;
   color: var(--ink);
 }

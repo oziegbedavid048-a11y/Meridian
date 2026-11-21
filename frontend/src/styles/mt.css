@@ -5,9 +5,9 @@
   --mt-chrome: #ececec;
   --mt-line: #a9a9a9;
   --mt-soft: #d6d6d6;
-  --mt-up: #1e4fa3;
+  --mt-up: #6d1a36;
   --mt-down: #c0271d;
-  --mt-sel: #cfe0f7;
+  --mt-sel: #eed2dc;
   font-size: 0.8125rem;
   color: #1c1c1c;
   border: 1px solid var(--mt-line);
@@ -61,7 +61,7 @@
 
 .mt-btn:hover:not(:disabled) {
   background: linear-gradient(#ffffff, #d5e4f7);
-  border-color: #4a78b8;
+  border-color: #8f3a55;
 }
 
 .mt-btn:disabled {
@@ -216,7 +216,7 @@
 }
 
 .mt-mini:hover:not(:disabled) {
-  border-color: #4a78b8;
+  border-color: #8f3a55;
   background: #e3eefc;
 }
 
@@ -307,7 +307,7 @@
 
 .mt-field select:focus,
 .mt-field input:focus {
-  outline: 2px solid #4a78b8;
+  outline: 2px solid #8f3a55;
   outline-offset: 0;
 }
 
@@ -378,7 +378,7 @@
 }
 
 .mt-quote__ask {
-  color: #1e4fa3;
+  color: #6d1a36;
 }
 
 .mt-bigbtns {
@@ -406,7 +406,7 @@
 }
 
 .mt-buy {
-  background: #1e4fa3;
+  background: #6d1a36;
 }
 
 .mt-sell:hover:not(:disabled),
@@ -450,7 +450,7 @@
 .mt-watch--dash {
   --mt-line: #a9a9a9;
   --mt-soft: #d6d6d6;
-  --mt-up: #1e4fa3;
+  --mt-up: #6d1a36;
   --mt-down: #c0271d;
   margin-bottom: 16px;
   font-size: 0.8125rem;

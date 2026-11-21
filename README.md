@@ -357,15 +357,15 @@ Security events (failed sign-ins, rate limits, refused addresses) are written to
 ## Brand
 
 The logo is a simple **Peak** mark (two mountain peaks) with the name
-beside it in Public Sans, in deep teal and mint.
+beside it in Public Sans, in wine and dark grey.
 
 * Artwork for print, social media or documents is in `frontend/public/brand/`:
   `logo.svg` and `mark.svg` for light backgrounds, `logo-on-dark.svg` and
-  `mark-on-dark.svg` for teal or dark ones. `public/favicon.svg` is the tab icon.
+  `mark-on-dark.svg` for wine or dark ones. `public/favicon.svg` is the tab icon.
 * On the website the `Logo` component (`src/components/ui.jsx`) is used on the
   public pages, sign-in, sign-up and the footer. It is deliberately **not** shown
   in the signed-in dashboard.
-* Colours: deep teal `#0f4c5c`, mint `#2fa59a` (soft mint `#8fd6cc` on dark).
+* Colours: wine `#722f37`, dark grey `#3a3a3d` (light grey `#c9c9cd` on dark).
 
 ## Editing content
 
