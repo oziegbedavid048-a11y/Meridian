@@ -290,3 +290,94 @@
 
 .ar-stats--4 { grid-template-columns: 1.6fr repeat(3, 1fr); }
 @media (max-width: 960px) { .ar-stats--4 { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- Trading Overview ---------- */
+.ar--wide { max-width: 1280px; }
+.ov-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 6px 0 22px; }
+.ov-head h1 { margin: 0 0 6px; font-family: var(--font); font-size: clamp(1.7rem, 1.3rem + 1.2vw, 2.25rem); font-weight: 700; color: var(--gold); }
+.ov-head p { margin: 0; color: var(--muted); font-size: 1.0625rem; }
+.ov-account { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 600; }
+.ov-account select {
+  min-width: 200px; min-height: 44px; padding: 0 14px; border: 1px solid #c9c9cd; border-radius: 10px;
+  background: var(--white); color: var(--ink); font: inherit; font-weight: 500;
+}
+.ov-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 0 0 18px; }
+.ov-stat {
+  display: flex; align-items: center; gap: 16px; min-width: 0; padding: 20px 22px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--white);
+  box-shadow: 0 6px 18px -14px rgb(0 0 0 / 0.35);
+}
+.ov-stat > span:last-child { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ov-stat small { color: var(--muted); font-size: 0.9375rem; }
+.ov-stat b { font-size: clamp(1.25rem, 1rem + 0.7vw, 1.6rem); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ov-stat__icon {
+  display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 14px;
+  background: var(--sea-100); color: var(--brand);
+}
+.ov-stat--main { background: var(--brand); border-color: var(--brand); }
+.ov-stat--main small { color: rgb(255 255 255 / 0.85); }
+.ov-stat--main b { color: var(--white); }
+.ov-stat--main .ov-stat__icon { background: rgb(255 255 255 / 0.14); color: var(--white); }
+
+.ov-main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; margin: 0 0 16px; }
+.ov-main .ar-card { margin: 0; }
+.ov-chart__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; }
+.ov-tabs { display: inline-flex; padding: 4px; border-radius: 10px; background: #f3f2f3; }
+.ov-tabs button {
+  min-width: 78px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 8px;
+  background: none; color: var(--ink); font: inherit; font-weight: 600; font-size: 0.875rem; cursor: pointer;
+}
+.ov-tabs button.is-on { background: var(--brand); color: var(--white); }
+.ov-tabs--small { margin-left: auto; }
+.ov-tabs--small button { min-width: 44px; padding: 0 10px; }
+.ov-expand { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 8px; color: var(--ink); }
+.ov-expand:hover { background: var(--sea-100); color: var(--brand); }
+.ov-quote { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin: 0 0 8px; }
+.ov-quote > span { display: flex; flex-direction: column; }
+.ov-quote b { font-size: 1.5rem; color: var(--ink); }
+.ov-quote small { color: var(--muted); }
+.ov-quote strong { font-size: clamp(1.6rem, 1.2rem + 1vw, 2.1rem); color: var(--ink); font-variant-numeric: tabular-nums; }
+.ar-chg { font-weight: 700; font-size: 0.9375rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ov-chart__plot { position: relative; min-height: 300px; }
+
+.ov-summary { display: flex; flex-direction: column; }
+.ov-summary h2 { margin: 0 0 12px; font-family: var(--font); font-size: 1.25rem; font-weight: 700; color: var(--ink); }
+.ov-summary dl { margin: 0 0 20px; }
+.ov-summary dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.ov-summary dt { color: var(--ink); }
+.ov-summary dd { margin: 0; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ov-trade { margin-top: auto; min-height: 54px; font-size: 1.0625rem; gap: 10px; }
+
+.ov-snap { display: grid; grid-template-columns: 180px repeat(4, minmax(0, 1fr)); align-items: center; gap: 0; padding: 14px 20px; }
+.ov-snap h2 { margin: 0; font-family: var(--font); font-size: 1.125rem; font-weight: 700; color: var(--ink); }
+.ov-snap__item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 6px 20px;
+  border: 0; border-left: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.ov-snap__item:hover b { color: var(--brand); }
+.ov-snap__item b { font-size: 1rem; }
+.ov-snap__item strong { font-size: 1.125rem; font-variant-numeric: tabular-nums; margin-right: 10px; }
+
+@media (max-width: 1100px) {
+  .ov-stats { grid-template-columns: 1fr 1fr; }
+  .ov-main { grid-template-columns: 1fr; }
+  .ov-snap { grid-template-columns: 1fr 1fr; row-gap: 12px; }
+  .ov-snap h2 { grid-column: 1 / -1; }
+  .ov-snap__item:nth-child(even) { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 600px) {
+  .ov-stats { grid-template-columns: 1fr; }
+  .ov-tabs { overflow-x: auto; max-width: 100%; }
+  .ov-tabs button { min-width: 64px; }
+  .ov-tabs--small { margin-left: 0; }
+  .ov-account, .ov-account select { width: 100%; }
+}
+
+/* Phones: balance across the top, the other three cards two per row. */
+@media (max-width: 600px) {
+  .ov-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ov-stat--main { grid-column: 1 / -1; }
+  .ov-stat:not(.ov-stat--main) { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
+  .ov-stat:not(.ov-stat--main) .ov-stat__icon { width: 40px; height: 40px; }
+  .ov-stat:not(.ov-stat--main) b { font-size: 1.0625rem; }
+}

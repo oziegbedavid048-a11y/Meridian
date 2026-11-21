@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Camera, CandlestickChart, Check, Clock3, KeyRound,
-  Loader2, Mail, MapPin, ShieldAlert, Trash2, UserRound,
+  AlertCircle, BadgeCheck, BarChart3, Camera, Check, Coins, KeyRound, Loader2, Mail, MapPin, Maximize2,
+  PlusCircle, ShieldCheck, Trash2, UserRound, Wallet,
 } from 'lucide-react';
 import AccountShell from '../components/AccountShell.jsx';
 import { Avatar } from '../components/DashboardMenu.jsx';
 import { RuleList } from '../components/Form.jsx';
 import { api } from '../lib/api.js';
 import { useAuth } from '../lib/auth.jsx';
-import { getFunding, getPositions, money, price, signed, useAccountSummary, usePoll } from '../lib/trading.js';
+import {
+  getCandles, getFunding, getHistory, getInstruments, getPositions, money, price, signed, startingInstruments,
+  useAccountSummary, usePoll,
+} from '../lib/trading.js';
+import CandleChart from '../components/CandleChart.jsx';
 import { passwordOk, passwordRules } from '../lib/validation.js';
 import { COUNTRIES } from '../content/countries.js';
 
@@ -33,103 +37,150 @@ function Page({ title, intro, children }) {
 }
 
 /* ================= Overview ================= */
+const OV_SYMBOLS = ['BTCUSD', 'ETHUSD', 'XRPUSD', 'SOLUSD'];
+const OV_FRAMES = [['1H', 'H1'], ['4H', 'H4'], ['1D', 'D1'], ['1W', 'W1'], ['1M', 'MN']];
+
+function Change({ pct }) {
+  if (pct == null) return <span className="ar-chg">—</span>;
+  const up = pct >= 0;
+  return <span className={`ar-chg ${up ? 'is-up' : 'is-down'}`}>{up ? '▲' : '▼'} {up ? '+' : ''}{pct.toFixed(2)}%</span>;
+}
+
 export function OverviewPage() {
-  const { user } = useAuth();
   const [account] = useAccountSummary(8000);
-  const [positions, setPositions] = useState(null);
-  const [activity, setActivity] = useState(null);
-  const [identity, setIdentity] = useState(null);
+  const [instruments, setInstruments] = useState(startingInstruments);
+  const [symbol, setSymbol] = useState('BTCUSD');
+  const [frame, setFrame] = useState('H1');
+  const [candles, setCandles] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [openCount, setOpenCount] = useState(0);
   const c = account?.currency || 'USD';
 
-  const load = useCallback(async () => {
-    try { setPositions((await getPositions()).positions || []); } catch { /* keep last */ }
+  const loadPrices = useCallback(async () => {
+    try {
+      const res = await getInstruments();
+      if (res.instruments?.length) setInstruments(res.instruments);
+    } catch { /* keep the last prices */ }
   }, []);
-  usePoll(load, 8000);
+  usePoll(loadPrices, 5000);
+
+  const loadChart = useCallback(async () => {
+    try { setCandles((await getCandles(symbol, frame)).candles || []); } catch { setCandles((x) => x || []); }
+  }, [symbol, frame]);
+  useEffect(() => { setCandles(null); }, [symbol, frame]);
+  usePoll(loadChart, 15000, [symbol, frame]);
+
   useEffect(() => {
-    getFunding().then((r) => setActivity((r.requests || []).slice(0, 6))).catch(() => setActivity([]));
-    api('/profile/').then((p) => setIdentity(p.identity)).catch(() => {});
+    getHistory().then((h) => setSummary(h.summary || null)).catch(() => {});
+    getPositions().then((r) => setOpenCount((r.positions || []).filter((p) => p.status === 'open').length)).catch(() => {});
   }, []);
 
-  const open = (positions || []).filter((p) => p.status === 'open');
-  const pending = (positions || []).filter((p) => p.status === 'pending');
-  const pl = account?.floating_profit ?? 0;
+  const bySymbol = Object.fromEntries(instruments.map((i) => [i.symbol, i]));
+  const inst = bySymbol[symbol];
+  const level = account?.margin_level;
 
   return (
-    <Page title="Overview" intro={user?.first_name ? `Welcome back, ${user.first_name}.` : 'Welcome back.'}>
-      {identity && identity.status !== 'approved' && (
-        <Link to="/account/verify" className={`ar-banner ar-banner--${identity.status}`}>
-          {identity.status === 'pending' ? <Clock3 size={20} aria-hidden="true" /> : <ShieldAlert size={20} aria-hidden="true" />}
-          <span>
-            <b>{identity.status === 'pending' ? 'Your identity check is under review' : 'Verify your identity'}</b>
-            <small>{identity.status === 'pending' ? 'We will let you know as soon as it is approved.' : 'It is needed before your first withdrawal and takes about two minutes.'}</small>
-          </span>
-        </Link>
-      )}
-
-      <section className="ar-stats" aria-label="Account summary">
-        <div className="ar-stat ar-stat--main">
-          <small>Equity</small>
-          <b>{account ? money(account.equity, c) : 'Loading…'}</b>
-          <span className={pl >= 0 ? 'is-up' : 'is-down'}>{account ? `${signed(pl, c)} open profit / loss` : ''}</span>
-        </div>
-        <div className="ar-stat"><small>Balance</small><b>{account ? money(account.balance, c) : '—'}</b></div>
-        <div className="ar-stat"><small>Free margin</small><b>{account ? money(account.free_margin, c) : '—'}</b></div>
-        <div className="ar-stat"><small>Margin used</small><b>{account ? money(account.margin, c) : '—'}</b></div>
-        <div className="ar-stat"><small>Margin level</small><b>{account?.margin_level ? `${account.margin_level}%` : '—'}</b></div>
-      </section>
-
-      <section className="ar-actions" aria-label="Quick actions">
-        <Link to="/account/terminal" className="ar-action"><CandlestickChart size={22} aria-hidden="true" /> Trade</Link>
-        <Link to="/account/deposit" className="ar-action"><ArrowDownToLine size={22} aria-hidden="true" /> Deposit</Link>
-        <Link to="/account/withdraw" className="ar-action"><ArrowUpFromLine size={22} aria-hidden="true" /> Withdraw</Link>
-        <Link to="/account/portfolio" className="ar-action"><BadgeCheck size={22} aria-hidden="true" /> Portfolio</Link>
-      </section>
-
-      <div className="ar-grid">
-        <section className="ar-card" aria-labelledby="ov-positions">
-          <div className="ar-card__head">
-            <h2 id="ov-positions">Open positions</h2>
-            <Link to="/account/portfolio">View portfolio</Link>
+    <AccountShell>
+      <div className="ar ar--wide">
+        <TitleEffect title="Trading Overview" />
+        <header className="ov-head">
+          <div>
+            <h1>Trading Overview</h1>
+            <p>Your portfolio, markets, and performance at a glance.</p>
           </div>
-          {positions === null ? <p className="ar-muted">Loading…</p> : !open.length ? (
-            <p className="ar-muted">No open positions. <Link to="/account/terminal">Place a trade</Link></p>
-          ) : (
-            <ul className="ar-list">
-              {open.slice(0, 5).map((p) => (
-                <li key={p.id}>
-                  <span><b>{p.symbol}</b><small>{p.side === 'buy' ? 'Buy' : 'Sell'} {p.volume} lots</small></span>
-                  <span className={p.profit >= 0 ? 'is-up' : 'is-down'}>{signed(p.profit, c)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {pending.length > 0 && <p className="ar-muted">{pending.length} pending order{pending.length === 1 ? '' : 's'}.</p>}
+          <label className="ov-account">
+            <span>Account:</span>
+            <select defaultValue="practice" aria-label="Account">
+              <option value="practice">Practice account</option>
+            </select>
+          </label>
+        </header>
+
+        <section className="ov-stats" aria-label="Account summary">
+          <div className="ov-stat ov-stat--main">
+            <span className="ov-stat__icon"><Wallet size={26} aria-hidden="true" /></span>
+            <span><small>Account Balance</small><b>{account ? money(account.balance, c) : '—'}</b></span>
+          </div>
+          <div className="ov-stat">
+            <span className="ov-stat__icon"><Coins size={26} aria-hidden="true" /></span>
+            <span><small>Equity</small><b>{account ? money(account.equity, c) : '—'}</b></span>
+          </div>
+          <div className="ov-stat">
+            <span className="ov-stat__icon"><BarChart3 size={26} aria-hidden="true" /></span>
+            <span><small>Free Margin</small><b>{account ? money(account.free_margin, c) : '—'}</b></span>
+          </div>
+          <div className="ov-stat">
+            <span className="ov-stat__icon"><ShieldCheck size={26} aria-hidden="true" /></span>
+            <span><small>Margin Level</small><b>{account ? (level ? `${level}%` : '∞') : '—'}</b></span>
+          </div>
         </section>
 
-        <section className="ar-card" aria-labelledby="ov-activity">
-          <div className="ar-card__head">
-            <h2 id="ov-activity">Recent activity</h2>
-            <Link to="/account/deposit">Funding</Link>
-          </div>
-          {activity === null ? <p className="ar-muted">Loading…</p> : !activity.length ? (
-            <p className="ar-muted">No deposits or withdrawals yet.</p>
-          ) : (
-            <ul className="ar-list">
-              {activity.map((r) => (
-                <li key={r.id}>
-                  <span><b>{KIND[r.kind] || r.kind}</b><small>{when.format(new Date(r.created_at))}</small></span>
-                  <span className="ar-right">
-                    <b>{r.kind === 'withdrawal' ? '−' : '+'}{money(r.amount, c)}</b>
-                    <small className={`ar-pill ar-pill--${r.status}`}>{STATUS[r.status] || r.status}</small>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="ov-main">
+          <section className="ar-card ov-chart" aria-label="Chart">
+            <div className="ov-chart__bar">
+              <div className="ov-tabs" role="tablist" aria-label="Market">
+                {OV_SYMBOLS.map((s) => (
+                  <button key={s} type="button" role="tab" aria-selected={symbol === s}
+                    className={symbol === s ? 'is-on' : ''} onClick={() => setSymbol(s)}>{s}</button>
+                ))}
+              </div>
+              <div className="ov-tabs ov-tabs--small" role="tablist" aria-label="Timeframe">
+                {OV_FRAMES.map(([label, tf]) => (
+                  <button key={tf} type="button" role="tab" aria-selected={frame === tf}
+                    className={frame === tf ? 'is-on' : ''} onClick={() => setFrame(tf)}>{label}</button>
+                ))}
+              </div>
+              <Link to={`/account/terminal?symbol=${symbol}`} className="ov-expand" aria-label="Open in the trading screen" title="Open in the trading screen">
+                <Maximize2 size={18} aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="ov-quote">
+              <span><b>{symbol}</b><small>{inst?.name || ''}</small></span>
+              <strong>{inst?.bid != null ? price(inst.bid, inst.digits) : '—'}</strong>
+              <Change pct={inst?.change_pct} />
+            </div>
+            <div className="ov-chart__plot">
+              <CandleChart candles={candles || []} digits={inst?.digits ?? 2} timeframe={frame} bid={inst?.bid ?? null}
+                loading={candles === null} height={300} indicators={{ sma: true }} compact />
+            </div>
+          </section>
+
+          <section className="ar-card ov-summary" aria-labelledby="ov-sum">
+            <h2 id="ov-sum">Portfolio Summary</h2>
+            <dl>
+              <div>
+                <dt>Profit / Loss</dt>
+                <dd className={(summary?.net_profit ?? 0) >= 0 ? 'is-up' : 'is-down'}>{summary ? signed(summary.net_profit, c) : '—'}</dd>
+              </div>
+              <div><dt>Open Positions</dt><dd>{openCount}</dd></div>
+              <div><dt>Closed Orders</dt><dd>{summary ? summary.trades : '—'}</dd></div>
+              <div><dt>Win Rate</dt><dd>{summary?.win_rate != null ? `${summary.win_rate}%` : '—'}</dd></div>
+              <div><dt>Total Trades</dt><dd>{summary ? summary.trades + openCount : '—'}</dd></div>
+            </dl>
+            <Link to="/account/terminal" className="ar-btn ov-trade"><PlusCircle size={20} aria-hidden="true" /> Open New Trade</Link>
+          </section>
+        </div>
+
+        <section className="ar-card ov-snap" aria-label="Market snapshot">
+          <h2>Market Snapshot</h2>
+          {OV_SYMBOLS.map((s) => {
+            const i = bySymbol[s];
+            return (
+              <button type="button" key={s} className="ov-snap__item" onClick={() => setSymbol(s)}>
+                <b>{s}</b>
+                <span><strong>{i?.bid != null ? price(i.bid, i.digits) : '—'}</strong> <Change pct={i?.change_pct} /></span>
+              </button>
+            );
+          })}
         </section>
       </div>
-    </Page>
+    </AccountShell>
   );
+}
+
+function TitleEffect({ title }) {
+  useEffect(() => { document.title = `${title} | Meridian Prime Global`; }, [title]);
+  return null;
 }
 
 /* ================= Portfolio ================= */
