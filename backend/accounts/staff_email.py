@@ -4,7 +4,7 @@ Staff write in a Gmail-style editor, so the message arrives as HTML. Before it
 is sent it is cleaned to a short list of safe tags (bold, lists, links and so
 on): anything pasted from another page, such as scripts, forms, tracking images
 or styles, is dropped, but every character of the text is kept, whatever the
-language or symbols. Each client gets their own copy, so nobody sees who else
+language or symbols. Clients get blind copies (BCC), so nobody sees who else
 it went to.
 """
 
@@ -124,10 +124,16 @@ def clean_html(raw):
     return cleaner.result()
 
 
-def build_message(to, subject, body_html, body_text, attachments):
+BATCH_SIZE = 50  # clients per send; each is a blind copy, so nobody sees the others
+
+
+def build_message(bcc, subject, body_html, body_text, attachments):
+    """One message to a batch of clients, each as a blind copy (BCC)."""
+    sender = getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+    support = getattr(settings, 'SUPPORT_EMAIL', '')
     message = EmailMultiAlternatives(
-        subject=subject, body=body_text, to=[to],
-        reply_to=[getattr(settings, 'SUPPORT_EMAIL', '')] if getattr(settings, 'SUPPORT_EMAIL', '') else None,
+        subject=subject, body=body_text, to=[sender], bcc=list(bcc),
+        reply_to=[support] if support else None,
     )
     message.attach_alternative(_layout(f'<div style="font-size:15px;line-height:1.6;color:#222;">{body_html}</div>'),
                                'text/html')
@@ -137,15 +143,17 @@ def build_message(to, subject, body_html, body_text, attachments):
 
 
 def send_to_clients(emails, subject, raw_html, attachments):
-    """Send one copy to each address. Returns (sent addresses, failed addresses)."""
+    """Send in batches of blind copies, so files are uploaded once per batch
+    rather than once per client. Returns (sent addresses, failed addresses)."""
     body_html, body_text = clean_html(raw_html)
     sent, failed = [], []
     connection = get_connection()
-    for address in emails:
+    for start in range(0, len(emails), BATCH_SIZE):
+        batch = emails[start:start + BATCH_SIZE]
         try:
-            connection.send_messages([build_message(address, subject, body_html, body_text, attachments)])
-            sent.append(address)
-        except Exception as exc:  # one bad address must not stop the rest
-            log.error('staff email to a client failed: %s', exc)
-            failed.append(address)
+            connection.send_messages([build_message(batch, subject, body_html, body_text, attachments)])
+            sent.extend(batch)
+        except Exception as exc:  # one failed batch must not stop the rest
+            log.error('staff email batch failed: %s', exc)
+            failed.extend(batch)
     return sent, failed

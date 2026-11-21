@@ -20,12 +20,15 @@
   var fileList = document.getElementById('gm-files');
   var errorBox = document.getElementById('gm-error');
   var sendBtn = document.getElementById('gm-send');
+  var sendBtnTop = document.getElementById('gm-send-top');
+  var uploadUrl = form.dataset.uploadUrl;
   var count = document.getElementById('gm-count');
+  var sending = false;
 
   var byId = {};
   clients.forEach(function (c) { byId[c.id] = c; });
   var selected = [];          // client ids, in the order picked
-  var files = [];             // File objects
+  var files = [];             // { file, id, progress, state: 'uploading' | 'done' | 'failed', xhr }
   var active = -1;            // highlighted suggestion
 
   function el(tag, cls, text) {
@@ -44,7 +47,7 @@
     errorBox.hidden = !msg;
   }
   function updateCount() {
-    var total = files.reduce(function (s, f) { return s + f.size; }, 0);
+    var total = files.reduce(function (s, i) { return s + i.file.size; }, 0);
     var parts = [];
     if (selected.length) parts.push(selected.length + ' recipient' + (selected.length === 1 ? '' : 's'));
     if (files.length) parts.push(files.length + ' file' + (files.length === 1 ? '' : 's') + ', ' + sizeText(total));
@@ -190,8 +193,9 @@
   /* ---------- Attachments ---------- */
   function renderFiles() {
     fileList.innerHTML = '';
-    files.forEach(function (f, i) {
-      var li = el('li', 'gm__file');
+    files.forEach(function (item) {
+      var f = item.file;
+      var li = el('li', 'gm__file is-' + item.state);
       if (/^image\//.test(f.type)) {
         var img = el('img');
         img.alt = '';
@@ -204,28 +208,107 @@
       var name = el('span', 'gm__file-name', f.name);
       name.title = f.name;
       li.appendChild(name);
-      li.appendChild(el('small', '', sizeText(f.size)));
+      var state = item.state === 'uploading' ? item.progress + '%'
+        : item.state === 'failed' ? 'Failed' : sizeText(f.size) + ' ✓';
+      li.appendChild(el('small', 'gm__state', state));
+      if (item.state === 'failed') {
+        var retry = el('button', '', '↻');
+        retry.type = 'button';
+        retry.title = 'Try again';
+        retry.setAttribute('aria-label', 'Upload ' + f.name + ' again');
+        retry.addEventListener('click', function () { upload(item); });
+        li.appendChild(retry);
+      }
       var x = el('button', '', '×');
       x.type = 'button';
       x.setAttribute('aria-label', 'Remove ' + f.name);
-      x.addEventListener('click', function () { files.splice(i, 1); renderFiles(); });
+      x.addEventListener('click', function () { removeFile(item); });
       li.appendChild(x);
+      if (item.state === 'uploading') {
+        var bar = el('span', 'gm__bar');
+        bar.style.width = item.progress + '%';
+        li.appendChild(bar);
+      }
       fileList.appendChild(li);
     });
     updateCount();
+    updateSend();
+  }
+  function uploading() { return files.some(function (i) { return i.state === 'uploading'; }); }
+  function updateSend() {
+    if (sending) return;
+    var waiting = uploading();
+    [sendBtn, sendBtnTop].forEach(function (b) {
+      if (!b) return;
+      b.disabled = waiting;
+      b.textContent = waiting ? 'Uploading…' : 'Send';
+    });
+  }
+  // Each file is uploaded the moment it is attached, so Send only has to send the message.
+  function upload(item) {
+    item.state = 'uploading';
+    item.progress = 0;
+    renderFiles();
+    var data = new FormData();
+    data.append('file', item.file, item.file.name);
+    var xhr = new XMLHttpRequest();
+    item.xhr = xhr;
+    xhr.open('POST', uploadUrl);
+    xhr.setRequestHeader('X-CSRFToken', csrf());
+    xhr.upload.onprogress = function (e) {
+      if (!e.lengthComputable) return;
+      item.progress = Math.min(99, Math.round((e.loaded / e.total) * 100));
+      var li = fileList.children[files.indexOf(item)];
+      if (li) {
+        var bar = li.querySelector('.gm__bar');
+        var st = li.querySelector('.gm__state');
+        if (bar) bar.style.width = item.progress + '%';
+        if (st) st.textContent = item.progress + '%';
+      }
+    };
+    xhr.onload = function () {
+      var out = {};
+      try { out = JSON.parse(xhr.responseText); } catch (err) { /* not JSON */ }
+      if (xhr.status === 200 && out.ok) {
+        item.id = out.id;
+        item.state = 'done';
+      } else {
+        item.state = 'failed';
+        showError(out.error || ('"' + item.file.name + '" could not be uploaded. Press ↻ to try again.'));
+      }
+      if (files.indexOf(item) !== -1) renderFiles();
+    };
+    xhr.onerror = function () {
+      item.state = 'failed';
+      showError('"' + item.file.name + '" could not be uploaded. Check your connection and press ↻.');
+      if (files.indexOf(item) !== -1) renderFiles();
+    };
+    xhr.send(data);
+  }
+  function removeFile(item) {
+    if (item.xhr && item.state === 'uploading') item.xhr.abort();
+    if (item.id) {
+      var data = new FormData();
+      data.append('delete', item.id);
+      fetch(uploadUrl, { method: 'POST', body: data, credentials: 'same-origin', headers: { 'X-CSRFToken': csrf() } });
+    }
+    files = files.filter(function (i) { return i !== item; });
+    renderFiles();
   }
   function addFiles(list) {
     showError('');
-    var total = files.reduce(function (s, f) { return s + f.size; }, 0);
+    var total = files.reduce(function (s, i) { return s + i.file.size; }, 0);
     Array.prototype.forEach.call(list, function (f) {
       if (files.length >= maxFiles) { showError('You can attach up to ' + maxFiles + ' files.'); return; }
       if (total + f.size > maxBytes) {
-        showError('Attachments can be up to ' + (maxBytes / 1024 / 1024) + ' MB in total. "' + f.name + '" was not added.');
+        showError('Attachments can be up to ' + (maxBytes / 1024 / 1024) + ' MB in total. "' + (f.name || 'The file') + '" was not added.');
         return;
       }
       var named = f.name ? f : new File([f], 'pasted-image.png', { type: f.type });
-      files.push(named);
+      var item = { file: named, id: null, progress: 0, state: 'uploading' };
+      files.push(item);
       total += f.size;
+      upload(item);
     });
     renderFiles();
   }
@@ -253,7 +336,6 @@
     var input = form.querySelector('input[name="csrfmiddlewaretoken"]');
     return input ? input.value : '';
   }
-  var sending = false;
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (sending) return;
@@ -262,17 +344,20 @@
     if (!selected.length) { showError('Choose at least one recipient.'); toInput.focus(); return; }
     if (!subject.value.trim()) { showError('Add a subject.'); subject.focus(); return; }
     if (!text && !files.length) { showError('Write a message.'); body.focus(); return; }
+    if (uploading()) { showError('Wait for the attachments to finish uploading.'); return; }
+    if (files.some(function (i) { return i.state === 'failed'; })) {
+      showError('An attachment did not upload. Press \u21bb to try again, or remove it.'); return;
+    }
 
     var data = new FormData();
     selected.forEach(function (id) { data.append('to', id); });
     data.append('subject', subject.value);
     // Sent as a file part so a message of any length gets through.
     data.append('body', new Blob([body.innerHTML], { type: 'text/html' }), 'message.html');
-    files.forEach(function (f) { data.append('attachments', f, f.name); });
+    files.forEach(function (i) { data.append('attachment', i.id); });
 
     sending = true;
-    sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending…';
+    [sendBtn, sendBtnTop].forEach(function (b) { if (b) { b.disabled = true; b.textContent = 'Sending\u2026'; } });
     fetch(window.location.pathname, {
       method: 'POST', body: data, credentials: 'same-origin',
       headers: { 'X-CSRFToken': csrf(), 'X-Requested-With': 'XMLHttpRequest' },
@@ -286,13 +371,11 @@
       }
       showError(out.error || 'The email could not be sent.');
       sending = false;
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send';
+      [sendBtn, sendBtnTop].forEach(function (b) { if (b) { b.disabled = false; b.textContent = 'Send'; } });
     }).catch(function () {
       showError('Network problem. Check your connection and try again.');
       sending = false;
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send';
+      [sendBtn, sendBtnTop].forEach(function (b) { if (b) { b.disabled = false; b.textContent = 'Send'; } });
     });
   });
 
@@ -301,7 +384,7 @@
     if (!sending && ((body.innerText || '').trim() || subject.value.trim() || files.length)) return true;
     return undefined;
   };
-  form.querySelectorAll('.gm__close, .gm__discard').forEach(function (a) {
+  form.querySelectorAll('.gm__leave').forEach(function (a) {
     a.addEventListener('click', function (e) {
       if (((body.innerText || '').trim() || subject.value.trim() || files.length) &&
           !window.confirm('Discard this message?')) { e.preventDefault(); return; }

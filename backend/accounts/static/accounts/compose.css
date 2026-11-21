@@ -1,32 +1,48 @@
 /* Gmail-style compose window in the admin. */
+html, body.gm-page { margin: 0; height: 100%; background: #fff; }
+*, *::before, *::after { box-sizing: border-box; }
 .gm {
   --gm-accent: #722f37;
   --gm-accent-dark: #561f27;
   --gm-ink: #202124;
   --gm-muted: #5f6368;
   --gm-line: #e0e0e0;
-  max-width: 880px;
-  margin: 8px 0 32px;
-  border: 1px solid var(--gm-line);
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: #fff;
   color: var(--gm-ink);
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
   font-family: 'Google Sans', Roboto, 'Segoe UI', Arial, sans-serif;
-  overflow: visible;
-  position: relative;
 }
 .gm__head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: 12px 12px 0 0;
-  background: #f2f2f2;
-  font-size: 15px;
-  font-weight: 600;
+  gap: 12px;
+  min-height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--gm-line);
+  background: #fff;
 }
-.gm__close { color: var(--gm-muted) !important; font-size: 24px; line-height: 1; text-decoration: none !important; }
+.gm__head h1 { margin: 0; font-size: 18px; font-weight: 600; color: var(--gm-ink); }
+.gm__head-gap { flex: 1; }
+.gm__back {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  color: var(--gm-muted); font-size: 22px; text-decoration: none;
+}
+.gm__back:hover { background: #f1f3f4; color: var(--gm-ink); }
+.gm__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 0;
+}
 .gm__row {
   position: relative;
   display: flex;
@@ -129,8 +145,8 @@
 .gm__toolbar button.is-on { background: #f6eef0; color: var(--gm-accent); }
 .gm__sep { width: 1px; height: 20px; margin: 0 4px; background: var(--gm-line); }
 .gm__body {
-  min-height: 340px;
-  max-height: 60vh;
+  flex: 1;
+  min-height: 300px;
   padding: 16px;
   overflow-y: auto;
   outline: 0;
@@ -167,6 +183,10 @@
 .gm__file button:hover { background: #e8eaed; }
 .gm__error { margin: 12px 16px 0; padding: 10px 12px; border-radius: 8px; background: #fce8e6; color: #a50e0e; font-size: 14px; }
 .gm__foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: #fff;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -202,8 +222,29 @@
 .gm__attach span:first-child { font-size: 18px; }
 .gm__count { flex: 1; color: var(--gm-muted); font-size: 13px; }
 .gm__discard { color: var(--gm-muted) !important; font-size: 14px; }
+.gm__send--top { display: none; }
+.gm__file { position: relative; overflow: hidden; }
+.gm__bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--gm-accent); transition: width 0.2s; }
+.gm__file.is-uploading { opacity: 0.85; }
+.gm__file.is-failed { border-color: #f1b0a9; background: #fce8e6; }
+.gm__state { flex: none; font-size: 12px; color: var(--gm-muted); }
+.gm__file.is-done .gm__state { color: #1e7e34; }
 @media (max-width: 640px) {
-  .gm__row { flex-wrap: wrap; }
+  .gm__head { padding: 0 8px; min-height: 56px; }
+  .gm__send--top { display: inline-block; min-width: 76px; height: 36px; padding: 0 16px; font-size: 14px; }
+  .gm__foot .gm__send { display: none; }
+  .gm__row { flex-wrap: wrap; padding: 4px 12px; }
+  .gm__label { width: auto; }
+  .gm__link { margin-left: auto; }
   .gm__suggest { left: 8px; right: 8px; }
+  .gm__toolbar { flex-wrap: nowrap; overflow-x: auto; padding: 6px 8px; }
+  .gm__body { padding: 14px 12px; }
+  .gm__files { padding-left: 12px; padding-right: 12px; }
+  .gm__file { max-width: 100%; flex: 1 1 100%; }
   .gm__attach-text { display: none; }
+  .gm__foot { padding: 10px 12px; }
+}
+/* Top and bottom bars line up with the centred writing area on wide screens. */
+@media (min-width: 641px) {
+  .gm__head, .gm__foot { padding-left: max(20px, calc((100% - 1100px) / 2 + 16px)); padding-right: max(20px, calc((100% - 1100px) / 2 + 16px)); }
 }

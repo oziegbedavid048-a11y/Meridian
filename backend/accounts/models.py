@@ -217,3 +217,29 @@ class StaffEmail(models.Model):
 
     def __str__(self):
         return self.subject
+
+
+def staff_attachment_path(instance, filename):
+    return f'staff-email/{uuid.uuid4().hex}'
+
+
+class StaffEmailAttachment(models.Model):
+    """A file attached in the compose window. It is uploaded as soon as it is
+    attached, so pressing Send does not wait for it; it is deleted once sent or
+    after a day if the message is never sent."""
+
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='+')
+    file = models.FileField(upload_to=staff_attachment_path, storage=get_private_storage, max_length=200)
+    name = models.CharField(max_length=200)
+    content_type = models.CharField(max_length=120, default='application/octet-stream')
+    size = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+@receiver(post_delete, sender=StaffEmailAttachment)
+def _remove_staff_attachment(sender, instance, **kwargs):
+    if instance.file:
+        instance.file.storage.delete(instance.file.name)

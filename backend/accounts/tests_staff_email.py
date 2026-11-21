@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from config.zohomail import ZohoMailBackend
 
-from .models import StaffEmail
+from .models import StaffEmail, StaffEmailAttachment
 from .staff_email import clean_html
 
 PASSWORD = 'StaffTest2026x'
@@ -57,12 +57,14 @@ class StaffEmailTests(TestCase):
         self.assertNotEqual(res.status_code, 200)
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_each_recipient_gets_their_own_copy_and_it_is_logged(self):
+    def test_recipients_get_blind_copies_and_it_is_logged(self):
         res = self.send()
         self.assertEqual(res.status_code, 200, res.content)
         self.assertTrue(res.json()['ok'])
-        self.assertEqual(sorted(m.to[0] for m in mail.outbox), ['ana@example.com', 'ben@example.com'])
-        self.assertTrue(all(len(m.to) == 1 and not m.cc and not m.bcc for m in mail.outbox))
+        self.assertEqual(len(mail.outbox), 1)  # one batch, so attachments go to the email service once
+        message = mail.outbox[0]
+        self.assertEqual(sorted(message.bcc), ['ana@example.com', 'ben@example.com'])
+        self.assertNotIn('ana@example.com', message.to + message.cc)
         self.assertEqual(StaffEmail.objects.get().recipients.splitlines(), ['ana@example.com', 'ben@example.com'])
 
     def test_a_very_long_message_in_any_language_arrives_whole(self):
@@ -75,12 +77,17 @@ class StaffEmailTests(TestCase):
         self.assertIn('中文 العربية русский 😀🚀', html)
         self.assertIn('&lt;tag&gt; &amp;', html)
 
-    def test_files_and_images_are_attached(self):
-        res = self.send(to=[self.ana.pk], attachments=[
-            SimpleUploadedFile('statement.pdf', b'%PDF-1.4 data', content_type='application/pdf'),
-            SimpleUploadedFile('photo.png', b'\x89PNG data', content_type='image/png'),
-        ])
+    def upload(self, name, content, content_type='application/octet-stream'):
+        return self.client.post(reverse('admin:accounts_send_email_upload'),
+                                {'file': SimpleUploadedFile(name, content, content_type=content_type)})
+
+    def test_files_upload_first_then_are_attached_and_cleaned_up(self):
+        a = self.upload('statement.pdf', b'%PDF-1.4 data', 'application/pdf').json()
+        b = self.upload('photo.png', b'\x89PNG data', 'image/png').json()
+        self.assertTrue(a['ok'] and b['ok'])
+        res = self.send(to=[self.ana.pk], attachment=[a['id'], b['id']])
         self.assertEqual(res.status_code, 200, res.content)
+        self.assertFalse(StaffEmailAttachment.objects.exists())  # removed once sent
         names = [a[0] for a in mail.outbox[0].attachments]
         self.assertEqual(names, ['statement.pdf', 'photo.png'])
         self.assertEqual(mail.outbox[0].attachments[0][1], b'%PDF-1.4 data')
@@ -104,8 +111,15 @@ class StaffEmailTests(TestCase):
         self.assertEqual(len(mail.outbox), 0)
 
     def test_attachments_over_the_size_limit_are_refused(self):
-        big = SimpleUploadedFile('big.bin', b'0' * (10 * 1024 * 1024 + 1))
-        res = self.send(attachments=[big])
+        res = self.upload('big.bin', b'0' * (10 * 1024 * 1024 + 1))
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(StaffEmailAttachment.objects.exists())
+
+    def test_another_staff_members_upload_cannot_be_sent(self):
+        item = self.upload('a.pdf', b'x').json()
+        other = get_user_model().objects.create_superuser('other@example.com', 'other@example.com', PASSWORD)
+        self.client.force_login(other)
+        res = self.send(attachment=[item['id']])
         self.assertEqual(res.status_code, 400)
         self.assertEqual(len(mail.outbox), 0)
 

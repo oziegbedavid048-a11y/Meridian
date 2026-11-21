@@ -269,7 +269,8 @@ from django.contrib.auth.admin import UserAdmin as _BaseUserAdmin  # noqa: E402
 from django.http import JsonResponse  # noqa: E402
 
 from . import staff_email  # noqa: E402
-from .models import StaffEmail  # noqa: E402
+from .models import StaffEmail, StaffEmailAttachment  # noqa: E402
+from datetime import timedelta  # noqa: E402
 
 User = get_user_model()
 
@@ -301,6 +302,7 @@ class ClientUserAdmin(_BaseUserAdmin):
     def get_urls(self):
         return [
             path('send-email/', self.admin_site.admin_view(self.compose_view), name='accounts_send_email'),
+            path('send-email/upload/', self.admin_site.admin_view(self.upload_view), name='accounts_send_email_upload'),
         ] + super().get_urls()
 
     def compose_view(self, request):
@@ -317,9 +319,31 @@ class ClientUserAdmin(_BaseUserAdmin):
             'max_attachments_mb': staff_email.MAX_ATTACHMENTS_BYTES // (1024 * 1024),
             'max_attachments': staff_email.MAX_ATTACHMENTS,
             'users_url': reverse('admin:auth_user_changelist'),
+            'upload_url': reverse('admin:accounts_send_email_upload'),
             'opts': self.model._meta,
         }
         return render(request, 'admin/accounts/compose_email.html', context)
+
+    def upload_view(self, request):
+        """One attachment, uploaded the moment it is attached so Send does not wait for it."""
+        if request.method != 'POST':
+            return JsonResponse({'ok': False, 'error': 'Use POST.'}, status=405)
+        if request.POST.get('delete'):
+            StaffEmailAttachment.objects.filter(pk=request.POST['delete'], uploaded_by=request.user).delete()
+            return JsonResponse({'ok': True})
+        f = request.FILES.get('file')
+        if f is None:
+            return JsonResponse({'ok': False, 'error': 'No file was received.'}, status=400)
+        if f.size > staff_email.MAX_ATTACHMENTS_BYTES:
+            return JsonResponse({'ok': False, 'error': f'Files can be up to {staff_email.MAX_ATTACHMENTS_BYTES // (1024 * 1024)} MB.'}, status=400)
+        # Drafts nobody sent are removed after a day.
+        for old in StaffEmailAttachment.objects.filter(created_at__lt=timezone.now() - timedelta(days=1)):
+            old.delete()
+        item = StaffEmailAttachment(uploaded_by=request.user, name=(f.name or 'attachment')[:200],
+                                    content_type=(f.content_type or 'application/octet-stream')[:120], size=f.size)
+        item.file.save('upload', f, save=False)
+        item.save()
+        return JsonResponse({'ok': True, 'id': item.pk, 'name': item.name, 'size': item.size})
 
     def _send(self, request):
         def fail(message, status=400):
@@ -344,19 +368,28 @@ class ClientUserAdmin(_BaseUserAdmin):
             return fail('The message is too long to send by email.')
         raw = body_file.read().decode('utf-8', 'replace')
         cleaned, text = staff_email.clean_html(raw)
-        files = request.FILES.getlist('attachments')
+        ids = [int(x) for x in request.POST.getlist('attachment') if str(x).isdigit()]
+        files = list(StaffEmailAttachment.objects.filter(pk__in=ids, uploaded_by=request.user))
+        if len(files) != len(set(ids)):
+            return fail('An attachment is missing. Remove it and attach it again.')
         if len(files) > staff_email.MAX_ATTACHMENTS:
             return fail(f'You can attach up to {staff_email.MAX_ATTACHMENTS} files.')
         if sum(f.size for f in files) > staff_email.MAX_ATTACHMENTS_BYTES:
             return fail(f'Attachments can be up to {staff_email.MAX_ATTACHMENTS_BYTES // (1024 * 1024)} MB in total.')
         if not text.strip() and not files:
             return fail('Write a message.')
-        attachments = [(f.name[:200], f.read(), f.content_type or 'application/octet-stream') for f in files]
+        attachments = []
+        for f in files:
+            with f.file.open('rb') as handle:
+                attachments.append((f.name, handle.read(), f.content_type))
         sent, failed = staff_email.send_to_clients(emails, subject, raw, attachments)
         StaffEmail.objects.create(
             sent_by=request.user, subject=subject, body=cleaned, recipients='\n'.join(sent),
             failed='\n'.join(failed), attachment_names='\n'.join(a[0] for a in attachments),
         )
+        if sent:
+            for f in files:
+                f.delete()  # sent, so the uploaded copy is no longer needed
         log.info('staff user %s emailed %s clients (%s failed)', request.user.pk, len(sent), len(failed))
         if not sent:
             return fail('The email could not be sent. Check the email settings and try again.', status=502)
