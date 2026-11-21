@@ -98,8 +98,9 @@ export function DashboardMock() {
 export function LaptopMock() {
   return (
     <div className="laptop-mock" aria-hidden="true">
-      <div className="lm-screen"><LiveChart /></div>
+      <div className="lm-screen"><span className="lm-camera" /><LiveChart /></div>
       <div className="lm-base" />
+      <div className="lm-surface" />
     </div>
   );
 }

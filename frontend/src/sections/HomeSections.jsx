@@ -18,32 +18,24 @@ export function Hero() {
   return (
     <>
       <section className="hero" aria-labelledby="hero-title">
-        <div className="hero__wedge" aria-hidden="true" />
+        <div className="hero__photo" aria-hidden="true" />
+        <div className="hero__table" aria-hidden="true" />
         <div className="container hero__inner">
           <div className="hero__copy">
-            <h1 id="hero-title">{hero.title}</h1>
+            <h1 id="hero-title">
+              {hero.title.split(' ').slice(0, -1).join(' ')}{' '}
+              <span className="hero__accent">{hero.title.split(' ').slice(-1)}</span>
+            </h1>
+            <span className="hero__rule" aria-hidden="true" />
             <p>{hero.subtitle}</p>
             <div className="hero__ctas">
-              <Link to={hero.primary.href} className="btn btn--white">{hero.primary.label}</Link>
-              <Link to={hero.secondary.href} className="btn btn--white-outline">{hero.secondary.label}</Link>
+              <Link to={hero.primary.href} className="btn hero__btn-main">{hero.primary.label} <span aria-hidden="true">&rsaquo;</span></Link>
+              <Link to={hero.secondary.href} className="btn hero__btn-alt">{hero.secondary.label}</Link>
             </div>
           </div>
           <div className="hero__visual"><LaptopMock /></div>
         </div>
       </section>
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <div className="container">
-          <Link to="/">Home</Link> <span aria-hidden="true">/</span> <span aria-current="page">{hero.title}</span>
-        </div>
-      </nav>
-      <nav className="on-page" aria-label="On this page">
-        <div className="container on-page__inner">
-          <span>On this page</span>
-          {[['Accounts', '#accounts'], ['Markets', '#markets'], ['Pricing', '#pricing'], ['Learn', '#learn'], ['Questions', '#faq']].map(([l, h]) => (
-            <Link key={h} to={`/${h}`} className="pill-link">{l}</Link>
-          ))}
-        </div>
-      </nav>
     </>
   );
 }

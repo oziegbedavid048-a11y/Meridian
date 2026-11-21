@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
-import { LOGO_VIEW_BOX, LOGO_PEAK, LOGO_PEAK_SMALL } from '../content/logoShapes.js';
+import {
+  LOGO_VIEW_BOX, LOGO_MARK_BOX, LOGO_PEAK, LOGO_PEAK_SMALL, LOGO_SWOOSH,
+} from '../content/logoShapes.js';
 import { ArrowRight } from 'lucide-react';
 import { useInView } from '../lib/motion.js';
 import { brand } from '../content/site.js';
@@ -53,20 +55,30 @@ export function Logo({ light = false }) {
   return (
     <span className={`logo ${light ? 'logo--light' : ''}`}>
       <svg viewBox={LOGO_VIEW_BOX} className="logo__svg" role="img" aria-label={brand.name}>
-        <path d={LOGO_PEAK} className="logo__main" />
-        <path d={LOGO_PEAK_SMALL} className="logo__accent" />
-        <text x="72" y="45" className="logo__main logo__word">Meridian Prime <tspan className="logo__accent logo__sub">Global</tspan></text>
+        <LogoMark />
+        <text x="76" y="35" className="logo__word">Meridian Prime <tspan className="logo__sub">Global</tspan></text>
+        <text x="77" y="53" className="logo__tag">MULTI-ASSET BROKERAGE</text>
       </svg>
     </span>
   );
 }
 
-/** The Peak mark on its own, for small headers beside the name. */
+/** The mountain mark: a wine peak and a dark grey peak, each with a cut-out, over a swoosh. */
+function LogoMark() {
+  return (
+    <>
+      <path d={LOGO_PEAK} className="logo__main" fillRule="evenodd" />
+      <path d={LOGO_PEAK_SMALL} className="logo__accent" fillRule="evenodd" />
+      <path d={LOGO_SWOOSH} className="logo__main" />
+    </>
+  );
+}
+
+/** The mark on its own, for small headers beside the name. */
 export function BrandMark({ light = false }) {
   return (
-    <svg viewBox="10 17 52 38" className={`brand-mark ${light ? 'logo--light' : ''}`} aria-hidden="true" focusable="false">
-      <path d={LOGO_PEAK} className="logo__main" />
-      <path d={LOGO_PEAK_SMALL} className="logo__accent" />
+    <svg viewBox={LOGO_MARK_BOX} className={`brand-mark ${light ? 'logo--light' : ''}`} aria-hidden="true" focusable="false">
+      <LogoMark />
     </svg>
   );
 }

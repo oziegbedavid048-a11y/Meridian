@@ -158,3 +158,208 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; letter-spac
 .topbar__signin:hover { background: #a3a3a8; }
 .mainbar__cta.btn--primary { background: #2f2f31; border-color: #2f2f31; color: var(--white); }
 .mainbar__cta.btn--primary:hover { background: #1f1f21; border-color: #1f1f21; }
+
+/* ---------- Logo: mountain mark, name and tagline ---------- */
+.logo__svg { height: 52px; }
+.logo__snow { fill: var(--white); }
+.logo--light .logo__snow { fill: var(--gold); }
+.logo__word { font-size: 24px; font-weight: 700 !important; letter-spacing: 0.1px; }
+.logo__sub { font-weight: 700; }
+.logo__tag { fill: var(--gold); font-family: var(--font); font-size: 9.6px; font-weight: 700; letter-spacing: 3.3px; }
+.logo--light .logo__tag { fill: var(--gold-300); }
+.brand-mark { width: 34px; height: 28px; }
+@media (max-width: 560px) { .logo__svg { height: 44px; } }
+
+/* ---------- Home hero: misty mountains, light, in the brand colours ---------- */
+.hero {
+  background: #ffffff;
+  color: var(--ink);
+}
+.hero__wedge { display: none; }
+/* The photo is shown in soft greys with a wine tint, then faded to white behind the words. */
+.hero__photo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+}
+/* The photo on its own layer, mirrored so the highest peak sits behind the laptop. */
+.hero__photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* The photo fades out gradually to the left, so it melts into the white with no edge. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 18%, rgb(0 0 0 / 0.35) 32%, #000 52%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 18%, rgb(0 0 0 / 0.35) 32%, #000 52%);
+  /* Warm, low sun lighting the snow on the main peak, like late-afternoon alpenglow. */
+  background-image:
+    radial-gradient(18% 26% at 68% 16%, rgb(255 168 78 / 0.9), rgb(255 150 70 / 0.35) 55%, rgb(255 150 70 / 0) 80%),
+    radial-gradient(30% 34% at 70% 10%, rgb(255 210 150 / 0.4), rgb(255 210 150 / 0) 70%),
+    url('https://images.unsplash.com/photo-1458668383970-8ddd3927deed?auto=format&fit=crop&w=2000&q=75');
+  background-blend-mode: soft-light, screen, normal;
+  background-size: 100% 100%, 100% 100%, 90% auto;
+  background-repeat: no-repeat;
+  /* The main peak's summit sits just above the laptop. */
+  background-position: center, center, right -80px top -40px;
+}
+.hero__photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0.97) 0%, rgb(255 255 255 / 0.9) 28%, rgb(255 255 255 / 0.55) 42%, rgb(255 255 255 / 0) 60%);
+}
+.hero__inner { min-height: 520px; padding-block: 64px; }
+.hero h1 {
+  color: var(--gold);
+  margin-bottom: 18px;
+  line-height: 1.08;
+}
+.hero__accent { color: var(--brand); }
+.hero__rule {
+  display: block;
+  width: 96px;
+  height: 5px;
+  margin: 0 0 24px;
+  border-radius: 3px;
+  background: var(--brand);
+}
+.hero__copy p { color: #2f2f31; font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem); }
+.hero__btn-main {
+  background: var(--brand);
+  border: 1.5px solid var(--brand);
+  color: var(--white);
+  font-weight: 600;
+  box-shadow: 0 8px 20px -10px rgb(109 26 54 / 0.7);
+}
+.hero__btn-main:hover { background: var(--brand-700); border-color: var(--brand-700); color: var(--white); }
+.hero__btn-main span { margin-left: 6px; font-size: 1.25em; line-height: 0; }
+.hero__btn-alt {
+  background: rgb(255 255 255 / 0.85);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+.hero__btn-alt:hover { background: var(--white); color: var(--brand); border-color: var(--brand); }
+/* The laptop: dark bezel, light chart screen. */
+.hero .lm-screen { border-color: #18181b; background: #18181b; box-shadow: 0 30px 50px -24px rgb(0 0 0 / 0.55); }
+.hero .lm-base { box-shadow: 0 26px 30px -14px rgb(0 0 0 / 0.45); }
+@media (max-width: 900px) {
+  .hero__photo::before { background-size: cover; background-position: 35% 70%; }
+  .hero__photo::after {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.95) 0%, rgb(255 255 255 / 0.85) 45%, rgb(255 255 255 / 0.3) 75%, rgb(255 255 255 / 0.6) 100%);
+  }
+  .hero__inner { min-height: 0; padding-block: 44px 40px; }
+}
+
+/* Laptop: larger, with a camera, sitting on a glossy surface with a soft reflection. */
+.hero__visual { padding-inline: 2% 0; }
+.hero .laptop-mock { position: relative; }
+.hero .lm-screen { position: relative; border-radius: 16px 16px 0 0; }
+.lm-camera {
+  position: absolute; top: -0.55em; left: 50%; z-index: 2;
+  width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3a3a40;
+}
+.hero .lm-base {
+  background: linear-gradient(180deg, #f4f5f7 0%, #c9ccd2 55%, #9ea2a9 100%);
+  border-radius: 0 0 18px 18px;
+  box-shadow: 0 2px 0 rgb(255 255 255 / 0.6) inset, 0 14px 18px -10px rgb(0 0 0 / 0.55);
+}
+.lm-surface {
+  position: absolute;
+  left: -16%;
+  right: -16%;
+  top: 100%;
+  height: 70px;
+  margin-top: -2px;
+  background:
+    radial-gradient(42% 26% at 50% 6%, rgb(0 0 0 / 0.42), rgb(0 0 0 / 0) 72%),
+    radial-gradient(58% 70% at 50% 0%, rgb(255 255 255 / 0.7), rgb(255 255 255 / 0) 70%);
+  pointer-events: none;
+}
+/* A faint mirror of the laptop on the glossy surface. */
+.lm-surface::before {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 6px;
+  height: 34px;
+  border-radius: 0 0 50% 50%;
+  background: linear-gradient(180deg, rgb(28 28 32 / 0.28), rgb(28 28 32 / 0));
+  transform: perspective(200px) rotateX(55deg);
+  transform-origin: top;
+}
+.hero .hero__inner { padding-bottom: 88px; }
+
+/* The laptop sits lower, so the summit shows above it. */
+.hero .hero__visual { align-self: end; margin-top: 90px; margin-bottom: -28px; }
+@media (max-width: 900px) { .hero .hero__visual { margin-top: 20px; margin-bottom: 0; } }
+
+/* Phones: show the peaks and the sea of cloud (not the rocks at the photo's foot),
+   keep the photo clear behind the laptop, and fade softly into the page below. */
+@media (max-width: 900px) {
+  .hero__photo::before {
+    background-size: auto 115%;
+    background-position: 38% 22%;
+  }
+  .hero__photo::after {
+    background: linear-gradient(180deg,
+      rgb(255 255 255 / 0.96) 0%, rgb(255 255 255 / 0.9) 38%,
+      rgb(255 255 255 / 0.35) 58%, rgb(255 255 255 / 0) 70%,
+      rgb(255 255 255 / 0) 86%, rgb(255 255 255 / 0.9) 100%);
+  }
+  .hero .hero__inner { padding-bottom: 56px; }
+  .lm-surface { height: 34px; }
+  .lm-surface::before { display: none; }
+  .lm-surface {
+    background: radial-gradient(45% 40% at 50% 10%, rgb(0 0 0 / 0.28), rgb(0 0 0 / 0) 75%);
+  }
+}
+
+/* Wider hero: the words and the laptop share the space evenly. */
+@media (min-width: 901px) {
+  .hero .hero__inner { grid-template-columns: 1fr 1fr; gap: 48px; }
+  /* Room on the right for the laptop's base, which is wider than its screen. */
+  .hero .hero__visual { width: 100%; max-width: 600px; justify-self: end; padding-inline: 6% 7%; }
+}
+
+/* ---------- Glossy table the laptop sits on ---------- */
+/* A pale, glossy tabletop across the bottom of the hero; the mountains are behind it. */
+.hero__table {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  height: 64px;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0) 45%),
+    linear-gradient(180deg, #e9ebef 0%, #f6f7f9 30%, #ffffff 100%);
+  box-shadow: 0 -1px 0 rgb(255 255 255 / 0.9), 0 -12px 24px -14px rgb(60 60 70 / 0.35);
+}
+/* The table's front edge catches the light. */
+.hero__table::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.95) 60%, rgb(255 255 255 / 0.6));
+}
+@media (min-width: 901px) {
+  /* The laptop's base rests on the tabletop. */
+  .hero .hero__inner { padding-bottom: 52px; }
+  .hero .hero__visual { margin-top: 70px; margin-bottom: 0; }
+}
+/* Its mirror image on the glossy surface (supported by Chrome, Edge and Safari). */
+.hero .laptop-mock {
+  -webkit-box-reflect: below 1px linear-gradient(transparent 0%, transparent 78%, rgb(255 255 255 / 0.13) 100%);
+}
+.hero .lm-surface { display: none; }
+@media (max-width: 900px) {
+  .hero__table { height: 52px; }
+  .hero .hero__inner { padding-bottom: 44px; }
+  .hero__photo::before { background-size: auto 100%; background-position: 50% 0%; }
+}
