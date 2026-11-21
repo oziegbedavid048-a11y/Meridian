@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from . import identity
 from .notify import notify_verification_approved
@@ -257,3 +258,135 @@ class SupportTicketAdmin(admin.ModelAdmin):
     def close_selected(self, request, queryset):
         count = queryset.exclude(status=SupportTicket.Status.CLOSED).update(status=SupportTicket.Status.CLOSED)
         self.message_user(request, f'Closed {count} ticket(s).', messages.SUCCESS)
+
+
+# ---------- Email clients from the admin ----------
+# The Users list has a "Send email" button and a "Send email" action for ticked
+# users. Both open a Gmail-style compose page.
+
+from django.contrib.auth import get_user_model  # noqa: E402
+from django.contrib.auth.admin import UserAdmin as _BaseUserAdmin  # noqa: E402
+from django.http import JsonResponse  # noqa: E402
+
+from . import staff_email  # noqa: E402
+from .models import StaffEmail  # noqa: E402
+
+User = get_user_model()
+
+
+def _client_list():
+    """Everyone with an email address, for the To box."""
+    return [
+        {'id': u.pk, 'email': u.email, 'name': u.get_full_name() or u.email}
+        for u in User.objects.exclude(email='').filter(is_active=True).order_by('email')
+    ]
+
+
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+
+
+@admin.register(User)
+class ClientUserAdmin(_BaseUserAdmin):
+    actions = ('send_email',)
+    change_list_template = 'admin/accounts/user_changelist.html'
+
+    @admin.action(description='Send email to the selected users')
+    def send_email(self, request, queryset):
+        ids = ','.join(str(pk) for pk in queryset.values_list('pk', flat=True))
+        return redirect(f"{reverse('admin:accounts_send_email')}?to={ids}")
+
+    def get_urls(self):
+        return [
+            path('send-email/', self.admin_site.admin_view(self.compose_view), name='accounts_send_email'),
+        ] + super().get_urls()
+
+    def compose_view(self, request):
+        if not request.user.is_staff:
+            raise PermissionDenied
+        if request.method == 'POST':
+            return self._send(request)
+        chosen = [int(x) for x in (request.GET.get('to') or '').split(',') if x.strip().isdigit()]
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'New message',
+            'clients': _client_list(),
+            'chosen': chosen,
+            'max_attachments_mb': staff_email.MAX_ATTACHMENTS_BYTES // (1024 * 1024),
+            'max_attachments': staff_email.MAX_ATTACHMENTS,
+            'users_url': reverse('admin:auth_user_changelist'),
+            'opts': self.model._meta,
+        }
+        return render(request, 'admin/accounts/compose_email.html', context)
+
+    def _send(self, request):
+        def fail(message, status=400):
+            return JsonResponse({'ok': False, 'error': message}, status=status)
+
+        ids = [int(x) for x in request.POST.getlist('to') if str(x).isdigit()]
+        emails = list(User.objects.filter(pk__in=ids, is_active=True).exclude(email='')
+                      .values_list('email', flat=True))
+        if not emails:
+            return fail('Choose at least one recipient.')
+        subject = (request.POST.get('subject') or '').replace('\r', ' ').replace('\n', ' ').strip()
+        if not subject:
+            return fail('Add a subject.')
+        if len(subject) > staff_email.MAX_SUBJECT_CHARS:
+            return fail(f'The subject can be up to {staff_email.MAX_SUBJECT_CHARS} characters.')
+        # The message is sent as a file part, so its length is not limited by the
+        # small cap on ordinary form fields.
+        body_file = request.FILES.get('body')
+        if body_file is None or body_file.size == 0:
+            return fail('Write a message.')
+        if body_file.size > staff_email.MAX_BODY_BYTES:
+            return fail('The message is too long to send by email.')
+        raw = body_file.read().decode('utf-8', 'replace')
+        cleaned, text = staff_email.clean_html(raw)
+        files = request.FILES.getlist('attachments')
+        if len(files) > staff_email.MAX_ATTACHMENTS:
+            return fail(f'You can attach up to {staff_email.MAX_ATTACHMENTS} files.')
+        if sum(f.size for f in files) > staff_email.MAX_ATTACHMENTS_BYTES:
+            return fail(f'Attachments can be up to {staff_email.MAX_ATTACHMENTS_BYTES // (1024 * 1024)} MB in total.')
+        if not text.strip() and not files:
+            return fail('Write a message.')
+        attachments = [(f.name[:200], f.read(), f.content_type or 'application/octet-stream') for f in files]
+        sent, failed = staff_email.send_to_clients(emails, subject, raw, attachments)
+        StaffEmail.objects.create(
+            sent_by=request.user, subject=subject, body=cleaned, recipients='\n'.join(sent),
+            failed='\n'.join(failed), attachment_names='\n'.join(a[0] for a in attachments),
+        )
+        log.info('staff user %s emailed %s clients (%s failed)', request.user.pk, len(sent), len(failed))
+        if not sent:
+            return fail('The email could not be sent. Check the email settings and try again.', status=502)
+        if failed:
+            messages.warning(request, f'Sent to {len(sent)}; could not send to: {", ".join(failed)}.')
+        else:
+            messages.success(request, f'Email sent to {len(sent)} recipient{"s" if len(sent) != 1 else ""}.')
+        return JsonResponse({'ok': True, 'sent': len(sent), 'failed': failed,
+                             'next': reverse('admin:accounts_staffemail_changelist')})
+
+
+@admin.register(StaffEmail)
+class StaffEmailAdmin(admin.ModelAdmin):
+    list_display = ('subject', 'recipient_count', 'sent_by', 'created_at')
+    search_fields = ('subject', 'recipients')
+    readonly_fields = ('subject', 'sent_by', 'created_at', 'recipients', 'failed', 'attachment_names', 'message')
+    fields = readonly_fields
+    change_list_template = 'admin/accounts/staffemail_changelist.html'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description='Recipients')
+    def recipient_count(self, obj):
+        return len([x for x in obj.recipients.splitlines() if x.strip()])
+
+    @admin.display(description='Message')
+    def message(self, obj):
+        return format_html('<div style="max-width:720px;padding:12px;border:1px solid #ddd;border-radius:8px">{}</div>',
+                           mark_safe(obj.body))  # noqa: S308 (cleaned to safe tags before it was saved)

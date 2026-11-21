@@ -1,0 +1,84 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'accounts/compose.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a> &rsaquo;
+  <a href="{{ users_url }}">Users</a> &rsaquo; New message
+</div>
+{% endblock %}
+
+{% block content %}
+{{ clients|json_script:"gm-clients" }}
+{{ chosen|json_script:"gm-chosen" }}
+
+<form id="gm" class="gm" novalidate data-max-mb="{{ max_attachments_mb }}" data-max-files="{{ max_attachments }}">
+  {% csrf_token %}
+  <div class="gm__head">
+    <span>New message</span>
+    <a href="{{ users_url }}" class="gm__close" aria-label="Close" title="Discard and close">&times;</a>
+  </div>
+
+  <div class="gm__row gm__row--to">
+    <label for="gm-to-input" class="gm__label">To</label>
+    <div class="gm__chips" id="gm-chips">
+      <input id="gm-to-input" class="gm__to-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Search by name or email" role="combobox" aria-expanded="false" aria-controls="gm-suggest">
+    </div>
+    <button type="button" class="gm__link" id="gm-all">Select all users</button>
+    <ul class="gm__suggest" id="gm-suggest" role="listbox" hidden></ul>
+  </div>
+
+  <div class="gm__row">
+    <label for="gm-subject" class="gm__label">Subject</label>
+    <input id="gm-subject" class="gm__subject" type="text" maxlength="998" autocomplete="off">
+  </div>
+
+  <div class="gm__toolbar" role="toolbar" aria-label="Formatting">
+    <button type="button" data-cmd="undo" title="Undo (Ctrl+Z)">&#8630;</button>
+    <button type="button" data-cmd="redo" title="Redo (Ctrl+Y)">&#8631;</button>
+    <span class="gm__sep"></span>
+    <select data-cmd="formatBlock" title="Text style" aria-label="Text style">
+      <option value="p">Normal</option>
+      <option value="h2">Heading</option>
+      <option value="h3">Subheading</option>
+      <option value="blockquote">Quote</option>
+    </select>
+    <span class="gm__sep"></span>
+    <button type="button" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+    <button type="button" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+    <button type="button" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+    <button type="button" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+    <span class="gm__sep"></span>
+    <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">&#8226;&#8801;</button>
+    <button type="button" data-cmd="insertOrderedList" title="Numbered list">1&#8801;</button>
+    <button type="button" data-cmd="createLink" title="Insert link">&#128279;</button>
+    <button type="button" data-cmd="removeFormat" title="Remove formatting">T&#824;</button>
+  </div>
+
+  <div id="gm-body" class="gm__body" contenteditable="true" role="textbox" aria-multiline="true"
+       aria-label="Message" data-placeholder="Write your message…"></div>
+
+  <ul class="gm__files" id="gm-files" aria-label="Attachments"></ul>
+  <p class="gm__drop-hint" id="gm-drop" hidden>Drop files to attach them</p>
+
+  <p class="gm__error" id="gm-error" role="alert" hidden></p>
+
+  <div class="gm__foot">
+    <button type="submit" class="gm__send" id="gm-send">Send</button>
+    <label class="gm__attach" title="Attach files">
+      <input type="file" id="gm-file-input" multiple hidden>
+      <span aria-hidden="true">&#128206;</span><span class="gm__attach-text">Attach files</span>
+    </label>
+    <span class="gm__count" id="gm-count"></span>
+    <a href="{{ users_url }}" class="gm__discard" title="Discard">Discard</a>
+  </div>
+</form>
+
+<script src="{% static 'accounts/compose.js' %}"></script>
+{% endblock %}

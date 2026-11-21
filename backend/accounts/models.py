@@ -198,3 +198,22 @@ class SupportMessage(models.Model):
 
     def __str__(self):
         return f'{self.get_author_display()} on {self.ticket.reference}'
+
+
+class StaffEmail(models.Model):
+    """A record of each email staff sent to clients from the admin."""
+
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')
+    subject = models.CharField(max_length=998)
+    body = models.TextField()  # the cleaned HTML that was sent
+    recipients = models.TextField(help_text='One address per line')
+    failed = models.TextField(blank=True, help_text='Addresses that could not be sent to')
+    attachment_names = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'sent email'
+
+    def __str__(self):
+        return self.subject

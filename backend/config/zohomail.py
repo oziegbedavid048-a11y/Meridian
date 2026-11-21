@@ -12,6 +12,8 @@ Settings (environment variables):
                             domain must be verified in Zoho
 """
 
+import base64
+import mimetypes
 import urllib.error
 from email.utils import parseaddr
 
@@ -68,6 +70,23 @@ class ZohoMailBackend(BaseEmailBackend):
             body['reply_to'] = [_address(value) for value in message.reply_to]
         html = next((content for content, kind in getattr(message, 'alternatives', [])
                      if kind == 'text/html'), None)
+        files = []
+        for item in getattr(message, 'attachments', []) or []:
+            if isinstance(item, tuple):
+                name, content, mimetype = item
+            else:  # a MIME part
+                name = item.get_filename() or 'attachment'
+                content = item.get_payload(decode=True) or b''
+                mimetype = item.get_content_type()
+            if isinstance(content, str):
+                content = content.encode('utf-8')
+            files.append({
+                'name': name,
+                'mime_type': mimetype or mimetypes.guess_type(name)[0] or 'application/octet-stream',
+                'content': base64.b64encode(content).decode('ascii'),
+            })
+        if files:
+            body['attachments'] = files
         if message.content_subtype == 'html':
             body['htmlbody'] = message.body
         else:
@@ -78,8 +97,10 @@ class ZohoMailBackend(BaseEmailBackend):
 
     def _send(self, message):
         try:
-            outbound.post_json(self.url, self._payload(message),
-                               headers={'Authorization': PREFIX + self.token}, timeout=self.timeout)
+            payload = self._payload(message)
+            # Attachments can take a while to upload.
+            timeout = max(self.timeout, 90) if payload.get('attachments') else self.timeout
+            outbound.post_json(self.url, payload, headers={'Authorization': PREFIX + self.token}, timeout=timeout)
         except urllib.error.HTTPError as exc:
             detail = exc.read(2000).decode('utf-8', 'replace')
             raise OSError(f'Zoho email API refused the message ({exc.code}): {detail}') from None

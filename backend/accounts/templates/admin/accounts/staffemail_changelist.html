@@ -1,0 +1,4 @@
+{% extends "admin/change_list.html" %}
+{% block object-tools-items %}
+  <li><a href="{% url 'admin:accounts_send_email' %}" class="addlink" style="background-image:none">&#9993;&nbsp; Compose</a></li>
+{% endblock %}
