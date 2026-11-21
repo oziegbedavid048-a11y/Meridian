@@ -363,3 +363,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; letter-spac
   .hero .hero__inner { padding-bottom: 44px; }
   .hero__photo::before { background-size: auto 100%; background-position: 50% 0%; }
 }
+
+/* Only the home hero (and the header above it) uses the wider layout;
+   every other section keeps the standard width and side space. */
+.hero,
+body:has(.hero) .site-header {
+  --container: 1360px;
+  --gutter: clamp(16px, 4vw, 48px);
+}

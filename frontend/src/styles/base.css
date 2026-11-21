@@ -28,8 +28,8 @@
 
   --radius: 8px;
   --pill: 999px;
-  --container: 1360px;
-  --gutter: clamp(16px, 4vw, 48px);
+  --container: 1152px;
+  --gutter: clamp(16px, 4vw, 32px);
   --section-y: clamp(56px, 7vw, 96px);
   --header-h: 64px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
