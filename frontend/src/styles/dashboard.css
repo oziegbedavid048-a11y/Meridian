@@ -418,15 +418,14 @@ main p a:not(.btn):hover, main li a:not(.btn):hover { color: var(--brand); text-
 .pill-link { min-height: 44px; padding: 8px 18px; }
 .drawer__phone { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
 
-/* ---------- Sign in: blurred mountain photo behind the form, logo in the card ---------- */
+/* ---------- Sign in: mountain photo behind the form, logo in the card ---------- */
 .auth__main { position: relative; isolation: isolate; overflow: hidden; }
 .auth__main::before {
   content: '';
   position: absolute;
-  inset: -24px; /* room for the blur so its edges never show */
+  inset: 0;
   z-index: -2;
   background: url('https://images.unsplash.com/photo-1458668383970-8ddd3927deed?auto=format&fit=crop&w=1600&q=70') center 30% / cover no-repeat;
-  filter: blur(5px);
 }
 .auth__main::after {
   content: '';
@@ -442,3 +441,7 @@ main p a:not(.btn):hover, main li a:not(.btn):hover { color: var(--brand); text-
 }
 .auth__card .auth__logo--mobile { display: flex; justify-content: center; width: 100%; margin: 0 0 24px; }
 .auth__card .auth__logo--mobile .logo__svg { height: 48px; }
+/* On phones the form sits in the middle of the screen. */
+@media (max-width: 860px) {
+  .auth__main { min-height: 100vh; min-height: 100dvh; align-items: center; padding-block: 24px; }
+}
