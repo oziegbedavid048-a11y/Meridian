@@ -207,7 +207,7 @@ function OrderDialog({ instruments, symbol, defaultVolume, onClose, onPlaced }) 
           <span className="ox-symbol__name">{inst?.name}</span>
           <select ref={firstRef} value={sym} aria-label="Pair"
             onChange={(e) => { setSym(e.target.value); setSl(''); setTp(''); setAtPrice(''); setDone(null); }}>
-            {instruments.map((i) => <option key={i.symbol} value={i.symbol}>{i.symbol}, {i.name}</option>)}
+            {instruments.map((i) => <option key={i.symbol} value={i.symbol}>{i.symbol}</option>)}
           </select>
         </label>
       </header>
@@ -1237,7 +1237,7 @@ function PairList({ instruments, current, onPick, onClose }) {
             <li key={i.symbol}>
               <button type="button" role="option" aria-selected={i.symbol === current}
                 className={i.symbol === current ? 'is-on' : ''} onClick={() => { onPick(i.symbol); onClose(); }}>
-                <span className="cx-pairs__id"><b>{i.symbol}</b><small>{i.name}</small></span>
+                <b>{i.symbol}</b>
                 <span>{price(i.bid, i.digits)}</span>
               </button>
             </li>

@@ -288,6 +288,8 @@ class ApiTests(TestCase):
         self.assertEqual(self.account.balance, Decimal('10500.00'))
         record.refresh_from_db()
         self.assertEqual((record.status, record.balance_after), (FundingRequest.Status.COMPLETED, Decimal('10500.00')))
+        # The Overview's Total Deposit counts approved deposits only.
+        self.assertEqual(self.client.get('/api/trading/funding/').json()['total_deposits'], 500.0)
         with self.assertRaises(engine.FundingDecisionError):
             engine.decide_funding(record.pk, approve=True)  # never twice
         record.delete()  # and the receipt file goes with it

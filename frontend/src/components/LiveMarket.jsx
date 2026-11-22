@@ -109,7 +109,7 @@ export default function LiveMarket() {
                   <tr key={i.symbol}>
                     <th scope="row">
                       <span className="mw-sym"><span className={`mt-arrow mt-arrow--${dir}`} aria-hidden="true" />{i.symbol}</span>
-                      <small className="mw-sub">{i.name}</small>
+                      <small className="mw-sub">{(i.name || "").replace(/ vs .*$/, "")}</small>
                     </th>
                     <td className="mw-graph"><Sparkline points={i.spark} up={up} /></td>
                     <td className={`mt-px mt-px--${dir}`}>{price(i.bid, i.digits)}</td>

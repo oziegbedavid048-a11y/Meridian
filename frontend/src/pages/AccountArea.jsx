@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, BadgeCheck, BarChart3, Camera, Check, Coins, KeyRound, Loader2, Mail, MapPin, Maximize2,
+  AlertCircle, ArrowDownToLine, BadgeCheck, Camera, Check, Coins, KeyRound, Loader2, Mail, MapPin, Maximize2,
   PlusCircle, ShieldCheck, Trash2, UserRound, Wallet,
 } from 'lucide-react';
 import AccountShell from '../components/AccountShell.jsx';
@@ -54,6 +54,7 @@ export function OverviewPage() {
   const [candles, setCandles] = useState(null);
   const [summary, setSummary] = useState(null);
   const [openCount, setOpenCount] = useState(0);
+  const [deposits, setDeposits] = useState(null);
   const c = account?.currency || 'USD';
 
   const loadPrices = useCallback(async () => {
@@ -72,6 +73,7 @@ export function OverviewPage() {
 
   useEffect(() => {
     getHistory().then((h) => setSummary(h.summary || null)).catch(() => {});
+    getFunding().then((f) => setDeposits(f.total_deposits ?? 0)).catch(() => {});
     getPositions().then((r) => setOpenCount((r.positions || []).filter((p) => p.status === 'open').length)).catch(() => {});
   }, []);
 
@@ -100,8 +102,8 @@ export function OverviewPage() {
             <span><small>Equity</small><b>{account ? money(account.equity, c) : '—'}</b></span>
           </div>
           <div className="ov-stat">
-            <span className="ov-stat__icon"><BarChart3 size={26} aria-hidden="true" /></span>
-            <span><small>Free Margin</small><b>{account ? money(account.free_margin, c) : '—'}</b></span>
+            <span className="ov-stat__icon"><ArrowDownToLine size={26} aria-hidden="true" /></span>
+            <span><small>Total Deposit</small><b>{deposits != null ? money(deposits, c) : '—'}</b></span>
           </div>
           <div className="ov-stat">
             <span className="ov-stat__icon"><ShieldCheck size={26} aria-hidden="true" /></span>

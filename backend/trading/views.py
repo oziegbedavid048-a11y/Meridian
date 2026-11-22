@@ -5,6 +5,7 @@ import logging
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
+from django.db.models import Sum
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -559,6 +560,10 @@ def funding(request):
                               for w in DepositWallet.objects.filter(enabled=True)],
             'min_deposit': _num(MIN_DEPOSIT),
             'starting_balance': _num(acc.starting_balance),
+            # Every deposit the client made that has been approved and credited.
+            'total_deposits': _num(acc.funding_requests.filter(
+                kind=FundingRequest.Kind.DEPOSIT, status=FundingRequest.Status.COMPLETED,
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')),
             'identity': state_for(request.user),
         })
     if (request.content_type or '').startswith('multipart/'):
