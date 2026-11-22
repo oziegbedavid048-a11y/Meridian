@@ -9,6 +9,7 @@ functions: fetch_quotes(symbols) and fetch_news(queries).
 """
 
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 
 import logging
@@ -39,11 +40,16 @@ def fetch_quotes(symbols):
     symbols = list(symbols)
     out = {}
     failure = None
-    for start in range(0, len(symbols), SPARK_BATCH):
-        try:
-            out.update(_fetch_quote_batch(symbols[start:start + SPARK_BATCH]))
-        except Exception as exc:  # one batch failing must not lose the others
-            failure = exc
+    batches = [symbols[start:start + SPARK_BATCH] for start in range(0, len(symbols), SPARK_BATCH)]
+    # Batches are fetched side by side, so a long market list costs about as
+    # long as one request rather than one request per batch.
+    with ThreadPoolExecutor(max_workers=min(8, len(batches) or 1)) as pool:
+        futures = [pool.submit(_fetch_quote_batch, batch) for batch in batches]
+        for future in futures:
+            try:
+                out.update(future.result())
+            except Exception as exc:  # one batch failing must not lose the others
+                failure = exc
     missing = [s for s in symbols if s not in out and BACKUP_CRYPTO.match(s)]
     for symbol in missing[:12]:
         try:

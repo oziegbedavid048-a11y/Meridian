@@ -48,7 +48,7 @@
   padding: 0 12px 0 18px;
   border-bottom: 1px solid var(--line);
 }
-.dm__brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; color: var(--gold); }
+.dm__brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; color: var(--brand); }
 .dm__close {
   display: inline-grid; place-items: center; width: 40px; height: 40px;
   border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer;
@@ -116,7 +116,7 @@
   padding: 14px 18px;
   border-radius: 12px;
   border: 1px solid #ecd3d7;
-  background: #f7ecf0;
+  background: #eef2f8;
   color: var(--brand);
   text-decoration: none;
 }
@@ -229,7 +229,7 @@
 .ar-verify--approved b { color: #1e7e4a; }
 .ar-verify--pending { border-left-color: #c58a00; background: #fff8e6; }
 .ar-verify--pending b { color: #8a5a00; }
-.ar-verify--rejected, .ar-verify--none { border-left-color: var(--brand); background: #f7ecf0; }
+.ar-verify--rejected, .ar-verify--none { border-left-color: var(--brand); background: #eef2f8; }
 .ar-verify--rejected b, .ar-verify--none b { color: var(--brand); }
 
 .ar-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
@@ -246,7 +246,7 @@
   color: var(--ink);
   font: inherit;
 }
-.ar-field input:focus, .ar-field select:focus { outline: 2px solid rgb(109 26 54 / 0.25); border-color: var(--brand); }
+.ar-field input:focus, .ar-field select:focus { outline: 2px solid rgb(19 37 74 / 0.25); border-color: var(--brand); }
 .ar-field input:disabled, .ar-field select:disabled { background: #f3f3f4; color: var(--muted); }
 .ar-field.has-error input, .ar-field.has-error select { border-color: #c0271d; }
 .ar-hint { color: var(--muted); font-size: 0.8125rem; }
@@ -294,7 +294,7 @@
 /* ---------- Trading Overview ---------- */
 .ar--wide { max-width: 1280px; }
 .ov-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 6px 0 22px; }
-.ov-head h1 { margin: 0 0 6px; font-family: var(--font); font-size: clamp(1.7rem, 1.3rem + 1.2vw, 2.25rem); font-weight: 700; color: var(--gold); }
+.ov-head h1 { margin: 0 0 6px; font-family: var(--font); font-size: clamp(1.7rem, 1.3rem + 1.2vw, 2.25rem); font-weight: 700; color: var(--brand); }
 .ov-head p { margin: 0; color: var(--muted); font-size: 1.0625rem; }
 .ov-account { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 600; }
 .ov-account select {

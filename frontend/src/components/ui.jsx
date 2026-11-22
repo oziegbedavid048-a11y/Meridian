@@ -48,7 +48,7 @@ export function CheckList({ items }) {
 
 /**
  * The Meridian Prime Global logo. `light` is for dark backgrounds (white and light grey);
- * the default is for light backgrounds (wine and dark grey). It is deliberately not used in
+ * the default is for light backgrounds (navy and gold). It is deliberately not used in
  * the signed-in dashboard.
  */
 export function Logo({ light = false }) {
@@ -63,7 +63,7 @@ export function Logo({ light = false }) {
   );
 }
 
-/** The mountain mark: a wine peak and a dark grey peak, each with a cut-out, over a swoosh. */
+/** The mountain mark: a navy peak and a gold peak, each with a cut-out, over a swoosh. */
 function LogoMark() {
   return (
     <>

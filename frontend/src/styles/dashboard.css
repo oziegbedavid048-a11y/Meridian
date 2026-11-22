@@ -46,7 +46,7 @@
 }
 /* MT5-style icons: dark grey, blue when on. */
 .tx-bar .cx-icon { color: #3a3f45; }
-.tx-bar .cx-icon.is-on { color: var(--mx-up); background: #f7ecf0; }
+.tx-bar .cx-icon.is-on { color: var(--mx-up); background: #eef2f8; }
 .tx-bar .cx-icon:disabled { opacity: 0.35; }
 .mx-tabs button { color: #8a8f96; }
 .mx-tabs button.is-active { color: var(--mx-up); }
@@ -142,22 +142,22 @@
   font-weight: 500;
 }
 
-/* ---------- Brand look: wine and dark grey, Cinzel headings ---------- */
+/* ---------- Brand look: navy and gold, Cinzel headings ---------- */
 h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; letter-spacing: 0.01em; }
 /* The trading dashboard keeps the plain text font for its compact titles. */
 .app-shell h1, .app-shell h2, .app-shell h3, .app-shell h4,
 .auth h2, .auth h1 { font-family: var(--font); font-weight: 600; letter-spacing: 0; }
-/* Logo: wine peak, dark grey peak; the name in dark grey with "Global" in wine. */
+/* Logo: navy peak, gold peak; the name in navy with "Global" in gold. */
 .logo__accent { fill: var(--gold); }
-.logo__word { fill: var(--gold); font-family: var(--font); font-weight: 400; }
-.logo__sub { fill: var(--brand); font-weight: 400; }
+.logo__word { fill: var(--brand); font-family: var(--font); font-weight: 400; }
+.logo__sub { fill: var(--gold); font-weight: 400; }
 .logo--light .logo__word { fill: var(--white); }
-.logo--light .logo__sub { fill: var(--gold-300); }
-/* Top bar: dark grey with a grey Sign in pill. Header button: dark grey. */
-.topbar__signin { background: #8e8e93; color: var(--white); }
-.topbar__signin:hover { background: #a3a3a8; }
-.mainbar__cta.btn--primary { background: #2f2f31; border-color: #2f2f31; color: var(--white); }
-.mainbar__cta.btn--primary:hover { background: #1f1f21; border-color: #1f1f21; }
+.logo--light .logo__sub { fill: var(--gold); }
+/* Top bar: deep navy with a gold Sign in pill. Header button: gold with navy text. */
+.topbar__signin { background: var(--gold); color: var(--brand-800); }
+.topbar__signin:hover { background: var(--gold-300); }
+.mainbar__cta.btn--primary { background: linear-gradient(180deg, #ddb24f, #c08a25); border-color: #c08a25; color: var(--brand-800); }
+.mainbar__cta.btn--primary:hover { background: linear-gradient(180deg, #e6c06a, #c9962f); border-color: #c9962f; color: var(--brand-800); }
 
 /* ---------- Logo: mountain mark, name and tagline ---------- */
 .logo__svg { height: 52px; }
@@ -165,7 +165,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; letter-spac
 .logo--light .logo__snow { fill: var(--gold); }
 .logo__word { font-size: 24px; font-weight: 700 !important; letter-spacing: 0.1px; }
 .logo__sub { font-weight: 700; }
-.logo__tag { fill: var(--gold); font-family: var(--font); font-size: 9.6px; font-weight: 700; letter-spacing: 3.3px; }
+.logo__tag { fill: var(--brand); font-family: var(--font); font-size: 9.6px; font-weight: 700; letter-spacing: 3.3px; }
 .logo--light .logo__tag { fill: var(--gold-300); }
 .brand-mark { width: 34px; height: 28px; }
 @media (max-width: 560px) { .logo__svg { height: 44px; } }
@@ -176,7 +176,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; letter-spac
   color: var(--ink);
 }
 .hero__wedge { display: none; }
-/* The photo is shown in soft greys with a wine tint, then faded to white behind the words. */
+/* The photo is shown in soft greys with a navy tint, then faded to white behind the words. */
 .hero__photo {
   position: absolute;
   inset: 0;
@@ -211,36 +211,36 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; letter-spac
 }
 .hero__inner { min-height: 520px; padding-block: 64px; }
 .hero h1 {
-  color: var(--gold);
+  color: var(--brand);
   margin-bottom: 18px;
   line-height: 1.08;
 }
-.hero__accent { color: var(--brand); }
+.hero__accent { color: var(--gold); }
 .hero__rule {
   display: block;
   width: 96px;
   height: 5px;
   margin: 0 0 24px;
   border-radius: 3px;
-  background: var(--brand);
+  background: var(--gold);
 }
-.hero__copy p { color: #2f2f31; font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem); }
+.hero__copy p { color: var(--brand-800); font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem); }
 .hero__btn-main {
-  background: var(--brand);
-  border: 1.5px solid var(--brand);
-  color: var(--white);
+  background: linear-gradient(180deg, #ddb24f, #c08a25);
+  border: 1.5px solid #c08a25;
+  color: var(--brand-800);
   font-weight: 600;
-  box-shadow: 0 8px 20px -10px rgb(109 26 54 / 0.7);
+  box-shadow: 0 8px 20px -10px rgb(192 138 37 / 0.8);
 }
-.hero__btn-main:hover { background: var(--brand-700); border-color: var(--brand-700); color: var(--white); }
+.hero__btn-main:hover { background: linear-gradient(180deg, #e6c06a, #c9962f); border-color: #c9962f; color: var(--brand-800); }
 .hero__btn-main span { margin-left: 6px; font-size: 1.25em; line-height: 0; }
 .hero__btn-alt {
   background: rgb(255 255 255 / 0.85);
-  border: 1.5px solid var(--gold);
-  color: var(--gold);
+  border: 1.5px solid var(--brand);
+  color: var(--brand);
   font-weight: 600;
 }
-.hero__btn-alt:hover { background: var(--white); color: var(--brand); border-color: var(--brand); }
+.hero__btn-alt:hover { background: var(--brand); color: var(--white); border-color: var(--brand); }
 /* The laptop: dark bezel, light chart screen. */
 .hero .lm-screen { border-color: #18181b; background: #18181b; box-shadow: 0 30px 50px -24px rgb(0 0 0 / 0.55); }
 .hero .lm-base { box-shadow: 0 26px 30px -14px rgb(0 0 0 / 0.45); }
@@ -371,3 +371,49 @@ body:has(.hero) .site-header {
   --container: 1360px;
   --gutter: clamp(16px, 4vw, 48px);
 }
+
+/* ---------- Design pass: navy and gold, consistent controls ----------
+   Primary actions are gold with navy text (9:1), as in the brand reference.
+   Secondary actions are navy outlines. Gold used as text is the darker
+   --gold-600 so it stays readable on white. */
+.btn--primary {
+  background: linear-gradient(180deg, #ddb24f, #c08a25);
+  border-color: #c08a25;
+  color: var(--brand-800);
+  font-weight: 600;
+}
+.btn--primary:hover {
+  background: linear-gradient(180deg, #e6c06a, #c9962f);
+  border-color: #c9962f;
+  color: var(--brand-800);
+}
+.btn--outline { border-color: var(--brand); color: var(--brand); font-weight: 600; }
+.btn--outline:hover { background: var(--brand); color: var(--white); }
+.btn { transition: background-color 0.2s, background-image 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s; }
+.btn:hover { box-shadow: 0 6px 16px -10px rgb(15 29 58 / 0.55); }
+/* The trading dashboard keeps its own compact buttons. */
+.app-shell .btn--primary { background: var(--brand); border-color: var(--brand); color: var(--white); }
+.app-shell .btn--primary:hover { background: var(--brand-700); border-color: var(--brand-700); color: var(--white); }
+
+/* Gold as text: the darker shade, so it reads on white. */
+.hero__accent { color: var(--gold-600); }
+.logo__sub { fill: var(--gold-600); }
+.logo--light .logo__sub { fill: var(--gold); }
+
+/* Headings: Cinzel for page and section titles; card titles in bold Lato
+   so short labels stay easy to read at small sizes. */
+h3, h4 { font-family: var(--font); font-weight: 700; letter-spacing: 0; color: var(--brand); }
+h1, h2 { color: var(--brand); }
+
+/* Focus rings stay visible on the navy bars and footer. */
+.topbar :focus-visible,
+.site-footer :focus-visible,
+.app-bar :focus-visible,
+.dm :focus-visible { outline-color: var(--gold-300); }
+
+/* Links in body text: navy with a gold underline on hover. */
+main p a:not(.btn), main li a:not(.btn) { color: var(--brand-600); text-underline-offset: 3px; }
+main p a:not(.btn):hover, main li a:not(.btn):hover { color: var(--brand); text-decoration-color: var(--gold); }
+/* 44px touch targets for small links. */
+.pill-link { min-height: 44px; padding: 8px 18px; }
+.drawer__phone { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }

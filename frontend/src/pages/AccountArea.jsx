@@ -135,7 +135,7 @@ export function OverviewPage() {
             </div>
             <div className="ov-chart__plot">
               <CandleChart candles={candles || []} digits={inst?.digits ?? 2} timeframe={frame} bid={inst?.bid ?? null}
-                loading={candles === null} height={300} indicators={{ sma: true }} compact />
+                loading={candles === null} height={300} compact />
             </div>
           </section>
 

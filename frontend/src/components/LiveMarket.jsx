@@ -1,21 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { KIND_LABELS, getInstruments, price, startingInstruments, usePoll } from '../lib/trading.js';
 
-const ORDER = ['crypto', 'forex', 'stock', 'index', 'commodity', 'bond'];
-const PICK_KEY = 'watch-market';
-const DEFAULT_PICK = 'crypto';
-
-function loadPick() {
-  try {
-    const saved = window.localStorage.getItem(PICK_KEY);
-    if (ORDER.includes(saved)) return saved;
-  } catch {
-    /* storage blocked: the default is used */
-  }
-  return DEFAULT_PICK;
-}
+const ORDER = ['crypto', 'forex', 'commodity', 'index', 'stock', 'bond'];
 
 /** A small line of today's prices, green when the market is up and red when it is down. */
 function Sparkline({ points, up }) {
@@ -38,48 +26,13 @@ function Sparkline({ points, up }) {
   );
 }
 
-/** One compact button that opens a list of markets; one market is shown at a time. */
-function MarketPicker({ kinds, picked, onChange }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    const onKey = (e) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('pointerdown', close);
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', onKey); };
-  }, [open]);
-
-  return (
-    <div className="mw-pick" ref={ref}>
-      <button type="button" className="mw-pick__btn" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        {KIND_LABELS[picked] || picked} <ChevronDown size={14} aria-hidden="true" />
-      </button>
-      {open && (
-        <div className="mw-pick__menu" role="radiogroup" aria-label="Market to show">
-          <p className="mw-pick__title">Show in Market Watch</p>
-          {kinds.map(([k, count]) => (
-            <button key={k} type="button" role="radio" aria-checked={picked === k}
-              className={picked === k ? 'is-on' : ''} onClick={() => { onChange(k); setOpen(false); }}>
-              <span className="mw-pick__box mw-pick__box--radio" aria-hidden="true">{picked === k && <Check size={13} />}</span>
-              <span className="mw-pick__name">{KIND_LABELS[k] || k}</span>
-              <span className="mw-pick__count">{count}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /** Live quotes on the dashboard, in the same Market Watch style as the terminal. */
 export default function LiveMarket() {
   // Show prices at once; live ones replace them within seconds.
   const [instruments, setInstruments] = useState(startingInstruments);
   const [live, setLive] = useState(false);
   const [ticks, setTicks] = useState({});
-  const [picked, setPicked] = useState(loadPick);
+  const [query, setQuery] = useState('');
   const [failed, setFailed] = useState(false);
   const [updated, setUpdated] = useState(null);
   const prev = useRef({});
@@ -106,36 +59,50 @@ export default function LiveMarket() {
   }, []);
   usePoll(load, 3000); // live: prices refresh every three seconds
 
-  const choose = (next) => {
-    setPicked(next);
-    try { window.localStorage.setItem(PICK_KEY, next); } catch { /* kept for this visit */ }
-  };
-
-  const kinds = ORDER.map((k) => [k, instruments.filter((i) => i.kind === k).length]).filter(([, n]) => n > 0);
-  // Only the chosen market: crypto and forex are never mixed.
-  const rows = instruments.filter((i) => i.kind === picked);
+  // Every market, grouped by type; the search box narrows the list.
+  const groups = useMemo(() => {
+    const q = query.trim().toUpperCase();
+    const match = (i) => !q || i.symbol.toUpperCase().includes(q) || (i.name || '').toUpperCase().includes(q);
+    return ORDER.map((k) => [k, instruments.filter((i) => i.kind === k && match(i))]).filter(([, list]) => list.length);
+  }, [instruments, query]);
+  const shown = groups.reduce((n, [, list]) => n + list.length, 0);
 
   return (
     <section className="mt-watch mt-watch--dash" aria-labelledby="lm-title">
       <header className="mt-pane-title mw-head">
         <span id="lm-title">Market Watch</span>
-        <MarketPicker kinds={kinds} picked={picked} onChange={choose} />
+        <span className="mw-count">{instruments.length} markets</span>
         <span className="mt-pane-title__time">
           {live && updated
             ? <><span className="mw-live" aria-hidden="true" />{updated.toLocaleTimeString('en-CA', { hour12: false })}</>
             : failed ? 'Reconnecting…' : 'Connecting…'}
         </span>
       </header>
+      <div className="mw-search">
+        <Search size={16} aria-hidden="true" />
+        <input type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search markets: gold, EURUSD, Apple, oil…" aria-label="Search markets" />
+        {query && (
+          <button type="button" className="mw-search__clear" aria-label="Clear search" onClick={() => setQuery('')}>
+            <X size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
       <div className="mt-watch__scroll">
         <table className="mt-table mt-watch__table">
           {/* No visible header row; the columns are still named for screen readers. */}
           <caption className="sr-only">Symbol, today's graph, bid, ask and change for each market</caption>
-          {!rows.length && (
-            <tbody><tr><td colSpan={7} className="mt-empty">{failed ? 'Prices are unavailable right now.' : 'Loading prices…'}</td></tr></tbody>
+          {!shown && (
+            <tbody><tr><td colSpan={7} className="mt-empty">
+              {query ? 'No market matches your search.' : failed ? 'Prices are unavailable right now.' : 'Loading prices…'}
+            </td></tr></tbody>
           )}
-          {rows.length > 0 && (
+          {shown > 0 && (
             <tbody>
-              {rows.map((i) => {
+              {groups.map(([kind, rows]) => (
+                <Fragment key={kind}>
+                  <tr className="mw-group"><th colSpan={6} scope="colgroup">{KIND_LABELS[kind] || kind} <span>{rows.length}</span></th></tr>
+                  {rows.map((i) => {
                 const dir = ticks[i.symbol] || 'flat';
                 const up = (i.change_pct ?? 0) >= 0;
                 return (
@@ -153,7 +120,9 @@ export default function LiveMarket() {
                     <td className="mt-actions"><Link className="mt-mini" to={`/account/terminal?symbol=${encodeURIComponent(i.symbol)}`}>Trade</Link></td>
                   </tr>
                 );
-              })}
+                  })}
+                </Fragment>
+              ))}
             </tbody>
           )}
         </table>

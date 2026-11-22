@@ -17,12 +17,12 @@ function Chart({ id }) {
     <svg viewBox="0 0 160 60" preserveAspectRatio="none" className="mock-chart" aria-hidden="true">
       <defs>
         <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#6d1a36" stopOpacity="0.22" />
-          <stop offset="1" stopColor="#6d1a36" stopOpacity="0" />
+          <stop offset="0" stopColor="#13254a" stopOpacity="0.22" />
+          <stop offset="1" stopColor="#13254a" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={`${LINE} L160 60 L0 60Z`} fill={`url(#${id})`} />
-      <path d={LINE} fill="none" stroke="#6d1a36" strokeWidth="1.6" />
+      <path d={LINE} fill="none" stroke="#13254a" strokeWidth="1.6" />
     </svg>
   );
 }

@@ -51,7 +51,7 @@ const TABS = [
 const SETTINGS_KEY = 'hd-terminal-settings-v2';
 const DEFAULT_SETTINGS = {
   advanced: true, ohlc: true, levels: true, askLine: true,
-  type: 'candles', ind: { sma: true, ema: false, bb: false, rsi: true, macd: false },
+  type: 'candles', ind: { sma: false, ema: false, bb: false, rsi: false, macd: false },
 };
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -74,7 +74,13 @@ function useViewport() {
 
 function loadSettings() {
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    // The moving-average line and the RSI panel used to be on by default.
+    // They now stay off until the client turns them on themselves
+    // (smaChosen and rsiChosen mark that choice).
+    if (saved.ind && !saved.smaChosen) saved.ind = { ...saved.ind, sma: false };
+    if (saved.ind && !saved.rsiChosen) saved.ind = { ...saved.ind, rsi: false };
+    return { ...DEFAULT_SETTINGS, ...saved };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -1206,26 +1212,38 @@ function CircleMenu({ at, timeframe, onTimeframe, onTool, onClose }) {
 
 /** Pairs listed down the right of the chart; crypto first. */
 function PairList({ instruments, current, onPick, onClose }) {
+  const [query, setQuery] = useState('');
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   const order = { crypto: 0, forex: 1, commodity: 2, index: 3, stock: 4, bond: 5 };
-  const list = [...instruments].sort((a, b) => (order[a.kind] ?? 9) - (order[b.kind] ?? 9));
+  const q = query.trim().toUpperCase();
+  const list = [...instruments]
+    .filter((i) => !q || i.symbol.toUpperCase().includes(q) || (i.name || '').toUpperCase().includes(q))
+    .sort((a, b) => (order[a.kind] ?? 9) - (order[b.kind] ?? 9));
   return (
     <div className="cx-scrim cx-scrim--clear" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <ul className="cx-pairs" role="listbox" aria-label="Choose a pair">
-        {list.map((i) => (
-          <li key={i.symbol}>
-            <button type="button" role="option" aria-selected={i.symbol === current}
-              className={i.symbol === current ? 'is-on' : ''} onClick={() => { onPick(i.symbol); onClose(); }}>
-              <b>{i.symbol}</b>
-              <span>{price(i.bid, i.digits)}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="cx-pairs">
+        <label className="cx-pairs__search">
+          <Search size={16} aria-hidden="true" />
+          <input type="search" autoFocus value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search pair" aria-label="Search pair" />
+        </label>
+        <ul className="cx-pairs__list" role="listbox" aria-label="Choose a pair">
+          {!list.length && <li className="cx-pairs__empty">No pair matches.</li>}
+          {list.map((i) => (
+            <li key={i.symbol}>
+              <button type="button" role="option" aria-selected={i.symbol === current}
+                className={i.symbol === current ? 'is-on' : ''} onClick={() => { onPick(i.symbol); onClose(); }}>
+                <span className="cx-pairs__id"><b>{i.symbol}</b><small>{i.name}</small></span>
+                <span>{price(i.bid, i.digits)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -1392,7 +1410,9 @@ export default function Terminal() {
     }
   }, [settings]);
   const setting = (key) => (value) => setSettings((s) => ({ ...s, [key]: value }));
-  const setIndicator = (key) => (value) => setSettings((s) => ({ ...s, ind: { ...s.ind, [key]: value } }));
+  const setIndicator = (key) => (value) => setSettings((s) => ({
+    ...s, ind: { ...s.ind, [key]: value }, ...(key === 'sma' || key === 'rsi' ? { [`${key}Chosen`]: true } : {}),
+  }));
 
   // Lines the client draws are kept per symbol, in this browser.
   useEffect(() => {

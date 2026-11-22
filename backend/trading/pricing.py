@@ -8,6 +8,7 @@ gives a mid price, bid sits half a spread below it and ask half a spread above.
 import hashlib
 import time
 import urllib.parse
+from types import SimpleNamespace
 from decimal import Decimal
 
 from django.core.cache import cache
@@ -68,6 +69,48 @@ def _get_json(url):
     return outbound.get_json(url, timeout=8)
 
 
+# A feed symbol such as "CL=F_EUR" means: take the market priced in US dollars
+# ("CL=F", WTI oil) and convert it into another currency ("EUR") with the
+# USD/EUR rate from the same feed. This gives markets like oil or gold priced
+# in euros, pounds or yen.
+_CONVERTED = re.compile(r'^(?P<base>.+)_(?P<ccy>[A-Z]{3})$')
+
+
+def split_converted(feed_symbol):
+    """Return (base feed symbol, currency) for a converted market, else None."""
+    m = _CONVERTED.match(feed_symbol or '')
+    return (m['base'], m['ccy']) if m else None
+
+
+def fetch_converted_quotes(feed_symbols):
+    """fetch_quotes() that also prices converted markets ("CL=F_EUR")."""
+    needed = set()
+    for feed in feed_symbols:
+        parts = split_converted(feed)
+        needed.update((parts[0], f'USD{parts[1]}=X') if parts else (feed,))
+    raw = fetch_quotes(sorted(needed))
+    out = {}
+    for feed in feed_symbols:
+        parts = split_converted(feed)
+        if not parts:
+            if feed in raw:
+                out[feed] = raw[feed]
+            continue
+        base, fx = raw.get(parts[0]), raw.get(f'USD{parts[1]}=X')
+        if not base or not fx or not fx.get('price'):
+            continue
+        rate = fx['price']
+        prev_rate = fx.get('previous_close') or rate
+        out[feed] = {
+            'price': base['price'] * rate,
+            'day_high': base['day_high'] * rate if base.get('day_high') else None,
+            'day_low': base['day_low'] * rate if base.get('day_low') else None,
+            'previous_close': base['previous_close'] * prev_rate if base.get('previous_close') else None,
+            'spark': [v * rate for v in (base.get('spark') or [])],
+        }
+    return out
+
+
 def get_prices(instruments):
     """Return {symbol: {'bid', 'ask', 'mid', 'previous_close'}} as Decimals."""
     instruments = list(instruments)
@@ -100,7 +143,7 @@ def get_prices(instruments):
     mids = cache.get(key)
     if mids is None:
         try:
-            raw = fetch_quotes(list(by_feed))
+            raw = fetch_converted_quotes(list(by_feed))
         except Exception:
             # A feed hiccup: keep showing the last good prices (up to an hour old) rather than none.
             mids = cache.get(key + ':last')
@@ -139,6 +182,14 @@ def get_candles(instrument, timeframe='H1', limit=300):
         return simulator.candles(instrument, BAR_SECONDS[timeframe], limit)
     if not re.match(FEED_SYMBOL_PATTERN, instrument.feed_symbol):
         raise ValueError('This instrument has an unusable feed symbol.')
+    parts = split_converted(instrument.feed_symbol)
+    if parts:
+        # Converted market: the US-dollar market's bars at today's exchange rate.
+        base = SimpleNamespace(feed_symbol=parts[0], price_source='feed',
+                               PriceSource=instrument.PriceSource)
+        rate = float(fx_rate('USD', parts[1]))
+        return [{**b, 'o': b['o'] * rate, 'h': b['h'] * rate, 'l': b['l'] * rate, 'c': b['c'] * rate}
+                for b in get_candles(base, timeframe, limit)]
     interval, rng, group = TIMEFRAMES[timeframe]
     key = f'trading:candles:{instrument.feed_symbol}:{timeframe}'
     bars = cache.get(key)

@@ -6,7 +6,7 @@
 
 :root {
   --mx-line: #dcdcd6;
-  --mx-up: #6d1a36;
+  --mx-up: #13254a;
   --mx-down: #c0271d;
   --mx-tabs-h: 60px;
 }
@@ -889,7 +889,7 @@
 }
 
 .mx-tools button:hover { background: var(--sea-100); color: var(--ink); }
-.mx-tools button.is-on { background: #f7ecf0; color: var(--mx-up); }
+.mx-tools button.is-on { background: #eef2f8; color: var(--mx-up); }
 .mx-tools button:disabled { opacity: 0.35; cursor: default; }
 .mx-tools__gap { flex: 1; min-width: 8px; }
 
@@ -937,7 +937,7 @@
 .mx-btn--solid { background: var(--brand); color: #fff; }
 .mx-btn--solid:hover { background: var(--brand-700); }
 
-.mx-icon.is-on { background: #f7ecf0; color: var(--mx-up); }
+.mx-icon.is-on { background: #eef2f8; color: var(--mx-up); }
 a.mx-icon { text-decoration: none; }
 
 .mx-filterbar {
@@ -946,7 +946,7 @@ a.mx-icon { text-decoration: none; }
   justify-content: space-between;
   gap: 8px;
   padding: 8px 16px;
-  background: #f7ecf0;
+  background: #eef2f8;
   font-size: 0.875rem;
   color: var(--ink);
 }

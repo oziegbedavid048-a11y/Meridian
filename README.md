@@ -365,7 +365,7 @@ beside it in Public Sans, in wine and dark grey.
 * On the website the `Logo` component (`src/components/ui.jsx`) is used on the
   public pages, sign-in, sign-up and the footer. It is deliberately **not** shown
   in the signed-in dashboard.
-* Colours: wine `#722f37`, dark grey `#3a3a3d` (light grey `#c9c9cd` on dark).
+* Colours: wine `#722f37`, dark grey `#c9962f` (light grey `#c9c9cd` on dark).
 
 ## Editing content
 

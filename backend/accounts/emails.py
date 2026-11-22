@@ -14,7 +14,7 @@ from django.utils.html import escape, linebreaks
 BRAND = 'Meridian Prime Global'
 FONT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 INK = '#1f2933'
-NAVY = '#6d1a36'
+NAVY = '#13254a'
 MUTED = '#7b8794'
 
 

@@ -46,7 +46,7 @@
 }
 
 .cx-icon:hover { background: var(--sand); }
-.cx-icon.is-on { background: #f7ecf0; color: var(--mx-up); }
+.cx-icon.is-on { background: #eef2f8; color: var(--mx-up); }
 .cx-icon:disabled { opacity: 0.4; cursor: default; }
 
 @media (max-width: 400px) {
@@ -200,7 +200,7 @@
 .cx-pairs button b { font-size: 1rem; font-weight: 600; }
 .cx-pairs button span { font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .cx-pairs button:hover { background: var(--sand); }
-.cx-pairs button.is-on { background: #f7ecf0; color: var(--mx-up); }
+.cx-pairs button.is-on { background: #eef2f8; color: var(--mx-up); }
 
 /* ---------- Extra drawing types ---------- */
 .chart__arrowhead { fill: #7c3aed; }
@@ -564,7 +564,7 @@
   cursor: pointer;
 }
 
-.ob-tools button:hover { background: #f7ecf0; }
+.ob-tools button:hover { background: #eef2f8; }
 
 .ob-tools--named {
   flex-direction: column;
@@ -848,3 +848,17 @@
 }
 
 .tx-bar__title { margin-left: 10px !important; }
+
+/* Pair picker: a search box above a scrolling list of every market. */
+.cx-pairs { display: flex; flex-direction: column; width: min(300px, 86vw); overflow: hidden; }
+.cx-pairs__search {
+  display: flex; align-items: center; gap: 8px; flex: none;
+  margin: 8px; padding: 0 12px; min-height: 44px;
+  border: 1px solid var(--mx-line); border-radius: 10px; color: var(--muted); background: #fff;
+}
+.cx-pairs__search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 1rem; color: var(--ink); }
+.cx-pairs__search:focus-within { border-color: var(--brand-600); box-shadow: 0 0 0 3px rgb(30 58 110 / 0.15); }
+.cx-pairs__list { flex: 1; min-height: 0; margin: 0; padding: 0; list-style: none; overflow-y: auto; border-top: 1px solid var(--mx-line); }
+.cx-pairs__id { display: flex; flex-direction: column; min-width: 0; }
+.cx-pairs__id small { overflow: hidden; color: var(--muted); font-size: 0.75rem; white-space: nowrap; text-overflow: ellipsis; }
+.cx-pairs__empty { padding: 16px; color: var(--muted); font-size: 0.9375rem; }

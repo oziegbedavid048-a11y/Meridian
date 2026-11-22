@@ -1992,7 +1992,7 @@ export const MARKET_SNAPSHOT = [
     ]
   },
   {
-    "symbol": "WTIUSD",
+    "symbol": "USOIL",
     "name": "Crude Oil (WTI) vs US Dollar",
     "kind": "commodity",
     "digits": 2,
