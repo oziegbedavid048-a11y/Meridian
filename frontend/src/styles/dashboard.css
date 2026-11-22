@@ -417,3 +417,28 @@ main p a:not(.btn):hover, main li a:not(.btn):hover { color: var(--brand); text-
 /* 44px touch targets for small links. */
 .pill-link { min-height: 44px; padding: 8px 18px; }
 .drawer__phone { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+
+/* ---------- Sign in: blurred mountain photo behind the form, logo in the card ---------- */
+.auth__main { position: relative; isolation: isolate; overflow: hidden; }
+.auth__main::before {
+  content: '';
+  position: absolute;
+  inset: -24px; /* room for the blur so its edges never show */
+  z-index: -2;
+  background: url('https://images.unsplash.com/photo-1458668383970-8ddd3927deed?auto=format&fit=crop&w=1600&q=70') center 30% / cover no-repeat;
+  filter: blur(5px);
+}
+.auth__main::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(244 246 250 / 0.55), rgb(244 246 250 / 0.35));
+}
+.auth__card {
+  border-color: rgb(255 255 255 / 0.7);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px -28px rgb(15 29 58 / 0.55);
+}
+.auth__card .auth__logo--mobile { display: flex; justify-content: center; width: 100%; margin: 0 0 24px; }
+.auth__card .auth__logo--mobile .logo__svg { height: 48px; }

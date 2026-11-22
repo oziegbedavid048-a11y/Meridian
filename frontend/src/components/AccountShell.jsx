@@ -8,7 +8,7 @@ import { money } from '../lib/trading.js';
 import SupportPanel from './SupportPanel.jsx';
 import { setChatBubble } from '../lib/livechat.js';
 import { BrandMark } from './ui.jsx';
-import DashboardMenu from './DashboardMenu.jsx';
+import DashboardMenu, { AvatarLink } from './DashboardMenu.jsx';
 
 
 export function SummaryBar({ account }) {
@@ -85,8 +85,11 @@ export default function AccountShell({ children, wide = false, bare = false }) {
     <div className={`app-shell ${wide ? 'app-shell--wide' : ''} ${bare ? 'app-shell--bare' : ''}`}>
       {!bare && (
       <header className="app-bar">
-        <DashboardMenu light onSupport={() => setSupport(true)} />
         <Link to="/account/terminal" className="app-bar__user app-bar__brand" title={`Signed in as ${user.email}`}><BrandMark light />Meridian Prime Global</Link>
+        <span className="app-bar__end">
+          <AvatarLink />
+          <DashboardMenu light onSupport={() => setSupport(true)} />
+        </span>
       </header>
       )}
 

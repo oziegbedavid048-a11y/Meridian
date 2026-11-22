@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, ArrowDownToLine, BadgeCheck, Camera, Check, Coins, KeyRound, Loader2, Mail, MapPin, Maximize2,
+  AlertCircle, ArrowDownToLine, BadgeCheck, Camera, Check, ChevronDown, Coins, KeyRound, Loader2, Mail, MapPin, Maximize2,
   PlusCircle, ShieldCheck, Trash2, UserRound, Wallet,
 } from 'lucide-react';
 import AccountShell from '../components/AccountShell.jsx';
-import { Avatar } from '../components/DashboardMenu.jsx';
+import { Avatar, avatarChanged } from '../components/DashboardMenu.jsx';
 import { RuleList } from '../components/Form.jsx';
 import { api } from '../lib/api.js';
 import { useAuth } from '../lib/auth.jsx';
@@ -329,7 +329,7 @@ const TITLES = [['mr', 'Mr.'], ['ms', 'Ms.'], ['mx', 'Mx.']];
 export function ProfilePage() {
   const { refresh } = useAuth();
   const [profile, setProfile] = useState(null);
-  const [avatarVersion, setAvatarVersion] = useState(Date.now());
+  const [openSec, setOpenSec] = useState(null);
   const [form, setForm] = useState({});
   const [addr, setAddr] = useState({});
   const photoRef = useRef(null);
@@ -357,11 +357,11 @@ export function ProfilePage() {
     const body = new FormData();
     body.append('photo', file);
     const out = await photo.run(() => api('/profile/avatar/', { method: 'POST', body }), 'Picture updated.');
-    if (out) { apply(out); setAvatarVersion(Date.now()); }
+    if (out) { apply(out); avatarChanged(); }
   };
   const removePhoto = async () => {
     const out = await photo.run(() => api('/profile/avatar/', { method: 'DELETE' }), 'Picture removed.');
-    if (out) { apply(out); setAvatarVersion(Date.now()); }
+    if (out) { apply(out); avatarChanged(); }
   };
 
   const saveDetails = async (e) => {
@@ -400,46 +400,48 @@ export function ProfilePage() {
   const f = set(setForm);
   const a = set(setAddr);
 
+  const verifyText = { approved: 'Verified', pending: 'Under review', rejected: 'Not approved' }[id.status] || 'Not verified';
+  const sec = (key, Icon, title, hint, children) => (
+    <ProfileSection key={key} id={`pr-${key}`} icon={Icon} title={title} hint={hint}
+      open={openSec === key} onToggle={() => setOpenSec((o) => (o === key ? null : key))}>
+      {children}
+    </ProfileSection>
+  );
+
   return (
-    <Page title="Profile" intro="Your picture, personal details, security and verification.">
-      <section className="ar-card ar-profile-top">
-        <div className="ar-photo">
-          <Avatar size={96} version={avatarVersion} />
-          <div>
-            <b>{[form.first_name, form.last_name].filter(Boolean).join(' ') || 'Your name'}</b>
-            <small>{profile.email}</small>
-            <small>Member since {new Date(profile.member_since).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</small>
-            <div className="ar-photo__acts">
-              <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" hidden
-                onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ''; }} />
-              <button type="button" className="ar-btn ar-btn--ghost" onClick={() => photoRef.current?.click()} disabled={photo.busy}>
-                {photo.busy ? <Loader2 size={16} className="spin" aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
-                {profile.has_avatar ? ' Change picture' : ' Upload picture'}
-              </button>
-              {profile.has_avatar && (
-                <button type="button" className="ar-btn ar-btn--text" onClick={removePhoto} disabled={photo.busy}>
-                  <Trash2 size={16} aria-hidden="true" /> Remove
-                </button>
-              )}
-            </div>
-            {photo.errors.photo && <small className="ar-error" role="alert">{photo.errors.photo}</small>}
-            {photo.done && <small className="ar-done" role="status">{photo.done}</small>}
-          </div>
+    <Page title="Profile">
+      <section className="pf-head">
+        <div className="pf-photo">
+          <Avatar size={104} />
+          <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" hidden
+            onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ''; }} />
+          <button type="button" className="pf-photo__cam" onClick={() => photoRef.current?.click()} disabled={photo.busy}
+            aria-label={profile.has_avatar ? 'Change picture' : 'Add a picture'} title={profile.has_avatar ? 'Change picture' : 'Add a picture'}>
+            {photo.busy ? <Loader2 size={18} className="spin" aria-hidden="true" /> : <Camera size={18} aria-hidden="true" />}
+          </button>
         </div>
+        <h2 className="pf-name">{[form.first_name, form.last_name].filter(Boolean).join(' ') || 'Your account'}</h2>
+        <p className="pf-since">Member since {new Date(profile.member_since).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</p>
+        {profile.has_avatar && (
+          <button type="button" className="pf-remove" onClick={removePhoto} disabled={photo.busy}>
+            <Trash2 size={14} aria-hidden="true" /> Remove picture
+          </button>
+        )}
+        {photo.errors.photo && <small className="ar-error" role="alert">{photo.errors.photo}</small>}
+        {photo.done && <small className="ar-done" role="status">{photo.done}</small>}
       </section>
 
-      <section className="ar-card" aria-labelledby="pr-verify">
-        <div className="ar-card__head"><h2 id="pr-verify"><BadgeCheck size={20} aria-hidden="true" /> Account verification</h2></div>
+      <div className="pf-list">
+        {sec('verify', BadgeCheck, 'Account verification', verifyText, (
         <div className={`ar-verify ar-verify--${id.status || 'none'}`}>
           {id.status === 'approved' && <><b>Verified</b><p>Your identity is confirmed. You can make withdrawals.</p></>}
           {id.status === 'pending' && <><b>Under review</b><p>We are checking your ID. This usually takes a few hours.</p></>}
           {id.status === 'rejected' && <><b>Not approved</b><p>{id.rejection_reason || 'Please send new photos.'}</p><Link to="/account/verify" className="ar-btn">Try again</Link></>}
           {(!id.status || id.status === 'none') && <><b>Not verified</b><p>Verify your identity with a photo of your ID. It is needed before your first withdrawal.</p><Link to="/account/verify" className="ar-btn">Verify now</Link></>}
         </div>
-      </section>
-
-      <section className="ar-card" aria-labelledby="pr-details">
-        <div className="ar-card__head"><h2 id="pr-details"><UserRound size={20} aria-hidden="true" /> Personal information</h2></div>
+        ))}
+        {sec('details', UserRound, 'Personal information', 'Name, date of birth and phone', (
+          <>
         {locked && <p className="ar-muted">Your legal name and date of birth match your verified ID, so they can only be changed by our support team.</p>}
         <form onSubmit={saveDetails} noValidate className="ar-form">
           <Field label="Title" id="pr-title" error={details.errors.title}>
@@ -465,10 +467,9 @@ export function ProfilePage() {
           </Field>
           <SaveRow busy={details.busy} done={details.done} error={details.errors.form} />
         </form>
-      </section>
-
-      <section className="ar-card" aria-labelledby="pr-address">
-        <div className="ar-card__head"><h2 id="pr-address"><MapPin size={20} aria-hidden="true" /> Address</h2></div>
+          </>
+        ))}
+        {sec('address', MapPin, 'Address', 'Where you live', (
         <form onSubmit={saveAddress} noValidate className="ar-form">
           <Field label="Street address" id="pr-street" error={address.errors.street}>
             <input id="pr-street" value={addr.street} onChange={a('street')} autoComplete="address-line1" maxLength={120} />
@@ -493,11 +494,9 @@ export function ProfilePage() {
           </Field>
           <SaveRow busy={address.busy} done={address.done} error={address.errors.form} />
         </form>
-      </section>
-
-      <div className="ar-grid">
-        <section className="ar-card" aria-labelledby="pr-email">
-          <div className="ar-card__head"><h2 id="pr-email"><Mail size={20} aria-hidden="true" /> Email address</h2></div>
+        ))}
+        {sec('email', Mail, 'Email address', 'Change the email you sign in with', (
+          <>
           <p className="ar-muted">Current: <b>{profile.email}</b></p>
           {!em.sent ? (
             <form onSubmit={sendEmailCode} noValidate className="ar-form ar-form--one">
@@ -520,10 +519,9 @@ export function ProfilePage() {
               <button type="button" className="ar-btn ar-btn--text" onClick={() => setEm((x) => ({ ...x, sent: false, code: '' }))}>Use a different email</button>
             </form>
           )}
-        </section>
-
-        <section className="ar-card" aria-labelledby="pr-pass">
-          <div className="ar-card__head"><h2 id="pr-pass"><KeyRound size={20} aria-hidden="true" /> Password</h2></div>
+          </>
+        ))}
+        {sec('password', KeyRound, 'Password', 'Change your password', (
           <form onSubmit={savePassword} noValidate className="ar-form ar-form--one">
             <Field label="Current password" id="pw-cur" error={pass.errors.current_password}>
               <input id="pw-cur" type="password" value={pw.current_password} onChange={(e) => setPw((x) => ({ ...x, current_password: e.target.value }))} autoComplete="current-password" maxLength={128} />
@@ -537,8 +535,22 @@ export function ProfilePage() {
             </Field>
             <SaveRow busy={pass.busy} done={pass.done} error={pass.errors.form} label="Update password" />
           </form>
-        </section>
+        ))}
       </div>
     </Page>
+  );
+}
+
+/** One row of the profile page: tap it to open the details beneath. */
+function ProfileSection({ id, icon: Icon, title, hint, open, onToggle, children }) {
+  return (
+    <section className={`pf-sec ${open ? 'is-open' : ''}`}>
+      <button type="button" className="pf-row" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+        <span className="pf-row__icon"><Icon size={20} aria-hidden="true" /></span>
+        <span className="pf-row__text"><b>{title}</b><small>{hint}</small></span>
+        <ChevronDown size={20} className="pf-row__chev" aria-hidden="true" />
+      </button>
+      {open && <div id={id} className="pf-body">{children}</div>}
+    </section>
   );
 }
